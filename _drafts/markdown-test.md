@@ -221,3 +221,117 @@ but, you must go with your guys.
 
     吓得小鸡，唧唧唧；  
     吓得小鸭，嘎嘎嘎。  
+
+如果你每行都有缩进，看起来会看好很多，当然，再次地，如果你很懒惰，Markdown 也允许：  
+*   This is a list item with two paragraphs.
+
+    This is the second paragraph in the list item. You're
+only required to indent the first line. Lorem ipsum dolor
+sit amet, consectetuer adipiscing elit.
+
+*   Another item in the same list.
+
+如果要在列表项目内放进引用，那 > 就需要缩进：  
+* 测试在列表中使用引用
+> the first line  
+  > second line  
+
+
+
+如果要放代码区块的话，该区块就需要缩进两次，也就是 8 个空格或是 2 个制表符：  
+
+当然，项目列表很可能会不小心产生，像是下面这样的写法：  
+1889. 打到小日本  
+
+换句话说，也就是在行首出现数字-句点-空白，要避免这样的状况，你可以在句点前面加上反斜杠。  
+
+1889\.小日本已经灭亡  
+
+
+## 代码区块
+
+和程序相关的写作或是标签语言原始码通常会有已经排版好的代码区块，通常这些区块我们并不希望它以一般段落文件的方式去排版，而是照原来的样子显示，Markdown 会用 <pre> 和 <code> 标签来把代码区块包起来。
+
+要在 Markdown 中建立代码区块很简单，只要简单地缩进 4个空格或是 1个制表符就可以，例如，下面的输入：
+
+计算和函数  
+
+    funtion(int org){
+        int  sum = 0;  
+        for(int i = 0 ; i< org ;i ++){
+        sum += i;
+        }
+        return sum;
+    }
+
+Markdown 会转换成：     
+
+<pre>
+  <code>
+  funtion(int org){
+      int  sum = 0;  
+      for(int i = 0 ; i< org ;i ++){
+        sum += i;
+      }
+      return sum;
+  }
+  </code>
+</pre>  
+
+**注意一般情况下制表符为4个空格，但是有些软件的制表符默认为两个比如github atom，自己配置直接符的空格数。**  
+
+
+    jack
+        main
+    rain
+    markdown
+
+一个代码区块会一直持续到没有缩进的那一行（或是文件结尾）。
+在代码区块里面， & 、 < 和 > 会自动转成 HTML 实体，这样的方式让你非常容易使用 Markdown 插入范例用的 HTML 原始码，只需要复制贴上，再加上缩进就可以了，剩下的 Markdown 都会帮你处理，例如：  
+
+<div class="footer">
+    &copy; 2004 Foo Corporation
+</div>
+
+会被转换为：
+
+<pre><code>&lt;div class="footer"&gt;
+    &amp;copy; 2004 Foo Corporation
+&lt;/div&gt;
+</code></pre>
+
+代码区块中，一般的 Markdown 语法不会被转换，像是星号便只是星号，这表示你可以很容易地以 Markdown 语法撰写 Markdown 语法相关的文件。
+
+
+
+## 分隔线
+
+你可以在一行中用三个以上的星号、减号、底线来建立一个分隔线，行内不能有其他东西。你也可以在星号或是减号中间插入空格。下面每种写法都可以建立分隔线：
+
+***   
+
+---   
+___
+
+*****  
+
+---------
+
+## 区段元素
+### 链接
+
+Markdown 支持两种形式的链接语法： 行内式和参考式两种形式。
+
+不管是哪一种，链接文字都是用 [方括号] 来标记。
+
+要建立一个行内式的链接，只要在方块括号后面紧接着圆括号并插入网址链接即可，如果你还想要加上链接的 title 文字，只要在网址后面，用双引号把 title 文字包起来即可，例如：
+
+
+[creative book](http://www.jianshu.com/users/79667750f82e/timeline) doandhan  
+cn blog [iteye](http://donald-draper.iteye.com/blog "Donald_Draper") .
+
+**注意链接和连接提示中间要加空格**
+
+如果你是要链接到同样主机的资源，你可以使用相对路径：
+
+See my [About](/about/) page for details.
