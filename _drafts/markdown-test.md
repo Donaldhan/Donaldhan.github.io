@@ -334,4 +334,37 @@ cn blog [iteye](http://donald-draper.iteye.com/blog "Donald_Draper") .
 
 如果你是要链接到同样主机的资源，你可以使用相对路径：
 
-See my [About](/about/) page for details.
+See my [About](/about/) page for details.   
+
+参考式的链接是在链接文字的括号后面再接上另一个方括号，而在第二个方括号里面要填入用以辨识链接的标记：
+
+This is [cn-blog][blog-iteye] reference-style link.
+
+你也可以选择性地在两个方括号中间加上一个空格：
+
+This is [an example] [id] reference-style link.
+
+接着，在文件的任意处，你可以把这个标记的链接内容定义出来：
+
+[blog-iteye]: http://donald-draper.iteye.com/blog  "Donald_Draper"
+链接内容定义的形式为：
+
+* 方括号（前面可以选择性地加上至多三个空格来缩进），里面输入链接文字
+*  接着一个冒号
+* 接着一个以上的空格或制表符
+* 接着链接的网址
+* 接着一个以上的空格或制表符
+* 选择性地接着 title 内容，可以用单引号、双引号或是括弧包着
+
+下面这三种链接的定义都是相同：
+
+[blog-iteye]: http://donald-draper.iteye.com/blog  "Donald_Draper"  
+
+[blog-iteye]: http://donald-draper.iteye.com/blog  'Donald_Draper'  
+
+[blog-iteye]: http://donald-draper.iteye.com/blog  (Donald_Draper)
+
+
+请注意：有一个已知的问题是 Markdown.pl 1.0.1 会忽略单引号包起来的链接 title。  
+
+This is [cn-blog][blog-iteye] reference-style link.
