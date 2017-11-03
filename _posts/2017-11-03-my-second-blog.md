@@ -1,5 +1,5 @@
 ---
-layout:    default
+layout:    post
 title:     my fisrt blog
 subtitle:  to show how
 date:      2017-11-03 15:17:19 +0800
