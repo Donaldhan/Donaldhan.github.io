@@ -1,9 +1,9 @@
 ---
-layout:     default
-title:      my fisrt blog
+layout:    default
+title:     my fisrt blog
 subtitle:  to show how
-date:       2017-11-03
-author:     donaldhan
+date:      2017-11-03 15:17:19 +0800
+author:    donaldhan
 catalog: true
 tags:
     - test

@@ -1,0 +1,6 @@
+{% assign posts = site.tags.jekyll | sort: 'date' %}
+{% for post in posts %}
+  {{ post.title }}
+  {{ post.excerpt | remove: '<p>' | remove: '</p>'  }}
+  {{ post.date | date: site.minima.date_format }}
+{% endfor %}
