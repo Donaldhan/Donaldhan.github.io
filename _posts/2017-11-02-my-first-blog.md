@@ -1,4 +1,16 @@
-paginate_path: "page:1"  
+---
+layout:     post
+title:      my fisrt blog
+subtitle:  to show how
+date:       2017-11-02
+author:     donaldhan
+catalog: true
+tags:
+    - test
+    - donaldhan
+    - page  
+---
+
 my first blog write by markdown, power by jekyll in github page  
 
 
