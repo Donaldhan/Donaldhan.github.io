@@ -3,8 +3,8 @@ description: Just do it deeply...
 show_downloads: false
 google_analytics:
 theme: jekyll-theme-architect
-github.repository_url: https://github.com/Donaldhan
-repository: https://github.com/Donaldhan
+github.repository_url: Donaldhan.github.io.git
+repository: Donaldhan/Donaldhan.github.io.git
 # Build settings
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
 permalink: pretty
