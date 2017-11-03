@@ -4,3 +4,4 @@ show_downloads: false
 google_analytics:
 theme: jekyll-theme-architect
 paginate: 5
+paginate_path: "page:num"
