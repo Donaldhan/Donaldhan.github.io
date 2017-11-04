@@ -5,14 +5,18 @@ google_analytics:
 theme: jekyll-theme-architect
 github.repository_url: Donaldhan.github.io.git
 repository: Donaldhan/Donaldhan.github.io.git
+
+
+github.username: Donaldhan
+iteye.username: donald-draper
+jianshu.username: Donaldhan
+
 # Build settings
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
-permalink: pretty
 plugins:
   - jekyll-paginate
 
 paginate: 5
-paginate_path: "/blog/p:num"
 exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
 anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
 

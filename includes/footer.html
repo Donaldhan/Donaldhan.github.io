@@ -1,0 +1,108 @@
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    {% if site.github.username %}
+                    <li>
+                        <a target="_blank" href="https://github.com/{{ site.github_username }}">
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if site.iteye.username %}
+                    <li>
+                        <a target="_blank" href="http://{{ site.iteye.username }}.iteye.com/blog">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">iteye</i>
+                            </span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if site.jianshu.username %}
+                            <li>
+                                <a target="_blank" href="https://www.jianshu.com/u/{{ site.jianshu.username }}">
+                                <!--    <span class="fa-stack fa-lg">
+                                        <i class="fa fa-circle fa-stack-2x"></i>
+                                        <i class="fa  fa-stack-1x fa-inverse">简</i>
+                                    </span>
+                                </a>
+                                 -->
+                                 简书
+                            </li>
+                    {% endif %}
+                    <!--
+                    {% if site.weibo_username %}
+                    <li>
+                        <a target="_blank" href="http://weibo.com/{{ site.weibo_username }}">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    {% endif %}
+                     -->
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; {{ site.title }} {{ site.time | date: '%Y' }}
+                    <br>
+                    Theme on <a href="{{ site.github.repository_url }}">GitHub</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://github.com/Donaldhan/Donaldhan.github.io/star" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="{{ "/js/jquery.min.js " | prepend: site.baseurl }}"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="{{ "/js/bootstrap.min.js " | prepend: site.baseurl }}"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="{{ "/js/hux-blog.min.js " | prepend: site.baseurl }}"></script>
+
+<!-- Service Worker -->
+{% if site.service-worker %}
+<script type="text/javascript">
+
+</script>
+{% endif %}
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- jquery.tagcloud.js -->
+<script>
+
+</script>
+
+<!--fastClick.js -->
+<script>
+
+</script>
+
+
+<!-- Google Analytics -->
+{% if site.ga_track_id %}
+<script>
+
+</script>
+{% endif %}
