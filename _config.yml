@@ -17,5 +17,5 @@ plugins:
   - jekyll-paginate
   - jekyll-seo-tag
 
-paginate: 3
+paginate: 5
 paginate_path: "page:num"
