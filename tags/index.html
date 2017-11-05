@@ -1,0 +1,37 @@
+---
+layout: default
+---
+<!-- list all the tags -->
+<h1>tags</h1>
+<hr/>
+{% assign tag_names = "" | split: "|"  %}
+{% for posts_by_tag in site.tags %}
+  {% assign tag_names = tag_names | push: posts_by_tag.first %}
+{% endfor %}
+{% assign tag_names = tag_names | sort %}
+{% include tag_cloud.html tag_names=tag_names %}
+<hr>
+<!-- list all the post base the tags -->
+<section class="posts-by-tags">
+  {% for tag_name in tag_names %}
+    <div>
+      <h2 id="{{ tag_name }}">
+        {{ tag_name | capitalize | replace: "_", " " }}
+      </h2>
+      <ul class="post-list">
+      {% for post in site.tags[tag_name] %}
+	    <li>
+			<a href="{{ post.url | prepend: baseurl }}">
+			  {{ post.title }}
+			  <span class="entry-date">
+				<time datetime="{{ post.date | date_to_xmlschema }}" itemprop="datePublished">
+				 {{ post.date | date: "%B %d, %Y" }}
+				</time>
+			  </span>
+			</a>
+		</li>
+      {% endfor %}
+	  </ul>
+    </div>
+  {% endfor %}
+</section>

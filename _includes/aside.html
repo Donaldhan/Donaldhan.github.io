@@ -1,5 +1,5 @@
  <aside id="sidebar">
-      
+
           {% if site.show_downloads %}
             <a href="{{ site.github.zip_url }}" class="button">
               <small>Download</small>
@@ -20,22 +20,45 @@
             <a href="{{ site.github.repository_url }}" class="button"><small>Follow me on</small> GitHub</a>
           {% endif %}
       -->
-      <!-- list categories -->
+      <!-- list categories start -->
 	   <h1>categories</h1>
        <ul class="tag-box inline">
-		{% assign tags_list = site.categories %}  
+		{% assign tags_list = site.categories %}
 		  {% if tags_list.first[0] == null %}
-			{% for tag in tags_list %} 
+			{% for tag in tags_list %}
 			  <li><a href="/category/index.html#{{ tag }}">{{ tag | capitalize }} <span>{{ site.tags[tag].size }}</span></a></li>
 			{% endfor %}
 		  {% else %}
-			{% for tag in tags_list %} 
+			{% for tag in tags_list %}
 			  <li><a href="/category/index.html#{{ tag[0] }}">{{ tag[0] | capitalize }} <span>{{ tag[1].size }}</span></a></li>
 			{% endfor %}
 		  {% endif %}
 		{% assign tags_list = nil %}
 		</ul>
 		<hr/>
+        <!-- list categories end -->
+        <!-- list all the tags start -->
+        <h1>tags</h1>
+        {% if include.tag_names %}
+            {% assign tag_names = include.tag_names %}
+        {% else %}
+            {% assign tag_names = "" | split: "|"  %}
+            {% for posts_by_tag in site.tags %}
+                {% assign tag_names = tag_names | push: posts_by_tag.first %}
+            {% endfor %}
+        {% assign tag_names = tag_names | sort %}
+        {% endif %}
+        <ul class="tag-cloud">
+          {% for tag_name in tag_names %}
+            <li>
+              <a href="{{ site.baseurl }}/tags/index.html#{{ tag_name | slugize }}">
+                {{ tag_name }}
+              </a>
+            </li>
+          {% endfor %}
+       </ul>
+        <hr/>
+        <!-- list all the tags end -->
 		<p> <a href="https://github.com/Donaldhan">GitHub</a>
             | <a href="http://donald-draper.iteye.com/blog">Iteye</a>
             | <a href="https://gitee.com/Donaldhans">Gitee</a>
