@@ -21,7 +21,7 @@
 <ul class="tag-cloud">
   {% for tag_name in tag_names %}
     <li>
-      <a href="{{ baseurl }}/tags/index.html#{{ tag_name | slugize }}">
+      <a href="{{ site.baseurl }}/tags/index.html#{{ tag_name | slugize }}">
         {{ tag_name }}
       </a>
     </li>
