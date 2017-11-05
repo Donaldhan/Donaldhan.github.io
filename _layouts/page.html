@@ -6,6 +6,16 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
+		  <div class="site-heading">
+            <h1>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</h1>
+			<span class="subheading">write by {{ page.author}}, {{ page.date | date:  "%Y-%m-%d %H:%M" }}</span>
+            <span class="subheading">{{ page.description }}</span>
+          </div>
+		   <div class="tags">
+				 {% for tag in page.tags %}
+					 <a class="tag" href="{{ site.baseurl }}/tags/#{{ tag }}" title="{{ tag }}">{{ tag }}</a>
+				{% endfor %}
+        	</div>
           {{ content }}
         </section>
         {% include aside.html %}

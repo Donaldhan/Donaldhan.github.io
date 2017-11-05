@@ -1,10 +1,13 @@
 ---
-layout:    default
+layout:    page
 title:     my three blog
 subtitle:  to show how
-date:      2017-10-04 15:17:19 +0800
+date:      2017-10-04 15:17:19
 author:    donaldhan
 catalog: true
+category: tech
+categories:
+    - tech
 tags:
     - test
     - donaldhan

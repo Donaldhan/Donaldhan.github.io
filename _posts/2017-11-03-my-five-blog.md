@@ -1,10 +1,13 @@
 ---
-layout:    default
+layout:    page
 title:     my five blog
 subtitle:  to show how
-date:      2017-11-03 15:17:19 +0800
+date:      2017-11-03 15:17:19
 author:    donaldhan
 catalog: true
+category: life
+categories:
+    - life
 tags:
     - test
     - donaldhan
