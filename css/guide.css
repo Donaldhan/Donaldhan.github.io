@@ -38,3 +38,6 @@ div.menu ul li a:active
 	color: #f2f5f8 !important; 
 	text-decoration: none; 
 }
+.categories-title{
+   font:italic arial,sans-serif !important;
+}
