@@ -21,15 +21,25 @@ a {
 a:hover {
   color: #2268b2;
 }
-
-header {
+// now header csss
+header{
   padding-top: 40px;
   padding-bottom: 40px;
   font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
-  background: #2e7bcf url(../images/header-bg.jpg) 0 0 repeat-x;
+  background: #2e7bcf url(../images/header.jpg) no-repeat;
+  border-bottom: solid 1px #275da1;
+  height: 200px;
+}
+/* origin header css in jekyll architect theme, if you want to change to origin css,
+ just modify header-original to header and uping header to header-original.*/
+// origin header css
+header-original {
+  padding-top: 40px;
+  padding-bottom: 40px;
+  font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
+  background: #2e7bcf url(../images/header-bg.jpg) 0 0 repeat;
   border-bottom: solid 1px #275da1;
 }
-
 header h1 {
   width: 540px;
   margin-top: 0;
