@@ -45,3 +45,7 @@ div.menu ul li a:active
 .font-medium{
    font-size:medium;
 }
+.about-text{
+   text-align:center;
+   font-size:medium;
+}
