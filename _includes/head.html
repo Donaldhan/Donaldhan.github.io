@@ -1,7 +1,42 @@
  <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <!-- 兼容IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 是用于设定禁止浏览器从本地机的缓存中调阅页面内容，设定后一旦离开网页就无法从Cache中再调出； -->
+    <meta http-equiv="Pragma" contect="no-cache">
+    <!-- 强制页面在当前窗口中以独立页面显示，可以防止自己的网页被别人当作一个frame页调用； -->
+    <meta http-equiv="windows-Target" contect="_top">
+    <!-- 设定进入和离开页面时的特殊效果，这个功能即FrontPage中的“格式/网页过渡”，不过所加的页面不能够是一个frame页面。 -->
+    <meta http-equiv="Page-Enter" contect="revealTrans(duration=10,transtion=50)">
+    <meta http-equiv="Page-Exit"contect="revealTrans(duration=20，transtion=6)">
+    <!-- 可以用于设定网页的到期时间。一旦网页过期，必须到服务器上重新传输。 -->
+    <meta http-equiv="expires"content="Fri,12Jan200118:18:18GMT">
+    <!-- 设置双核浏览器的浏览模式 webkit|ie-comp|ie-stand 分别为极速模式，兼容模式，以及IE模式 -->
+    <meta name="renderer" content="webkit">
+    <!-- 添加对手机设备的支持 http://www.cnblogs.com/no-broken-boy/p/5124458.html-->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!-- 用以说明生成工具（如Microsoft FrontPage 4.0）等； http://blog.csdn.net/ysuncn/article/details/1742125-->
+    <meta name="Generator" contect="jekyll-theme-architect,tipue_search,gitalk,liquid,markdown">
+    <!-- Robots 机器人用来告诉搜索机器人哪些页面需要索引，哪些页面不需要索引。
+    其中的属性说明如下：
+　　设定为all：文件将被检索，且页面上的链接可以被查询；
+　　设定为none：文件将不被检索，且页面上的链接不可以被查询；
+　　设定为index：文件将被检索；
+　　设定为follow：页面上的链接可以被查询；
+　　设定为noindex：文件将不被检索，但页面上的链接可以被查询；
+　　设定为nofollow：文件将不被检索，页面上的链接可以被查询。
+   http://www.cnblogs.com/xiaoweizhi/p/4723848.html
+   -->
+    <meta name="Robots" contect="index">
+    <!-- keywords用来告诉搜索引擎你网页的关键字是什么 -->
+    <meta name="keywords"content="java,spring,spring mvc,spring boot,mybatis,hibernate,netty,mina,nio,juc,aio,bio,
+                  redis,memcached,activemq,kafka,hadoop,zookeeper,hbase,http,tcp,mysql,oracle,development,js,
+                  bootstrap,jquery,javascript,easyuip,jsp,freemarker,json,git,maven,svn,technology">
+    <!-- description用来告诉搜索引擎你的网站主要内容。 -->
+    <meta name="description"content="my learn notes, to record some technology points.">
+    <!-- 标注网页的作者 -->
+    <meta name="author" content="donald,{{ site.github.repository_url }},shaoqinghan@aliyun.com">
     <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}" media="screen" type="text/css">
     <link rel="stylesheet" href="{{ '/assets/css/print.css' | relative_url }}" media="print" type="text/css">
