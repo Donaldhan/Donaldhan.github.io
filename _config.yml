@@ -18,6 +18,26 @@ jianshu.username: Donaldhan
 plugins:
   - jekyll-paginate
   - jekyll-seo-tag
+  - jekyll-lunr-js-search
 
 paginate: 5
 paginate_path: "page:num"
+
+#lunr-js-search,move to plugins
+#gems: ['jekyll-lunr-js-search']
+
+#o exclude pages from the search index , you can else add
+# the following exclude_from_search setting to any page's YAML config.
+# exclude_from_search: true
+lunr_search:
+  excludes: [rss.xml, atom.xml]
+
+#configure a stopwords file, and a minimum length of word to be included in the index file.
+#This can be done by adding a search block to _config.yml. The default values are:
+lunr_search:
+  stopwords: "stopwords.txt"
+  min_length: 3
+
+#store index.json, search.min.js and lunr.min.js in a different directory like this:
+lunr_search:
+  js_dir: "fulltext"
