@@ -18,7 +18,7 @@
 
   {% assign tag_names = tag_names | sort %}
 {% endif %}
-<ul class="tag-cloud">
+<ul class="tag-cloud font-medium">
   {% for tag_name in tag_names %}
     <li>
       <a href="{{ site.baseurl }}/tags/index.html#{{ tag_name | slugize }}">

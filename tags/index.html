@@ -12,13 +12,13 @@ layout: default
 {% include tag_cloud.html tag_names=tag_names %}
 <hr>
 <!-- list all the post base the tags -->
-<section class="posts-by-tags">
+<section class="posts-by-tags font-medium">
   {% for tag_name in tag_names %}
     <div>
       <h2 id="{{ tag_name }}">
         {{ tag_name | capitalize | replace: "_", " " }}
       </h2>
-      <ul class="post-list">
+      <ul class="post-list ">
       {% for post in site.tags[tag_name] %}
 	    <li>
 			<a href="{{ post.url | prepend: baseurl }}">

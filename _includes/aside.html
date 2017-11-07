@@ -21,8 +21,8 @@
           {% endif %}
       -->
       <!-- list categories start -->
-	   <h1>categories</h1>
-       <ul class="tag-box inline">
+	   <h1>Categories</h1>
+       <ul class="tag-box inline font-medium">
 		{% assign tags_list = site.categories %}
 		  {% if tags_list.first[0] == null %}
 			{% for tag in tags_list %}
@@ -38,7 +38,7 @@
 		<hr/>
         <!-- list categories end -->
         <!-- list all the tags start -->
-        <h1>tags</h1>
+        <h1>Tags</h1>
         {% if include.tag_names %}
             {% assign tag_names = include.tag_names %}
         {% else %}
@@ -48,7 +48,7 @@
             {% endfor %}
         {% assign tag_names = tag_names | sort %}
         {% endif %}
-        <ul class="tag-cloud">
+        <ul class="tag-cloud font-medium">
           {% for tag_name in tag_names %}
             <li>
               <a href="{{ site.baseurl }}/tags/index.html#{{ tag_name | slugize }}">
@@ -60,8 +60,9 @@
         <hr/>
         <div class="profile">
             <img src="{{ site.baseurl }}/image/aside/profile.jpg"  alt="Donaldhan">
-            <p>Live in GuangZhou.<br/><br/>
-            Serving on the GuangZhou budget center of chinese people bank.<br/><br/>
+            <!-- now disabled, display at about html.    -->
+            <p>Live in GuangZhou.<br/>
+            Serving on the GuangZhou budget center of chinese people bank.<br/>
             <span>
                 <svg aria-hidden="true" class="octicon octicon-mail" height="16" version="1.1" viewBox="0 0 14 16" width="14">
                     <path fill-rule="evenodd"
