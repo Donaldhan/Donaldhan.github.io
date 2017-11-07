@@ -7,12 +7,17 @@ theme: jekyll-theme-architect
 github.repository_url: Donaldhan.github.io.git
 repository: Donaldhan/Donaldhan.github.io.git
 
-# feed
-github.username: Donaldhan
-iteye.username: donald-draper
-gitee.username: Donaldhans
-jianshu.username: Donaldhan
-
+# feed,注意变量的声明不能带.-
+github:
+    username: Donaldhan
+iteye:
+    username: donald-draper
+gitee:
+    username: Donaldhans
+jianshu:
+    username: Donaldhan
+Donaldhan:
+    email: shaoqinghan@aliyun.com
 # Build settings
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
 plugins:
