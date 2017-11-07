@@ -23,12 +23,29 @@ plugins:
 paginate: 5
 paginate_path: "page:num"
 
+# tipue_search fulltext search base liquid
+# collections is an array containing a list of collections you want to include.
+#https://github.com/Donaldhan/jekyll-tipue-search
+tipue_search:
+  include:
+    pages: true
+#    collections: [apples, oranges]
+
+#Exclude multiple files, tags or categories using a setting in _config.yml. files is an array containing
+#a list of file paths to be excluded. tags and categories are arrays containing lists of tags and categories you want to exclude.
+#tipue_search:
+#  exclude:
+#    files: [search.html, _apples/gragg.md, _oranges/valencia.md]
+#    tags: [tag1, tag2]
+#    categories: [category1, category2]
+
 #lunr-js-search,move to plugins
 #gems: ['jekyll-lunr-js-search']
 
-#o exclude pages from the search index , you can else add
+# exclude pages from the search index , you can else add
 # the following exclude_from_search setting to any page's YAML config.
 # exclude_from_search: true
+#
 lunr_search:
   excludes: [rss.xml, atom.xml]
 
