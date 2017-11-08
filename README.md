@@ -26,5 +26,4 @@ the `_config.yml` the global config of site, the laters are  private. Being care
 5. Visit [`localhost:4000`](http://localhost:4000) in your browser to preview your blog.
 
 ## Step by Step
-if you want to create blog by yourself step by step, or you are stirring guy, you can reference the [notes]
-(https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md) on my gitee repository.
+if you want to create blog by yourself step by step, or you are stirring guy, you can reference the [notes](https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md) on my gitee repository.
