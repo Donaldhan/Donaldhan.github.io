@@ -3,8 +3,8 @@
 [![Thumbnail of architect](thumbnail.png)](http://pages-themes.github.io/architect)
 
 * [Introduction](#introduction)
-* [Quick Start](#quick-start)
-* [Step by Step](#step-by-step)
+* [Quick start](#quick-start)
+* [Step by step](#step-by-step)
 
 
 # Introduction
