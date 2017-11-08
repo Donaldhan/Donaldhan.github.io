@@ -1,9 +1,13 @@
-# Introduction
-
 [![Build Status](https://travis-ci.org/pages-themes/architect.svg?branch=master)](https://travis-ci.org/pages-themes/architect) [![Gem Version](https://badge.fury.io/rb/jekyll-theme-architect.svg)](https://badge.fury.io/rb/jekyll-theme-architect)
 
 [![Thumbnail of architect](thumbnail.png)](http://pages-themes.github.io/architect)
 
+* [Introduction](#introduction)
+* [Quick Start](#quick-start)
+* [Step by Step](#step-by-step)
+
+
+# Introduction
 *The repository is used to record my study， it is a static site based on the [jekyll-theme-architect](http://pages-themes.github.io/architect).,
 if you don't want to waste much time on create blog step by step, you can  [use it today](#quick-start).*
 
@@ -23,5 +27,4 @@ the `_config.yml` the global config of site, the laters are  private. Being care
 
 ## Step by Step
 if you want to create blog by yourself step by step, or you are stirring guy, you can reference the [notes]
-(https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md)
-on my gitee repository.
+(https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md) on my gitee repository.
