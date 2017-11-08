@@ -8,7 +8,7 @@
 
 
 # Introduction
-*The repository is used to record my study， it is a static [blog](https://donaldhan.github.io/) site based on the [jekyll-theme-architect](http://pages-themes.github.io/architect),if you don't want to waste much time on create blog step by step, you can  [use it today](#quick-start).*
+*The repository is used to record my study, it is a static [blog](https://donaldhan.github.io/) site based on the [jekyll-theme-architect](http://pages-themes.github.io/architect), if you don't want to waste much time on create blog step by step, you can  [use it today](#quick-start).*
 
 ## Quick start
 
