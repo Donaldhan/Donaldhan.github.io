@@ -11,7 +11,7 @@
 *The repository is used to record my study， it is a static site based on the [jekyll-theme-architect](http://pages-themes.github.io/architect).,
 if you don't want to waste much time on create blog step by step, you can  [use it today](#quick-start).*
 
-## Quick Start
+## Quick start
 
 To create blog base the repository :
 1. you can pull the repository, and modify repository name to yours, such as:
@@ -25,5 +25,5 @@ the `_config.yml` the global config of site, the laters are  private. Being care
 6. Run `bundle exec jekyll serve` to start the preview server
 5. Visit [`localhost:4000`](http://localhost:4000) in your browser to preview your blog.
 
-## Step by Step
+## Step by step
 if you want to create blog by yourself step by step, or you are stirring guy, you can reference the [notes](https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md) on my gitee repository.
