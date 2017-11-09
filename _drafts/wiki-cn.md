@@ -97,9 +97,8 @@ YYYY-MM-DD-title.md
 ## 从零开始
 
 如果你喜欢折腾的话，可以参见我搭建博客的笔记[notes][notes_url] 。
-在创建博客之前，最好先看一下相关的概念。比如jekyll是什么？个人理解，jekyll是基于Ruby的将资源文件转换为站点的工具。在创建jekyll博客时，你可能会用
-两种文件格式，分别为 [yaml][] 和 [markdown][]，`yaml`
- is a human friendly data serialization standard for all programming languages, likes `xml`, but simplely, describle properties use some special symbols , instead of 'xml' use the complicate label, and you have to anlysize. `markdown` is  an easy-to-read and easy-to-write plain text marked language, and it is feasible, compatible with html. Of course, you need learn [Liuqid][]. If you want to edit markdown file, some software can help you , such as [Atom][] , [MarkdownPad][], `atom` is A github offical hackable text editor for markdown, has linux and windows two version. `markdownPas` is for windows, suggest to atom.  
+在创建博客之前，最好先看一下相关的概念。比如jekyll是什么？个人理解，jekyll是基于Ruby的将资源文件转换为站点的工具。另外对于jekyll，必须知道的一点是，模板引擎[Liuqid][]，Liuqid对于jekyll，犹如jsp和freemaker对于html一样，但更像freemaker。可以引用网站的数据，同时拥有逻辑判断和循环语法。在创建jekyll博客时，你可能会用两种文件格式，分别为 [yaml][] 和 [markdown][]，`yaml`是一个友好的数据序列序列编程语言，类似json，但比json更简单。markdown是一种易读易写的纯文本标记语言，不想xml和html那样繁琐，每个元素必须有开始和结束name标记，markdown精选了一些特殊的符号做为标记，markdown同时兼容html语言。浏览器解析markdown文件时，实际解析为html语言。如果你想编辑markdown语言，你可以使用[Atom][] , [MarkdownPad][]两个编辑软件，`atom`是github官方markdown编辑软件，有linux和window版本，
+MarkdownPad也不错，但只适用windows系统，建议使用atom。
 
 After above, you can create a simple static blog site, if you want some especial function ,such as fulltext search ([Jekyll Tipue Search][tipue-search]) and article comment([gitalk][]).
 
