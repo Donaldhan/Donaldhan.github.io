@@ -3,9 +3,9 @@
 [![Thumbnail of architect](thumbnail.png)](http://pages-themes.github.io/architect)
 
 目录  
-* 简介
+* [简介](#简介)
 * [快速启动](#快速启动)
-* 从零开始
+* [从零开始](#从零开始)
 
 
 # 简介
