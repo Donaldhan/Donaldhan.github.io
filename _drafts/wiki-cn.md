@@ -98,9 +98,10 @@ YYYY-MM-DD-title.md
 
 如果你喜欢折腾的话，可以参见我搭建博客的笔记[notes][notes_url] 。
 在创建博客之前，最好先看一下相关的概念。比如jekyll是什么？个人理解，jekyll是基于Ruby的将资源文件转换为站点的工具。另外对于jekyll，必须知道的一点是，模板引擎[Liuqid][]，Liuqid对于jekyll，犹如jsp和freemaker对于html一样，但更像freemaker。可以引用网站的数据，同时拥有逻辑判断和循环语法。在创建jekyll博客时，你可能会用两种文件格式，分别为 [yaml][] 和 [markdown][]，`yaml`是一个友好的数据序列序列编程语言，类似json，但比json更简单。markdown是一种易读易写的纯文本标记语言，不想xml和html那样繁琐，每个元素必须有开始和结束name标记，markdown精选了一些特殊的符号做为标记，markdown同时兼容html语言。浏览器解析markdown文件时，实际解析为html语言。如果你想编辑markdown语言，你可以使用[Atom][] , [MarkdownPad][]两个编辑软件，`atom`是github官方markdown编辑软件，有linux和window版本，
-MarkdownPad也不错，但只适用windows系统，建议使用atom。
-
-After above, you can create a simple static blog site, if you want some especial function ,such as fulltext search ([Jekyll Tipue Search][tipue-search]) and article comment([gitalk][]).
+MarkdownPad也不错，但只适用windows系统，建议使用atom。  
+在了解上面的知识后，创建一个可以发布文章的博客，已经没有什么问题了，当文章发布量增大时，如何快速查看以前的文章了，这就用到的全文搜索了，这个我们可以用基于
+liquid的[tipue search[tipue-search]。有了搜索，还有一点，不能发布过文章，就没有事，如果与读者交流才是最重要的，这个我们可以使用基于github issue的评论插件
+[gitalk][]。到这里，一个完整的博客该有的功能已基本实现，*Just play， hava fun， enjoy the game...*。
 
 [notes_url]: https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md
 [yaml]: http://www.yaml.org/ "YAML"
