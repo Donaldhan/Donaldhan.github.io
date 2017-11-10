@@ -108,3 +108,5 @@ liquid的[tipue search[tipue-search]。有了搜索，还有一点，不能发�
 [markdown]: https://daringfireball.net/projects/markdown/syntax "Markdown"
 [Liuqid]: https://help.shopify.com/themes/liquid/basics "Liuqid"
 [tipue-search]: https://github.com/jekylltools/jekyll-tipue-search "Jekyll Tipue Search based liquid"
+[MarkdownPad]: http://markdownpad.com/ "MarkdownPad"
+[Atom]: https://atom.io/ "Atom"
