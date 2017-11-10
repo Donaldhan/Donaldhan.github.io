@@ -36,7 +36,7 @@ Before you start to create blog, you must realize that what jekyll is? Simplely 
 
 After above, you can create a simple static blog site, if you want some especial function ,such as fulltext search ([Jekyll Tipue Search][tipue-search]) and article comment([gitalk][]).
 
-further more see [wiki](https://github.com/Donaldhan/Donaldhan.github.io/wiki)
+Further more, see [wiki](https://github.com/Donaldhan/Donaldhan.github.io/wiki)
 
 [notes_url]: https://gitee.com/Donaldhans/draft/blob/master/git-page-blog.md
 [yaml]: http://www.yaml.org/ "YAML"
