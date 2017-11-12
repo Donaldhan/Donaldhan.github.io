@@ -13,7 +13,7 @@ layout: default
     {% endfor %}
   </div> -->
   <div class="content">
-    {{ post.content }}
+       {{ post.content | strip_html | truncate:200 }}
   </div>
 {% endfor %}
 <!-- 分页链接 -->
