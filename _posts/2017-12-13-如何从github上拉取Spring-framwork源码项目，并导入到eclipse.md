@@ -39,7 +39,7 @@ tags:
 
 在具备使用gradle基础之后，我将要装一个gradle eclipse 插件[buildship][buildship-url]
 
-[[buildship-url]: https://github.com/eclipse/buildship/blob/master/docs/user/Installation.md "buildship"
+[buildship-url]:https://github.com/eclipse/buildship/blob/master/docs/user/Installation.md "buildship"
 
 如果在线安装失败的话，可以在eclipse的 *Marketplace* 软件库中安装指定的buildship插件即可。 安装完插件到Windows-peference中配置gradle的安装目录和gradle用户目录 *D:.gradle* 文件夹，这个和maven的 *.m2* 文件夹 的作用相同。gradle项目的jar包一般在用户目录的 *caches* 下，我的是在 *D:.gradle\caches\modules-2\files-2.1* 目录下。
 在配置gradle和groove的时候，如果找不到对应的命令，看看是不是gradle和groove的用户变量和系统变量，及PATH声明错误。
