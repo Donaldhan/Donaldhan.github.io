@@ -15,6 +15,7 @@ tags:
 * [下载源码](#下载源码)
 * [配置gradle环境](#配置gradle环境)
 * [导入到eclipse中](#导入到eclipse中)
+* [提交修改](#提交修改)
 * [注意事项](#注意事项)   
 
 在工作两年的时间内，一直再用spring框架做开发，在空闲时间搞过hadoop，hbase，学习了netty和mina，java nio和juc的源码，其他以下项目redis，activemq等都是通过反编译去看源码，反编译会丢失很多java doc注释，可读性不高。在之前也反编译过spring框架的源码，也是知道个大概，上次有人问我spring的几个特点，我居然一时打不上来，着实可恨，所以下定决心研究一下spring框架的源码。
@@ -140,5 +141,181 @@ repositories {
 ```
 
 然后将 *spring-framework* 项目导入的eclipse中即可，不过这个过程要等一会，这个取决于网络环境，我构建的时候大概用了15-20分钟。
+
+## 提交修改
+修改代码提交主要有两种一种是在主干上直接修改，另一种在分支上修改，下面我们分别来看这两种方式。
+### 修改远端主干
+刚从github下载到本地时，本地的master的分支对应远端的origin/master,
+```
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+nothing to commit, working tree clean
+```
+修改相关代码，提交远端origin/master，注意在push之前，要先pull
+```
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git add .
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git commit -m "perfect jcenter"
+[master afbd1f640c] perfect jcenter
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git pull
+Already up-to-date.
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git push origin master
+Counting objects: 3, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 290 bytes | 0 bytes/s, done.
+Total 3 (delta 2), reused 0 (delta 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/Donaldhan/spring-framework.git
+   3b26f7f51f..afbd1f640c  master -> master
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+nothing to commit, working tree clean
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$
+```
+### 修改远端分支
+如果要修远端的分支可以是先切换到远端的对应分支，我们以origin/4.3.x为例。  
+
+首先切换到origin/4.3.x远端分支
+```
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+nothing to commit, working tree clean
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git branch
+* master
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git checkout origin/4.3.x
+```
+
+创建origin/4.3.x的本地分支4.3.x
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((7dfdb67674...))
+$ git status
+HEAD detached at origin/4.3.x
+nothing to commit, working tree clean
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((7dfdb67674...))
+$ git branch
+* (HEAD detached at origin/4.3.x)
+  master
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((7dfdb67674...))
+$ git checkout -b 4.3.x
+Switched to a new branch '4.3.x'
+```
+修改相关代码，提交到本地分支4.3.x
+```
+donald@donaldHP MINGW64 /f/github/spring-framework (4.3.x)
+$ git add .
+
+donald@donaldHP MINGW64 /f/github/spring-framework (4.3.x)
+$ git commit -m "perferct the maven repository url"
+[4.3.x 98dfd2591c] perferct the maven repository url
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+donald@donaldHP MINGW64 /f/github/spring-framework (4.3.x)
+$ git status
+On branch 4.3.x
+nothing to commit, working tree clean
+```
+切换到远端origin/4.3.x，合并本地4.3.x分支到远端origin/4.3.x分支
+```
+donald@donaldHP MINGW64 /f/github/spring-framework (4.3.x)
+$ git checkout origin/4.3.x
+Note: checking out 'origin/4.3.x'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
+
+  git checkout -b <new-branch-name>
+
+HEAD is now at 7dfdb67674... add repository in cn to growth load jar
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((7dfdb67674...))
+$ git merge 4.3.x
+Updating 7dfdb67674..98dfd2591c
+Fast-forward
+ build.gradle | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git pull origin 4.3.x
+From https://github.com/Donaldhan/spring-framework
+ * branch                  4.3.x      -> FETCH_HEAD
+Already up-to-date.
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git push origin HEAD:4.3.x
+Counting objects: 3, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 310 bytes | 0 bytes/s, done.
+Total 3 (delta 2), reused 0 (delta 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/Donaldhan/spring-framework.git
+   7dfdb67674..98dfd2591c  HEAD -> 4.3.x
+
+```
+删除本地4.3.x分支
+
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git branch
+* (HEAD detached at origin/4.3.x)
+  4.3.x
+  master
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git branch -d 4.3.x
+Deleted branch 4.3.x (was 98dfd2591c).
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git checkout master
+Checking out files: 100% (5741/5741), done.
+Previous HEAD position was 98dfd2591c... perferct the maven repository url
+Switched to branch 'master'
+Your branch is up-to-date with 'origin/master'.
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+nothing to commit, working tree clean
+
+donald@donaldHP MINGW64 /f/github/spring-framework (master)
+$ git branch
+* master
+
+```
+到此，分支修改，提交结束。
+
+
 ## 注意事项
-在我们阅读源码修改的过程中，注意不要上传 *.classpath* 和 *.project* 文件及 *.settings* 文件夹 ，应为这是eclipse产生的项目本地文件，因为每个人用过开发工具可能有所不同
+在我们阅读源码修改的过程中，注意不要上传 *.classpath* 和 *.project* 文件及 *.settings* 文件夹 ，应为这是eclipse产生的项目本地文件，因为每个人用过开发工具可能有所不同，在提交之前最好使用如下命令查看修改:  
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git diff .
+```
+另外需要注意的一点时，在push之前，要先pull相应分支或主干远端代码。
