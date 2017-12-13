@@ -16,9 +16,7 @@ tags:
 * [配置gradle环境](#配置gradle环境)
 * [导入到eclipse中](#导入到eclipse中)
 * [注意事项](#注意事项)
-在工作两年的时间内，一直再用spring框架做开发，在空闲时间搞过hadoop，hbase，学习了netty和mina，java nio和juc的源码，其他以下项目redis，activemq等都是通过反编译
-去看源码，反编译会丢失很多java doc注释，可读性不高。在之前也反编译过spring框架的源码，也是知道个大概，上次有人问我spring的几个特点，我居然一时打不上来，
-着实可恨，所以下定决心研究一下spring框架的源码。
+在工作两年的时间内，一直再用spring框架做开发，在空闲时间搞过hadoop，hbase，学习了netty和mina，java nio和juc的源码，其他以下项目redis，activemq等都是通过反编译去看源码，反编译会丢失很多java doc注释，可读性不高。在之前也反编译过spring框架的源码，也是知道个大概，上次有人问我spring的几个特点，我居然一时打不上来，着实可恨，所以下定决心研究一下spring框架的源码。
 
 ## 下载源码
 首先，我们要从github上，fork *spring-framework* 项目到自己的github仓库中，在fork之前你要有一个github账号。然后使用git
@@ -57,7 +55,7 @@ Gradle 4.4
 Build time:   2016-09-19 10:53:53 UTC
 Revision:     13f38ba699afd86d7cdc4ed8fd7dd3960c0b1f97
 
-Groovy:       2.4.7
+Groovy:       2.4.13
 Ant:          Apache Ant(TM) version 1.9.6 compiled on June 29 2015
 JVM:          1.8.0_131 (Oracle Corporation 25.131-b11)
 OS:           Windows 10 10.0 amd64
