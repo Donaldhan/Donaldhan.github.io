@@ -5,9 +5,9 @@ subtitle: spring源码构建
 date: 2017-12-13 09:17:19
 author: donaldhan
 catalog: true
-category: spring
+category: spring-framework
 categories:
-    - spring
+    - spring-framework
 tags:
     - gradle
 ---
