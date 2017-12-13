@@ -15,7 +15,8 @@ tags:
 * [下载源码](#下载源码)
 * [配置gradle环境](#配置gradle环境)
 * [导入到eclipse中](#导入到eclipse中)
-* [注意事项](#注意事项)
+* [注意事项](#注意事项)   
+
 在工作两年的时间内，一直再用spring框架做开发，在空闲时间搞过hadoop，hbase，学习了netty和mina，java nio和juc的源码，其他以下项目redis，activemq等都是通过反编译去看源码，反编译会丢失很多java doc注释，可读性不高。在之前也反编译过spring框架的源码，也是知道个大概，上次有人问我spring的几个特点，我居然一时打不上来，着实可恨，所以下定决心研究一下spring框架的源码。
 
 ## 下载源码
@@ -38,7 +39,7 @@ tags:
 
 在具备使用gradle基础之后，我将要装一个gradle eclipse 插件[buildship][buildship-url]
 
-[[buildship-url](https://github.com/eclipse/buildship/blob/master/docs/user/Installation.md)  "buildship"
+[[buildship-url]: https://github.com/eclipse/buildship/blob/master/docs/user/Installation.md "buildship"
 
 如果在线安装失败的话，可以在eclipse的 *Marketplace* 软件库中安装指定的buildship插件即可。 安装完插件到Windows-peference中配置gradle的安装目录和gradle用户目录 *D:.gradle* 文件夹，这个和maven的 *.m2* 文件夹 的作用相同。gradle项目的jar包一般在用户目录的 *caches* 下，我的是在 *D:.gradle\caches\modules-2\files-2.1* 目录下。
 在配置gradle和groove的时候，如果找不到对应的命令，看看是不是gradle和groove的用户变量和系统变量，及PATH声明错误。
