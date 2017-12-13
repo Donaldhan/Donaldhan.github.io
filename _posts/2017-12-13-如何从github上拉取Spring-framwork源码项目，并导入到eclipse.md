@@ -309,7 +309,86 @@ $ git branch
 * master
 
 ```
-到此，分支修改，提交结束。
+到此，分支修改，这种方式我们时通过创建远程分支的本地分支，然后将本地分支合并到远端分支，强烈建议使用分支开发这种方式。   
+***
+当然还有可以直接在分支上修改，提交具体如下：
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git status
+HEAD detached at origin/4.3.x
+nothing to commit, working tree clean
+```
+修改相关代码，并直接提交到远端分支。
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git status
+HEAD detached at origin/4.3.x
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   build.gradle
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git diff .
+diff --git a/build.gradle b/build.gradle
+index 9bbc5f2e5e..a7205dafc2 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -2,9 +2,9 @@ buildscript {
+        repositories {
+            jcenter()
+                mavenCentral()
+-               maven { url "http://maven.aliyun.com/nexus/content/groups/public/"}
+-               maven { url 'http://maven.oschina.net/content/groups/public/'}
+-               maven { url "https://repo.spring.io/plugins-release"}
++               maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
++               maven { url 'http://maven.oschina.net/content/groups/public/' }
++               maven { url "https://repo.spring.io/plugins-release" }
+        }
+        dependencies {
+                classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git add .
+
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
+$ git commit -m "formate mavne reposity url"
+[detached HEAD 35298201cc] formate mavne reposity url
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ git pull origin 4.3.x
+From https://github.com/Donaldhan/spring-framework
+ * branch                  4.3.x      -> FETCH_HEAD
+Already up-to-date.
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ git push origin 4.3.x
+error: src refspec 4.3.x does not match any.
+error: failed to push some refs to 'https://github.com/Donaldhan/spring-framework.git'
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ git status
+HEAD detached from origin/4.3.x
+nothing to commit, working tree clean
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ git push origin HEAD:4.3.x
+Counting objects: 3, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 327 bytes | 0 bytes/s, done.
+Total 3 (delta 2), reused 0 (delta 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/Donaldhan/spring-framework.git
+   98dfd2591c..35298201cc  HEAD -> 4.3.x
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+```
 
 
 ## 注意事项
