@@ -142,6 +142,69 @@ repositories {
 
 然后将 *spring-framework* 项目导入的eclipse中即可，不过这个过程要等一会，这个取决于网络环境，我构建的时候大概用了15-20分钟。
 
+针对构建后出现缺失 *spring-cglib-repack* 和 *spring-objenesis-repack* 这两个依赖问题,可以直接执行任务相应的任务重新打包。
+搜 *build.gradle* 文件可以找到如下片段：
+```
+task cglibRepackJar(type: Jar) { repackJar ->
+    repackJar.baseName = "spring-cglib-repack"
+    repackJar.version = cglibVersion
+
+    doLast() {
+        project.ant {
+            taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask",
+                classpath: configurations.jarjar.asPath
+            jarjar(destfile: repackJar.archivePath) {
+                configurations.cglib.each { originalJar ->
+                    zipfileset(src: originalJar)
+                }
+                // Repackage net.sf.cglib => org.springframework.cglib
+                rule(pattern: "net.sf.cglib.**", result: "org.springframework.cglib.@1")
+                // As mentioned above, transform cglib"s internal asm dependencies from
+                // org.objectweb.asm => org.springframework.asm. Doing this counts on the
+                // the fact that Spring and cglib depend on the same version of asm!
+                rule(pattern: "org.objectweb.asm.**", result: "org.springframework.asm.@1")
+            }
+        }
+    }
+}
+
+task objenesisRepackJar(type: Jar) { repackJar ->
+    repackJar.baseName = "spring-objenesis-repack"
+    repackJar.version = objenesisVersion
+
+    doLast() {
+        project.ant {
+            taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask",
+                classpath: configurations.jarjar.asPath
+            jarjar(destfile: repackJar.archivePath) {
+                configurations.objenesis.each { originalJar ->
+                    zipfileset(src: originalJar)
+                }
+                // Repackage org.objenesis => org.springframework.objenesis
+                rule(pattern: "org.objenesis.**", result: "org.springframework.objenesis.@1")
+            }
+        }
+    }
+}
+```
+从代码片段中可以看出，cglibRepackJar任务是将 *org.objectweb.asm.*** 重新打包成 *org.springframework.asm*，
+*net.sf.cglib.***重新打包成 *org.springframework.cglib* ，*org.objenesis.*** 重新打包成 *org.springframework.objenesis*
+,从spring3.2以后，spring集成了cglib，不在需要这些包，而使将其放在spring框架内部使用，具体说明如下：
+
+for this dynamic subclassing to work, the class that the spring container will subclass cannot be final, and the method to be overridden cannot be final either. also, testing a class that has an abstract method requires you to subclass the class yourself and to supply a stub implementation of the abstract method. finally, objects that have been the target of method injection cannot be serialized. as of spring 3.2 it is no longer necessary to add cglib to your classpath, because cglib classes are repackaged under org.springframework and distributed within the spring-core jar. this is done both for convenience as well as to avoid potential conflicts with other projects that use differing versions of cglib
+
+到spring-framwork源码目录下，执行相应任务：
+```
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ gradle -q cglibRepackJar
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$ gradle -q objenesisRepackJar
+
+donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
+$
+```
+然后 *Refresh Gradle Project* 即可。
 ## 提交修改
 修改代码提交主要有两种一种是在主干上直接修改，另一种在分支上修改，下面我们分别来看这两种方式。
 ### 修改远端主干
