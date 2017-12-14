@@ -313,7 +313,7 @@ $ git branch
 
 ***
 
-当然还有可以直接在分支上修改，提交具体如下：
+当然还有可以直接在分支上修改、提交,具体如下：
 ```
 donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
 $ git status
