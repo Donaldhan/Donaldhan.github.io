@@ -44,28 +44,28 @@ tags:
 
 如果在线安装失败的话，可以在eclipse的 *Marketplace* 软件库中安装指定的buildship插件即可。 安装完插件到Windows-peference中配置gradle的安装目录和gradle用户目录 *D:.gradle* 文件夹，这个和maven的 *.m2* 文件夹 的作用相同。gradle项目的jar包一般在用户目录的 *caches* 下，我的是在 *D:.gradle\caches\modules-2\files-2.1* 目录下。
 在配置gradle和groove的时候，如果找不到对应的命令，看看是不是gradle和groove的用户变量和系统变量，及PATH声明错误。
-下面是我的gradle和groovy 版本信息：
+下面是我的gradle(3.1)和groovy(2.4.7) 版本信息：
 
 ```
-donald@donaldHP MINGW64 /f/github.io/Donaldhan.github.io (master)
 $ gradle -v
 
 ------------------------------------------------------------
-Gradle 4.4
+Gradle 3.1
 ------------------------------------------------------------
 
 Build time:   2016-09-19 10:53:53 UTC
 Revision:     13f38ba699afd86d7cdc4ed8fd7dd3960c0b1f97
 
-Groovy:       2.4.13
+Groovy:       2.4.7
 Ant:          Apache Ant(TM) version 1.9.6 compiled on June 29 2015
 JVM:          1.8.0_131 (Oracle Corporation 25.131-b11)
 OS:           Windows 10 10.0 amd64
 
 
+
 donald@donaldHP MINGW64 /f/github.io/Donaldhan.github.io (master)
 $ groovy -v
-Groovy Version: 2.4.13 JVM: 1.8.0_131 Vendor: Oracle Corporation OS: Windows 10
+Groovy Version: 2.4.7 JVM: 1.8.0_131 Vendor: Oracle Corporation OS: Windows 10
 
 donald@donaldHP MINGW64 /f/github.io/Donaldhan.github.io (master)
 ```
@@ -205,6 +205,21 @@ donald@donaldHP MINGW64 /f/github/spring-framework ((35298201cc...))
 $
 ```
 然后 *Refresh Gradle Project* 即可。
+
+如果出现构建错误 *Gradle sync failed: Cause: org/gradle/listener/ActionBroadcast* ， 则将sonarqube的版本从1.1 升级到2.5即可。
+```
+plugins {
+	id "org.sonarqube" version "1.1"
+}
+```
+改为
+```
+plugins {
+	id "org.sonarqube" version "2.5"
+}
+```
+执行 *Refresh Gradle Project* 即可。
+
 ## 提交修改
 修改代码提交主要有两种一种是在主干上直接修改，另一种在分支上修改，下面我们分别来看这两种方式。
 ### 修改远端主干
@@ -463,3 +478,153 @@ donald@donaldHP MINGW64 /f/github/spring-framework ((98dfd2591c...))
 $ git diff .
 ```
 另外需要注意的一点时，在push之前，要先pull相应分支或主干远端代码。
+
+## 附
+如果出现构建错误，*Caused by: groovy.lang.GroovyRuntimeException: Could not find matching constructor for: org.gradle.plugins.ide.eclipse.model.ProjectDependency(org.codehaus.groovy.runtime.GStringImpl, java.lang.String)*
+这是由于gradle的版本导致到，我是用gradle-3.1构建的，用gradle-4.4构建就会出现如上错误：
+到gradle-4.4的安装目录源码下查看ProjectDependency源码：
+
+```java
+package org.gradle.plugins.ide.eclipse.model;
+
+import com.google.common.base.Preconditions;
+import groovy.util.Node;
+
+/**
+ * A classpath entry representing a project dependency.
+ */
+public class ProjectDependency extends AbstractClasspathEntry {
+
+    public ProjectDependency(Node node) {
+        super(node);
+        assertPathIsValid();
+    }
+
+    /**
+     * Create a dependency on another Eclipse project.
+     * @param path The path to the Eclipse project, which is the name of the eclipse project preceded by "/".
+     */
+    public ProjectDependency(String path) {
+        super(path);
+        assertPathIsValid();
+    }
+
+    private void assertPathIsValid() {
+        Preconditions.checkArgument(path.startsWith("/"));
+    }
+
+    @Override
+    public String getKind() {
+        return "src";
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectDependency" + super.toString();
+    }
+}
+```
+没有对应的构造，只有一个path参数构造，
+```java
+public ProjectDependency(String path) {
+    super(path);
+    assertPathIsValid();
+}
+```
+到gradle-3.1的的安装目录源码下查看ProjectDependency源码：
+
+```java
+/*
+ * Copyright 2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gradle.plugins.ide.eclipse.model;
+
+import com.google.common.base.Preconditions;
+import groovy.util.Node;
+import org.gradle.util.DeprecationLogger;
+
+/**
+ * A classpath entry representing a project dependency.
+ */
+public class ProjectDependency extends AbstractClasspathEntry {
+
+    private String gradlePath;
+
+    public ProjectDependency(Node node) {
+        super(node);
+        assertPathIsValid();
+    }
+
+    /**
+     * Create a dependency on another Eclipse project.
+     * @param path The path to the Eclipse project, which is the name of the eclipse project preceded by "/".
+     */
+    public ProjectDependency(String path) {
+        super(path);
+        assertPathIsValid();
+    }
+
+    /**
+     * Create a dependency on another Eclipse project.
+     * @deprecated Use {@link #ProjectDependency(String)} instead
+     */
+    @Deprecated
+    public ProjectDependency(String path, String gradlePath) {
+        this(path);
+        DeprecationLogger.nagUserOfDiscontinuedMethod("ProjectDependency(String path, String gradlePath)", "Please use ProjectDependency(String path) instead.");
+        this.gradlePath = gradlePath;
+    }
+
+    @Deprecated
+    public String getGradlePath() {
+        DeprecationLogger.nagUserOfDiscontinuedMethod("ProjectDependency.getGradlePath()");
+        return gradlePath;
+    }
+
+    @Deprecated
+    public void setGradlePath(String gradlePath) {
+        DeprecationLogger.nagUserOfDiscontinuedMethod("ProjectDependency.setGradlePath(String)");
+        this.gradlePath = gradlePath;
+    }
+
+    private void assertPathIsValid() {
+        Preconditions.checkArgument(path.startsWith("/"));
+    }
+
+    @Override
+    public String getKind() {
+        return "src";
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectDependency" + super.toString();
+    }
+}
+```
+存在相应的构造函数
+```java
+/**
+ * Create a dependency on another Eclipse project.
+ * @deprecated Use {@link #ProjectDependency(String)} instead
+ */
+@Deprecated
+public ProjectDependency(String path, String gradlePath) {
+    this(path);
+    DeprecationLogger.nagUserOfDiscontinuedMethod("ProjectDependency(String path, String gradlePath)", "Please use ProjectDependency(String path) instead.");
+    this.gradlePath = gradlePath;
+}
+```
