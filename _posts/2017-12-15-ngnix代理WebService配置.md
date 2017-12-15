@@ -12,7 +12,6 @@ tags:
     - WebService
 ---
 在使用ngnix做WebService服务器的负载均衡器的时候出现出现如下错误：
-出现以下错误：
 ```java
 Exception in thread "main" org.apache.cxf.service.factory.ServiceConstructionException: Failed to create service.
 	at org.apache.cxf.wsdl11.WSDLServiceFactory.<init>(WSDLServiceFactory.java:76)
@@ -112,7 +111,7 @@ upstream www.donald.com {
         }
 ```
 
-主要是代理proxy_set_header配置：
+主要是代理头部配置proxy_set_header：
 ```
 proxy_set_header   Host $host:$server_port;
 proxy_set_header   X-Real-IP        $remote_addr;
