@@ -21,10 +21,12 @@ tags:
 然后在分析ContextLoaderListener。
 
 ## 目录
+* [ClassPathXmlApplicationContext声明](#ClassPathXmlApplicationContext声明)
+* [总结](#总结)
 * [](#)
-* [](#)
-* [](#)
+* [附：UML工具类](#附：UML工具类)
 
+## ClassPathXmlApplicationContext声明
 先从基于xml的类路径应用上下文 *ClassPathXmlApplicationContext* 的声明定义开始：
 
 ```java
@@ -191,25 +193,22 @@ public interface Aware {
 public interface InitializingBean {
 }
 ```
+! [ClassPathXmlApplicationContext]
 
+![ClassPathXmlApplicationContext](../image/spring-context/ClassPathXmlApplicationContext.png)
 
+## 总结
 
+## 附：UML工具类
 
-MDT
-
-eclipse UML 插件[AmaterasUML][]
+eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装AmaterasUML之前要安装[GEF][]和[JDT][]
+还有 *Eclipse UML Generators* 这些插件安装是要靠运气的，祝你好运。
 [AmaterasUML]:http://amateras.osdn.jp/cgi-bin/fswiki_en/wiki.cgi?page=AmaterasUML "AmaterasUML"
 [AmaterasUML download]:https://zh.osdn.net/projects/amateras/releases/p4435
 [GEF]:http://www.eclipse.org/gef/
 [JDT]:http://www.eclipse.org/jdt/
+
+当然其他UML设计软件比如IBM的Rational Rose，Sybase的PowerDesigner，除此之外还有[enterprise architect][],不过这些软件都是要注册的，祝你破解成功，当然我们还是支持正版的。开源UML软件有 *ArgoUML* ,可惜的是不兼容win10系统，都是泪呀！最后权衡利弊，选择了[StarUML][]，作为UML设计软件。
+
 [enterprise architect]:http://www.sparxsystems.cn/
 [staruml]:http://staruml.io/download
-[Eclipse UML Generators ]:
-*-->* 表示继承 *--* 表示接口实现  
-ClassPathXmlApplicationContext  
-    -->AbstractXmlApplicationContext  
-        -->AbstractRefreshableConfigApplicationContext  
-            -->AbstractRefreshableApplicationContext  
-                -->AbstractApplicationContext   
-            --BeanNameAware  
-            --InitializingBean
