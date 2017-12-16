@@ -193,7 +193,6 @@ public interface Aware {
 public interface InitializingBean {
 }
 ```
-! [ClassPathXmlApplicationContext]
 
 ![ClassPathXmlApplicationContext](../image/spring-context/ClassPathXmlApplicationContext.png)
 
