@@ -198,7 +198,7 @@ public interface InitializingBean {
 上述，从源码描述上，追溯了 *ClassPathXmlApplicationContext* 的声明，是不是有点头晕，我也是，所以用StartUML画了一个
 的ClassPathXmlApplicationContext类图，如下：
 
-![ClassPathXmlApplicationContext](../image/spring-context/ClassPathXmlApplicationContext.png)
+![ClassPathXmlApplicationContext](/image/spring-context/ClassPathXmlApplicationContext.png)
 
 从ClassPathXmlApplicationContext的类图中，可以看出ClassPathXmlApplicationContext直接或间接地实现了
 *EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
