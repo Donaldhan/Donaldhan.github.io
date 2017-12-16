@@ -200,19 +200,17 @@ public interface InitializingBean {
 
 ![ClassPathXmlApplicationContext](/image/spring-context/ClassPathXmlApplicationContext.png)
 
-从ClassPathXmlApplicationContext的类图中，可以看出ClassPathXmlApplicationContext直接或间接地实现了
-*EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
-，DisposableBean* ，现在我们还不能完全理解这些接口的含义，我们将在接下来的文章中说明这些接口的作用。
+从ClassPathXmlApplicationContext的类图中，可以看出ClassPathXmlApplicationContext直接或间接地实现了 *EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean，DisposableBean* ，现在我们还不能完全理解这些接口的含义，我们将在接下来的文章中说明这些接口的作用。
 
 ## 总结
 ClassPathXmlApplicationContext直接或间接地实现了
-*EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
-，DisposableBean*
+*EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean，DisposableBean*
 
 ## 附：UML工具类
 
 eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装AmaterasUML之前要安装[GEF][]和[JDT][]
 还有 *Eclipse UML Generators* 这些插件安装是要靠运气的，祝你好运。
+
 [AmaterasUML]:http://amateras.osdn.jp/cgi-bin/fswiki_en/wiki.cgi?page=AmaterasUML "AmaterasUML"
 [AmaterasUML download]:https://zh.osdn.net/projects/amateras/releases/p4435
 [GEF]:http://www.eclipse.org/gef/
