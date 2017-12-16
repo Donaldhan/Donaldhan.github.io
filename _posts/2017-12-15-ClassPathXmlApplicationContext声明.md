@@ -1,7 +1,7 @@
 ---
 layout: page
-title: my blog
-subtitle: sub title
+title: ClassPathXmlApplicationContext声明
+subtitle: Spring基于xml的类型路径应用上下文的声明
 date: 2017-12-14 21:00:00
 author: donaldhan
 catalog: true
@@ -22,9 +22,10 @@ tags:
 
 ## 目录
 * [ClassPathXmlApplicationContext声明](#ClassPathXmlApplicationContext声明)
+* [ClassPathXmlApplicationContext类图](#ClassPathXmlApplicationContext类图)
 * [总结](#总结)
-* [](#)
 * [附：UML工具类](#附：UML工具类)
+
 
 ## ClassPathXmlApplicationContext声明
 先从基于xml的类路径应用上下文 *ClassPathXmlApplicationContext* 的声明定义开始：
@@ -193,10 +194,20 @@ public interface Aware {
 public interface InitializingBean {
 }
 ```
+## ClassPathXmlApplicationContext类图
+上述，从源码描述上，追溯了 *ClassPathXmlApplicationContext* 的声明，是不是有点头晕，我也是，所以用StartUML画了一个
+的ClassPathXmlApplicationContext类图，如下：
 
 ![ClassPathXmlApplicationContext](../image/spring-context/ClassPathXmlApplicationContext.png)
 
+从ClassPathXmlApplicationContext的类图中，可以看出ClassPathXmlApplicationContext直接或间接地实现了
+*EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
+，DisposableBean* ，现在我们还不能完全理解这些接口的含义，我们将在接下来的文章中说明这些接口的作用。
+
 ## 总结
+ClassPathXmlApplicationContext直接或间接地实现了
+*EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
+，DisposableBean* 
 
 ## 附：UML工具类
 
@@ -208,6 +219,11 @@ eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装A
 [JDT]:http://www.eclipse.org/jdt/
 
 当然其他UML设计软件比如IBM的Rational Rose，Sybase的PowerDesigner，除此之外还有[enterprise architect][],不过这些软件都是要注册的，祝你破解成功，当然我们还是支持正版的。开源UML软件有 *ArgoUML* ,可惜的是不兼容win10系统，都是泪呀！最后权衡利弊，选择了[StarUML][]，作为UML设计软件。
+### StarUML使用方法
+1. 单机左侧工具栏 *Toolbox* 中的类或接口，在画图框中点击，即出现相应的类或接口，双击可以，添加访问属性，子类，父类，父接口；对于接口可以添加父类接口或子类接口或具体实现。
+2. 当画图的时候，如果想要将多个独立的类或接口添加关系，我们首先要双击工具中的继承，实现，组合，聚合等关系，当出现锁时，表示可添加关系，直接连接独立的类或接口即可。
+3. 我们可以使用shift键或 *Ctrt+A* 选择所有，添加对齐方式或者作色，具体在右下角编辑器 *Editors* 中。
+4. 在画完图以后，我们可以将类图导出为图片或pdf，具体见 *File->Export Diagrams As* 。
 
 [enterprise architect]:http://www.sparxsystems.cn/
 [staruml]:http://staruml.io/download
