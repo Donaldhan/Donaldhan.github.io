@@ -2,7 +2,7 @@
 layout: page
 title: ClassPathXmlApplicationContext声明
 subtitle: Spring基于xml的类型路径应用上下文的声明
-date: 2017-12-14 21:00:00
+date: 2017-12-16 13:34:00
 author: donaldhan
 catalog: true
 category: spring-framework
@@ -207,7 +207,7 @@ public interface InitializingBean {
 ## 总结
 ClassPathXmlApplicationContext直接或间接地实现了
 *EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean
-，DisposableBean* 
+，DisposableBean*
 
 ## 附：UML工具类
 

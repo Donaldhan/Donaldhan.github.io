@@ -2,7 +2,7 @@
 layout: page
 title: nginx代理WebService配置
 subtitle: nginx代理WebService配置
-date: 2017-12-14 21:00:00
+date: 2017-12-15 21:00:00
 author: donaldhan
 catalog: true
 category: nginx
