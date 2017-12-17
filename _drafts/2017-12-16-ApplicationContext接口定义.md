@@ -392,6 +392,16 @@ public interface EnvironmentCapable {
 
 [Environment]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/Environment.java  "Environment"
 
+```java
+```
+
+
+
+[PropertyResolver][]
+[PropertyResolver]: ""
+
+```java
+```
 
 
 ### InitializingBean
