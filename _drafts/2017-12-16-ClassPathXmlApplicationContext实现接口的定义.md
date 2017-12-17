@@ -167,20 +167,208 @@ public interface ListableBeanFactory extends BeanFactory {
 具体HierarchicalBeanFactory源码，参见[HierarchicalBeanFactory][]
 [HierarchicalBeanFactory]：https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/HierarchicalBeanFactory.java "HierarchicalBeanFactory"
 
+```java
+package org.springframework.beans.factory;
+
+/**
+ *HierarchicalBeanFactory作为bean工厂的实现，标志着为一个可继承的bean工厂。
+ *在ConfigurableBeanFactory接口的setParentBeanFactory方法，中可以配置bean工厂的父类工厂。
+ * @author Rod Johnson
+ * @author Juergen Hoeller
+ * @since 07.07.2003
+ * @see org.springframework.beans.factory.config.ConfigurableBeanFactory#setParentBeanFactory
+ */
+public interface HierarchicalBeanFactory extends BeanFactory {
+	BeanFactory getParentBeanFactory();
+	boolean containsLocalBean(String name);
+}
+```
+从HierarchicalBeanFactory的定义来看，HierarchicalBeanFactory接口标志一个以可继承bean工厂，我们可以通过 *ConfigurableBeanFactory* 接口的 *setParentBeanFactory* 方法配置bean工厂的父类工厂，主要提供获取父工厂操作，以及判断在本地bean工厂中是否存在指定name对应的bean的操作，但忽略祖先上下文中的bean定义。
+
+### ApplicationEventPublisher
+ApplicationEventPublisher的源码，参见[ApplicationEventPublisher][]
+
+[ApplicationEventPublisher]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java "ApplicationEventPublisher"
+
+```java
+package org.springframework.context;
+
+/**
+ *ApplicationEventPublisher接口，封装了事件发布功能，作为ApplicationContext的父接口，
+ *服务于应用上下文ApplicationContext。
+ * @author Juergen Hoeller
+ * @author Stephane Nicoll
+ * @since 1.1.1
+ * @see ApplicationContext
+ * @see ApplicationEventPublisherAware
+ * @see org.springframework.context.ApplicationEvent
+ * @see org.springframework.context.event.EventPublicationInterceptor
+ */
+public interface ApplicationEventPublisher {
+	void publishEvent(ApplicationEvent event);
+	void publishEvent(Object event);
+
+}
+```
+从上面可看出，事件发布接口ApplicationEventPublisher，主要作为ApplicationContext的父接口，封装了事件发布功能，提供了事件发布功能。当事件发布时，通知所有注册到当前应用关注ApplicationEvent事件event的监听器，如果发布的事件不是 *ApplicationEvent*，
+则将会包装成 *PayloadApplicationEvent*。
+
+再来简单看一下应用事件[ApplicationEvent][]
+
+[ApplicationEvent]:  https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/ApplicationEvent.java "ApplicationEvent"
+
+```java
+package org.springframework.context;
+
+import java.util.EventObject;
+
+/**
+ *所有的应用事件，将会继承此类。抽象不意味着，一般的应用事件不可以直接发布。
+ * @author Rod Johnson
+ * @author Juergen Hoeller
+ */
+public abstract class ApplicationEvent extends EventObject {
+	/** use serialVersionUID from Spring 1.2 for interoperability */
+	private static final long serialVersionUID = 7099057708183571937L;
+	/** System time when the event happened 事件发生的系统时间*/
+	private final long timestamp;
+	public ApplicationEvent(Object source) {
+		super(source);
+		this.timestamp = System.currentTimeMillis();
+	}
+	public final long getTimestamp() {
+		return this.timestamp;
+	}
+
+}
+```
+
+从上面可以看出，ApplicationEvent用于表示应用发生的事件，事件包括事件发生的时间和事件发生源。
+
+我们再来看一下ApplicationEvent的父类EventObject，EventObject属于jdk的范畴。
+
+```java
+package java.util;
+
+/**
+ * <p>
+ * The root class from which all event state objects shall be derived.
+ 所有事件状态对象的原始类。
+ * <p>
+ * All Events are constructed with a reference to the object, the "source",
+ * that is logically deemed to be the object upon which the Event in question
+ * initially occurred upon.
+ 所有事件构造有一个对象已用，此对象用于表示，事件发生源。
+ *
+ * @since JDK1.1
+ */
+
+public class EventObject implements java.io.Serializable {
+
+    private static final long serialVersionUID = 5516075349620653480L;
+
+    /**
+     * The object on which the Event initially occurred.
+     事件发生源
+     */
+    protected transient Object  source;
+
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param    source    The object on which the Event initially occurred.
+     * @exception  IllegalArgumentException  if source is null.
+     */
+    public EventObject(Object source) {
+        if (source == null)
+            throw new IllegalArgumentException("null source");
+
+        this.source = source;
+    }
+    public Object getSource() {
+        return source;
+    }
+    ...
+}
+```
+
+从上面来看EventObject，表示一个事件对象，同时记录事件发生源。
+
+再来看一下应用监听器[ApplicationListener][]
+
+[ApplicationListener]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/ApplicationListener.java "ApplicationListener"
+
+```java
+package org.springframework.context;
+
+import java.util.EventListener;
+
+/**
+ * Interface to be implemented by application event listeners.
+ * Based on the standard {@code java.util.EventListener} interface
+ * for the Observer design pattern.。
+ *所有应用事件监听器将实现ApplicationListener接口。此接口基于标准的观察者模式的接口java.util.EventListener。
+ * <p>As of Spring 3.0, an ApplicationListener can generically declare the event type
+ * that it is interested in. When registered with a Spring ApplicationContext, events
+ * will be filtered accordingly, with the listener getting invoked for matching event
+ * objects only.
+ * 从spring3.0以后，应用监听器需要声明关注的应用事件类型。当监听器注册到spring的应用上下文ApplicationContext时，
+ * 将会根据事件类型过滤监听器，匹配事件类型的监听器才会被通知。
+ *
+ * @author Rod Johnson
+ * @author Juergen Hoeller
+ * @param <E> the specific ApplicationEvent subclass to listen to
+ * @see org.springframework.context.event.ApplicationEventMulticaster
+ */
+public interface ApplicationListener<E extends ApplicationEvent> extends EventListener {
+
+	/**
+	 * Handle an application event.
+	 * 处理应用事件
+	 * @param event the event to respond to
+	 */
+	void onApplicationEvent(E event);
+
+}
+
+```
+
+从上面可以看出，监听器接口ApplicationListener，是基于标准JDK的观察者模式的接口java.util.EventListener，
+从spring3.0以后，应用监听器需要声明关注的应用事件类型。当监听器注册到spring的应用上下文ApplicationContext时，
+将会根据事件类型过滤监听器，匹配事件类型的监听器才会被通知。接口主要提供了处理事件操作。
+
+来简单看一下jdk的事件监听器接口的声明：
+
+```java
+package java.util;
+
+/**
+ * A tagging interface that all event listener interfaces must extend.
+ * @since JDK1.1
+ */
+public interface EventListener {
+}
+```
+从上面可以看出事件监听器接口，从JDK1.1，就已经出现。
+
+我们接着看EnvironmentCapable接口
+
+### EnvironmentCapable
+源码参见[EnvironmentCapable][]
+
+[EnvironmentCapable]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/EnvironmentCapable.java "EnvironmentCapable"
+
+
+
 ### InitializingBean
 
 ### DisposableBean
 
 ### BeanNameAware
 
-### EnvironmentCapable
-
-### ApplicationEventPublisher
-
 ### ResourceLoader
 
 ### ResourcePatternResolver
-
 
 ### MessageSource
 
@@ -192,7 +380,21 @@ public interface ListableBeanFactory extends BeanFactory {
 ## 总结
 
 BeanFactory接口主要是主要提供了根据名称或类型获取bean的相关方法，以及判断bean是否匹配指定类型或判断是否包含指定name的共享单实例或多实例bean。需要注意的是，如果bean工厂的实现是可继承工厂，那么调用这些方法，如果没有在当前bean工厂实例中找到，将会从父工厂中查到。另外还需要注意一点，判断一个bean是否为共享单例模式，可以使用isSingleton方法，返回true，即是，返回false，并不能表示bean是多实例bean，具体要用isPrototype方法判断，同理isPrototype方法也是如此。  
+
 ListableBeanFactory接口主要提供了判断是否存在给定name的bean定义，获取bean定义数量，获取指定类型的bean定义的name集或name与bean实例的映射集，获取待指定注解的bean定义的name或name与bean实例的映射集，以及获取给定name对应的bean的注定注解实例。需要注意的是，提供的操作不会到可继承bean工厂中去搜索，但包括BeanFactoryUtils工具类获取bean工厂的祖先bean工厂。另外getBeanNamesForType和getBeanNamesForAnnotation方法可以通过includeNonSingletons和allowEagerInit，
-控制搜索bean的作用域范围和是否初始化懒加载单例模式bean与工厂bean。
+控制搜索bean的作用域范围和是否初始化懒加载单例模式bean与工厂bean。   
+
+HierarchicalBeanFactory接口标志一个以可继承bean工厂，我们可以通过 *ConfigurableBeanFactory* 接口的 *setParentBeanFactory* 方法配置bean工厂的父类工厂，主要提供获取父工厂操作，以及判断在本地bean工厂中是否存在指定name对应的bean的操作，但忽略祖先上下文中的bean定义。
+
+事件发布接口ApplicationEventPublisher，主要作为ApplicationContext的父接口，封装了事件发布功能，提供了事件发布功能。当事件发布时，通知所有注册到当前应用关注ApplicationEvent事件event的监听器，如果发布的事件不是 *ApplicationEvent*，
+则将会包装成 *PayloadApplicationEvent*。
+
+ApplicationEvent用于表示应用发生的事件，事件包括事件发生的时间和事件发生源。
+
+监听器接口ApplicationListener，是基于标准JDK的观察者模式的接口java.util.EventListener，
+从spring3.0以后，应用监听器需要声明关注的应用事件类型。当监听器注册到spring的应用上下文ApplicationContext时，
+将会根据事件类型过滤监听器，匹配事件类型的监听器才会被通知。接口主要提供了处理事件操作。
+
+
 
 ## 附
