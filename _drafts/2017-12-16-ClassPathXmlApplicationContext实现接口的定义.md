@@ -358,6 +358,40 @@ public interface EventListener {
 
 [EnvironmentCapable]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/EnvironmentCapable.java "EnvironmentCapable"
 
+```java
+package org.springframework.core.env;
+
+/**
+ * EnvironmentCapable表示一个组件包括一个或暴露一个Environment环境引用。
+ *Spring的所有应用上下文都是EnvironmentCapable接口实现，用于应用上下文与环境交互。
+ * 需要注意的是，ApplicationContext扩展了EnvironmentCapable接口，通过getEnvironment方法暴露环境配置；
+ * 然而ConfigurableApplicationContext将会重定义getEnvironment方法，返回一个ConfigurableEnvironment。
+ * 两种方法带来的效果是，在环境配置Environment对象在ConfigurableApplicationContext可访问以前，都是自读的，
+ * 可以理解为ConfigurableApplicationContext的getEnvironment方法返回的环境对象时可修改的。
+ *
+ * @author Chris Beams
+ * @since 3.1
+ * @see Environment
+ * @see ConfigurableEnvironment
+ * @see org.springframework.context.ConfigurableApplicationContext#getEnvironment()
+ */
+public interface EnvironmentCapable {
+
+	/**
+	 * Return the {@link Environment} associated with this component
+	 * (may be {@code null} or a default environment).
+	 * 返回组件关联的环境Environment，没有则为空。
+	 */
+	Environment getEnvironment();
+
+}
+```
+从上面可以看出，接口从spring3.1才使用，EnvironmentCapable接口，表示包括或暴露一个Environment环境引用的组件。Spring的所有应用上下文都是EnvironmentCapable接口实现，用于应用上下文与环境交互。需要注意的是，ApplicationContext扩展了EnvironmentCapable接口，通过getEnvironment方法暴露环境配置；然而 *ConfigurableApplicationContext* 将会重定义getEnvironment方法，返回一个*ConfigurableEnvironment*。 两种方法带来的效果是，在环境配置Environment对象在 *ConfigurableApplicationContext* 可访问以前，都是自读的，可以理解为 *ConfigurableApplicationContext* 的getEnvironment方法返回的环境象时可修改的。接口提供了获取环境配置操作。
+
+我们再来看一下环境配置[Environment][]接口的定义:
+
+[Environment]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/Environment.java  "Environment"
+
 
 
 ### InitializingBean
@@ -395,6 +429,6 @@ ApplicationEvent用于表示应用发生的事件，事件包括事件发生的�
 从spring3.0以后，应用监听器需要声明关注的应用事件类型。当监听器注册到spring的应用上下文ApplicationContext时，
 将会根据事件类型过滤监听器，匹配事件类型的监听器才会被通知。接口主要提供了处理事件操作。
 
-
+EnvironmentCapable接口，表示包括或暴露一个Environment环境引用的组件。Spring的所有应用上下文都是EnvironmentCapable接口实现，用于应用上下文与环境交互。需要注意的是，ApplicationContext扩展了EnvironmentCapable接口，通过getEnvironment方法暴露环境配置；然而 *ConfigurableApplicationContext* 将会重定义getEnvironment方法，返回一个*ConfigurableEnvironment*。 两种方法带来的效果是，在环境配置Environment对象在 *ConfigurableApplicationContext* 可访问以前，都是自读的，可以理解为 *ConfigurableApplicationContext* 的getEnvironment方法返回的环境象时可修改的。接口提供了获取环境配置操作。
 
 ## 附
