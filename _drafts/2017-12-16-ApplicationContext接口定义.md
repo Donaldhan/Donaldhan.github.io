@@ -562,24 +562,142 @@ public interface PropertyResolver {
 
 从上面可以看出从spring3.1开始，PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含给定属性，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
-### MessageSource
+### ResourcePatternResolver
 
+具体源码参见：[ResourcePatternResolver][]
 
+[ResourcePatternResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/support/ResourcePatternResolver.java  "ResourcePatternResolver"
+
+```java
+
+package org.springframework.core.io.support;
+
+import java.io.IOException;
+
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+
+/**
+ * Strategy interface for resolving a location pattern (for example,
+ * an Ant-style path pattern) into Resource objects.
+ *ResourcePatternResolver接口将指定路径下的文件加载资源对象。
+ * <p>This is an extension to the {@link org.springframework.core.io.ResourceLoader}
+ * interface. A passed-in ResourceLoader (for example, an
+ * {@link org.springframework.context.ApplicationContext} passed in via
+ * {@link org.springframework.context.ResourceLoaderAware} when running in a context)
+ * can be checked whether it implements this extended interface too.
+ *接口拓展了org.springframework.core.io.ResourceLoader接口。
+ * <p>{@link PathMatchingResourcePatternResolver} is a standalone implementation
+ * that is usable outside an ApplicationContext, also used by
+ * {@link ResourceArrayPropertyEditor} for populating Resource array bean properties.
+ *PathMatchingResourcePatternResolver接口是ResourcePatternResolver的一个独立是吸纳，不能在ApplicationContext外部使用，
+ *可以使用ResourceArrayPropertyEditor，设置bean的属性。
+ * <p>Can be used with any sort of location pattern (e.g. "/WEB-INF/*-context.xml"):
+ * Input patterns have to match the strategy implementation. This interface just
+ * specifies the conversion method rather than a specific pattern format.
+ *可以用于任何种类的位置模式（e.g. "/WEB-INF/*-context.xml"）：输入的模式必须匹配指定的规则。
+ * <p>This interface also suggests a new resource prefix "classpath*:" for all
+ * matching resources from the class path. Note that the resource location is
+ * expected to be a path without placeholders in this case (e.g. "/beans.xml");
+ * JAR files or classes directories can contain multiple files of the same name.
+ *此接口建议以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。需要注意的是，资源位置应该为一个路径，而不是没有占位符，
+ *比如 (e.g. "/beans.xml")；jar包文件或多个相同名字的文件。
+ * @author Juergen Hoeller
+ * @since 1.0.2
+ * @see org.springframework.core.io.Resource
+ * @see org.springframework.core.io.ResourceLoader
+ * @see org.springframework.context.ApplicationContext
+ * @see org.springframework.context.ResourceLoaderAware
+ */
+public interface ResourcePatternResolver extends ResourceLoader {
+
+	/**
+	 * Pseudo URL prefix for all matching resources from the class path: "classpath*:"
+	 * This differs from ResourceLoader's classpath URL prefix in that it
+	 * retrieves all matching resources for a given name (e.g. "/beans.xml"),
+	 * for example in the root of all deployed JAR files.
+	 * 所有匹配class路径的伪URL前缀“classpath*:”。以URL前缀“classpath*的开头的class路径资源，
+	 * 与匹配给定name（"/beans.xml"）的ResourceLoader的以"classpath:"为前缀的资源不同，比如，JAR包的根目录。
+	 * @see org.springframework.core.io.ResourceLoader#CLASSPATH_URL_PREFIX
+	 */
+	String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
+
+	/**
+	 * Resolve the given location pattern into Resource objects.
+	 * <p>Overlapping resource entries that point to the same physical
+	 * resource should be avoided, as far as possible. The result should
+	 * have set semantics.
+	 * 将给定路径模式下的文件，转换成资源Resource对应。尽量避免在同级物理层环境，出现重叠的资源entries。
+	 * 返回的结果为一个资源集。
+	 * @param locationPattern the location pattern to resolve
+	 * @return the corresponding Resource objects
+	 * @throws IOException in case of I/O errors
+	 */
+	Resource[] getResources(String locationPattern) throws IOException;
+
+}
+```
+
+从上，可以看出，ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或加载给定路径下的资源文件，ResourcePatternResolver建议使用
+以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。
+
+为了理解下面这个属性
+
+```java
+String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
+```
+，我们来看ResourceLoader
+```java
+public interface ResourceLoader {
+
+	/** Pseudo URL prefix for loading from the class path: "classpath:" */
+	String CLASSPATH_URL_PREFIX = ResourceUtils.CLASSPATH_URL_PREFIX;
+    ...
+}
+```
+
+```java
+public abstract class ResourceUtils {
+
+	/** Pseudo URL prefix for loading from the class path: "classpath:" */
+	public static final String CLASSPATH_URL_PREFIX = "classpath:";
+    ...
+}
+
+```
+从上面可以看出，ResourcePatternResolver建议使用以 classpath*: 为前缀，创建一个匹配class路径的所有资源，当然也可以是其他形式的位置模式。ResourceLoader的资源以 *classpath:* 为前缀，这两种方式的不同，我们在看完ResourceLoader接口的定义，再来比较。
 
 ### ResourceLoader
 
-### ResourcePatternResolver
+具体源码参见：[ResourceLoader][]
+
+[ResourceLoader]: "ResourceLoader"
+
+```java
+
+```
+
+
+#### Resource
+
+
+
+### MessageSource
+
+具体源码参见：[MessageSource][]
+
+[MessageSource]: "MessageSource"
+
+```java
+
+```
+
 
 ### InitializingBean
 
 ### DisposableBean
 
 ### BeanNameAware
-
-
-
-
-
 
 ### Lifecycle
 
@@ -610,4 +728,59 @@ Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活
 
 PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含给定属性，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
+ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或加载给定路径下的资源文件，ResourcePatternResolver建议使用
+以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。
+
 ## 附
+
+### ResourceUtils
+
+```java
+public abstract class ResourceUtils {
+
+	/** Pseudo URL prefix for loading from the class path: "classpath:" */
+	public static final String CLASSPATH_URL_PREFIX = "classpath:";
+
+	/** URL prefix for loading from the file system: "file:" */
+	public static final String FILE_URL_PREFIX = "file:";
+
+	/** URL prefix for loading from a jar file: "jar:" */
+	public static final String JAR_URL_PREFIX = "jar:";
+
+	/** URL prefix for loading from a war file on Tomcat: "war:" */
+	public static final String WAR_URL_PREFIX = "war:";
+
+	/** URL protocol for a file in the file system: "file" */
+	public static final String URL_PROTOCOL_FILE = "file";
+
+	/** URL protocol for an entry from a jar file: "jar" */
+	public static final String URL_PROTOCOL_JAR = "jar";
+
+	/** URL protocol for an entry from a war file: "war" */
+	public static final String URL_PROTOCOL_WAR = "war";
+
+	/** URL protocol for an entry from a zip file: "zip" */
+	public static final String URL_PROTOCOL_ZIP = "zip";
+
+	/** URL protocol for an entry from a WebSphere jar file: "wsjar" */
+	public static final String URL_PROTOCOL_WSJAR = "wsjar";
+
+	/** URL protocol for an entry from a JBoss jar file: "vfszip" */
+	public static final String URL_PROTOCOL_VFSZIP = "vfszip";
+
+	/** URL protocol for a JBoss file system resource: "vfsfile" */
+	public static final String URL_PROTOCOL_VFSFILE = "vfsfile";
+
+	/** URL protocol for a general JBoss VFS resource: "vfs" */
+	public static final String URL_PROTOCOL_VFS = "vfs";
+
+	/** File extension for a regular jar file: ".jar" */
+	public static final String JAR_FILE_EXTENSION = ".jar";
+
+	/** Separator between JAR URL and file path within the JAR: "!/" */
+	public static final String JAR_URL_SEPARATOR = "!/";
+
+	/** Special separator between WAR URL and jar part on Tomcat */
+	public static final String WAR_URL_SEPARATOR = "*/";
+}
+```
