@@ -678,15 +678,151 @@ public abstract class ResourceUtils {
 [ResourceLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/ResourceLoader.java  "ResourceLoader"
 
 ```java
+package org.springframework.core.io;
+
+import org.springframework.util.ResourceUtils;
+
+/**
+ * Strategy interface for loading resources (e.. class path or file system
+ * resources). An {@link org.springframework.context.ApplicationContext}
+ * is required to provide this functionality, plus extended
+ * {@link org.springframework.core.io.support.ResourcePatternResolver} support.
+ *ResourceLoader是一个策略接口，用于加载资源（比如class路径或文件系统资源）。org.springframework.context.ApplicationContext
+ *需要提供这些功能，同时要拓展ResourcePatternResolver的支持。
+ * <p>{@link DefaultResourceLoader} is a standalone implementation that is
+ * usable outside an ApplicationContext, also used by {@link ResourceEditor}.
+ *默认资源加载器DefaultResourceLoader是一个独立的实现，可以在在应用上下文外部使用。也可以通过ResourceEditor使用。
+ * <p>Bean properties of type Resource and Resource array can be populated
+ * from Strings when running in an ApplicationContext, using the particular
+ * context's resource loading strategy.
+ * 当运行在应用上下文中，可以使用特殊的上下为资源加载策略，类型资源和资源数组可以从字符串构建bean的属性。
+ * @author Juergen Hoeller
+ * @since 10.03.2004
+ * @see Resource
+ * @see org.springframework.core.io.support.ResourcePatternResolver
+ * @see org.springframework.context.ApplicationContext
+ * @see org.springframework.context.ResourceLoaderAware
+ */
+public interface ResourceLoader {
+
+	/** Pseudo URL prefix for loading from the class path: "classpath:" */
+	String CLASSPATH_URL_PREFIX = ResourceUtils.CLASSPATH_URL_PREFIX;
+
+	/**
+	 * 返回特殊位置资源的资源句柄。
+	 * 资源句柄可以总是可以重用资源描述，允许多次调用Resource#getInputStream()方法获取资源输入流。
+	 * 必须支持完全限定路径，如"file:C:/test.dat".
+	 * <li>Must support classpath pseudo-URLs, e.g. "classpath:test.dat".
+	 * 必须支持伪类路径URL，比如e.g. "classpath:test.dat".
+	 * 应该支持相对路径的文件路径，比如"WEB-INF/test.dat".
+	 * 这些需要具体的实现，典型的通过ApplicationContext提供实现
+	 * 注意：一个资源handle不以为者，资源存在，可以调用Resource#exists检查资源是否存在。
+	 * @param location the resource location
+	 * @return a corresponding Resource handle (never {@code null})
+	 * @see #CLASSPATH_URL_PREFIX
+	 * @see Resource#exists()
+	 * @see Resource#getInputStream()
+	 */
+	Resource getResource(String location);
+
+	/**
+	 * 暴露资源加载器ResourceLoader使用的类加载器。
+	 * 客户端需要直接访问ClassLoader，可以使用ResourceLoader的统一管理器。
+	 * @return the ClassLoader (only {@code null} if even the system
+	 * ClassLoader isn't accessible)
+	 * 如果系统类加载器不可访问，则返回null
+	 * @see org.springframework.util.ClassUtils#getDefaultClassLoader()
+	 */
+	ClassLoader getClassLoader();
+
+}
 
 ```
 
+从上面可以看出，ResourceLoader接口用于加载资源class路径或文件系统等类型资源，提供获取给定位置的资源操作和获取系统ClassLoader。
+再来简单看一下ClassUtils，获取类加载器
+
+```java
+package org.springframework.util;
+
+import java.beans.Introspector;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Miscellaneous class utility methods.
+ * Mainly for internal use within the framework.
+ *
+ * @author Juergen Hoeller
+ * @author Keith Donald
+ * @author Rob Harrop
+ * @author Sam Brannen
+ * @since 1.1
+ * @see TypeUtils
+ * @see ReflectionUtils
+ */
+public abstract class ClassUtils {
+public static ClassLoader getDefaultClassLoader() {
+		ClassLoader cl = null;
+		try {
+             //首先获取当前线程类加载器
+			cl = Thread.currentThread().getContextClassLoader();
+		}
+		catch (Throwable ex) {
+			// Cannot access thread context ClassLoader - falling back...
+		}
+		if (cl == null) {
+			// No thread context class loader -> use class loader of this class.
+            //没有当前线程上下文，则使用当前类的类加载器
+			cl = ClassUtils.class.getClassLoader();
+			if (cl == null) {
+				// getClassLoader() returning null indicates the bootstrap ClassLoader
+                //否则返回系统的类加载器。
+				try {
+					cl = ClassLoader.getSystemClassLoader();
+				}
+				catch (Throwable ex) {
+					// Cannot access system ClassLoader - oh well, maybe the caller can live with null...
+				}
+			}
+		}
+		return cl;
+    }
+}
+```
+从上可以看出，ResourceLoader获取类加载器，首先获取当前线程类加载器,如果没有当前线程上下文，则使用当前类的类加载器，如果当前类没有类加载器，则获取系统的类加载器。
+
 
 #### Resource
+具体源码参见：[Resource][]
 
+[Resource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/Resource.java "Resource"
+
+```java
+
+```
 
 #### InputStreamSource
+具体源码参见：[InputStreamSource][]
 
+[InputStreamSource]: "InputStreamSource"
+
+```java
+
+```
 
 ### MessageSource
 
@@ -735,8 +871,9 @@ Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活
 
 PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含给定属性，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
-ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或加载给定路径下的资源文件，ResourcePatternResolver建议使用
-以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。
+ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或加载给定路径下的资源文件，ResourcePatternResolver建议使用以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。
+
+ResourceLoader接口用于加载资源class路径或文件系统等类型资源，提供获取给定位置的资源操作和获取系统ClassLoader。ResourceLoader获取类加载器，首先获取当前线程类加载器,如果没有当前线程上下文，则使用当前类的类加载器，如果当前类没有类加载器，则获取系统的类加载器。
 
 ## 附
 
