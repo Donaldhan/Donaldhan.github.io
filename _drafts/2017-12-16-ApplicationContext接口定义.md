@@ -213,6 +213,8 @@ public interface ApplicationEventPublisher {
 从上面可看出，事件发布接口ApplicationEventPublisher，主要作为ApplicationContext的父接口，封装了事件发布功能，提供了事件发布功能。当事件发布时，通知所有注册到当前应用关注ApplicationEvent事件event的监听器，如果发布的事件不是 *ApplicationEvent*，
 则将会包装成 *PayloadApplicationEvent*。
 
+#### ApplicationEvent
+
 再来简单看一下应用事件[ApplicationEvent][]
 
 [ApplicationEvent]:  https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/ApplicationEvent.java "ApplicationEvent"
@@ -294,6 +296,7 @@ public class EventObject implements java.io.Serializable {
 
 从上面来看EventObject，表示一个事件对象，同时记录事件发生源。
 
+#### ApplicationListener
 再来看一下应用监听器[ApplicationListener][]
 
 [ApplicationListener]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/ApplicationListener.java "ApplicationListener"
@@ -457,6 +460,7 @@ public interface Environment extends PropertyResolver {
 ```
 从spring3.1开始，才出现Environment接口，Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活配置 *Profiles* 和默认配置的操作，同时提供了判断配置是否激活操作。应用环境Environment有一个或多个配置 *Profiles*，配置可以理解为配置集或类型，比如开发，测试，体验，生产等环境。当应用存在需要引用属性的情况，我们可以从环境中获取，应为环境是一个 *PropertyResolver*。环境配置对象必须通过ConfigurableEnvironment接口进行配置，所有AbstractApplicationContext的子类，都可通过getEnvironment方法返回一个可配置环境接口ConfigurableEnvironment。
 
+#### PropertyResolver
 我们简单看一下[PropertyResolver][]接口
 
 [PropertyResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/PropertyResolver.java "PropertyResolver"
@@ -671,7 +675,7 @@ public abstract class ResourceUtils {
 
 具体源码参见：[ResourceLoader][]
 
-[ResourceLoader]: "ResourceLoader"
+[ResourceLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/ResourceLoader.java  "ResourceLoader"
 
 ```java
 
@@ -681,8 +685,11 @@ public abstract class ResourceUtils {
 #### Resource
 
 
+#### InputStreamSource
+
 
 ### MessageSource
+
 
 具体源码参见：[MessageSource][]
 
