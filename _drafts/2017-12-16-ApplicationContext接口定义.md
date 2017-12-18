@@ -812,13 +812,127 @@ public static ClassLoader getDefaultClassLoader() {
 [Resource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/Resource.java "Resource"
 
 ```java
+package org.springframework.core.io;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+
+/**
+ *Resource接口表示一个资源描述符，即底层资源实例类型的抽象。比如文件，类路径资源。
+ *如果资源以物理形式存在，输入流可以被每个资源打开，但是一个URL或文件句柄，必须调整为确定的资源。
+ *实际的行为依赖于具体的实现。
+ * @author Juergen Hoeller
+ * @since 28.12.2003
+ * @see #getInputStream()
+ * @see #getURL()
+ * @see #getURI()
+ * @see #getFile()
+ * @see WritableResource
+ * @see ContextResource
+ * @see UrlResource
+ * @see ClassPathResource
+ * @see FileSystemResource
+ * @see PathResource
+ * @see ByteArrayResource
+ * @see InputStreamResource
+ */
+public interface Resource extends InputStreamSource {
+
+	/**
+	 * 判断资源实际上是否以物理形式存在。
+	 */
+	boolean exists();
+
+	/**
+	 * 判断资源的内容是否可以通过#getInputStream方法访问
+	 * 对于特殊的资源描述，将会返回true，需要注意的是尝试读取实际的内容有可能会失败。
+	 * 然而返回false，表示资源内容不可读。
+	 * @see #getInputStream()
+	 */
+	boolean isReadable();
+
+	/**
+	 * 判断一个资源是否是一个打开的流handle。如果返回true，输入流不能读取多次，
+	 * 同时在读取后，要关闭资源，避免内存泄漏。对于特殊的资源描述，将会返回false。
+	 */
+	boolean isOpen();
+
+	/**
+	 *返回资源的URL，如果资源不能够转化为URL，或资源不能够作为描述符访问，则抛出IO异常。
+	 */
+	URL getURL() throws IOException;
+
+	/**
+	 * 返回资源的URI，如果资源不能够转化为URI，或资源不能够作为描述符访问，则抛出IO异常。
+	 * @since 2.5
+	 */
+	URI getURI() throws IOException;
+
+	/**
+	 * @see #getInputStream()
+	 * 返回资源关联的文件句柄，如果文件不能够解决为一个绝对的文件路径，或在文件系统中，资源不可利用，
+	 * 则抛出FileNotFoundException异常，对于一般的读或解决路径失败，则抛出IOException异常
+	 */
+	File getFile() throws IOException;
+
+	/**
+	 * Determine the content length for this resource.
+	 * @throws IOException if the resource cannot be resolved
+	 * (in the file system or as some other known physical resource type)
+	 * 获取资源内容的长度，如果资源在文件系统中或其他物理资源类型，不能够解决，则抛出IOException异常
+	 */
+	long contentLength() throws IOException;
+
+	/**
+	 * Determine the last-modified timestamp for this resource.
+	 * @throws IOException if the resource cannot be resolved
+	 * (in the file system or as some other known physical resource type)
+	 * 返回资源上次修改的时间戳，如果资源在文件系统中或其他物理资源类型，不能够解决，则抛出IOException异常
+	 */
+	long lastModified() throws IOException;
+
+	/**
+	 * Create a resource relative to this resource.
+	 * 创建资源的相对路径资源。
+	 * @param relativePath the relative path (relative to this resource)
+	 * @return the resource handle for the relative resource
+	 * @throws IOException if the relative resource cannot be determined
+	 */
+	Resource createRelative(String relativePath) throws IOException;
+
+	/**
+	 * Determine a filename for this resource, i.e. typically the last
+	 * part of the path: for example, "myfile.txt".
+	 * <p>Returns {@code null} if this type of resource does not
+	 * have a filename.
+	 * 获取资源的文件名
+	 */
+	String getFilename();
+
+	/**
+	 * Return a description for this resource,
+	 * to be used for error output when working with the resource.
+	 * <p>Implementations are also encouraged to return this value
+	 * from their {@code toString} method.
+	 * 返回资源的描述符
+	 * @see Object#toString()
+	 */
+	String getDescription();
+
+}
 
 ```
+从上面可以看出，Resource实际为一个输入流资源 *InputStreamSource* 接口，主要提供了获取资源URL，URI，对应的文件，文件名，上次修改时间戳，文件描述符操作，以及判断资源是否存在，是否可读，是否打开等操作。需要注意的是在读取资源后，要关闭资源，以防内存泄漏。
+
+再来看一些Resource的父接口Resource。
 
 #### InputStreamSource
 具体源码参见：[InputStreamSource][]
 
 [InputStreamSource]: "InputStreamSource"
+
 
 ```java
 
@@ -874,6 +988,8 @@ PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含
 ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或加载给定路径下的资源文件，ResourcePatternResolver建议使用以 "classpath*:"为前缀，创建一个匹配class路径的所有资源。
 
 ResourceLoader接口用于加载资源class路径或文件系统等类型资源，提供获取给定位置的资源操作和获取系统ClassLoader。ResourceLoader获取类加载器，首先获取当前线程类加载器,如果没有当前线程上下文，则使用当前类的类加载器，如果当前类没有类加载器，则获取系统的类加载器。
+
+Resource实际为一个输入流资源 *InputStreamSource* 接口，主要提供了获取资源URL，URI，对应的文件，文件名，上次修改时间戳，文件描述符操作，以及判断资源是否存在，是否可读，是否打开等操作。需要注意的是在读取资源后，要关闭资源，以防内存泄漏。
 
 ## 附
 
