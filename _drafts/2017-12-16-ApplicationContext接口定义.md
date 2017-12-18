@@ -457,13 +457,118 @@ public interface Environment extends PropertyResolver {
 ```
 从spring3.1开始，才出现Environment接口，Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活配置 *Profiles* 和默认配置的操作，同时提供了判断配置是否激活操作。应用环境Environment有一个或多个配置 *Profiles*，配置可以理解为配置集或类型，比如开发，测试，体验，生产等环境。当应用存在需要引用属性的情况，我们可以从环境中获取，应为环境是一个 *PropertyResolver*。环境配置对象必须通过ConfigurableEnvironment接口进行配置，所有AbstractApplicationContext的子类，都可通过getEnvironment方法返回一个可配置环境接口ConfigurableEnvironment。
 
+我们简单看一下[PropertyResolver][]接口
 
-[PropertyResolver][]
-[PropertyResolver]: ""
+[PropertyResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/PropertyResolver.java "PropertyResolver"
 
 ```java
+package org.springframework.core.env;
+
+/**
+ * PropertyResolver是一个依赖于底层数据解决属性接口
+ * @author Chris Beams
+ * @author Juergen Hoeller
+ * @since 3.1
+ * @see Environment
+ * @see PropertySourcesPropertyResolver
+ */
+public interface PropertyResolver {
+
+	/**
+	 * 如果给定的key不为null，返回是否包含给定属性key
+	 * i.e. if the value for the given key is not {@code null}.
+	 */
+	boolean containsProperty(String key);
+
+	/**
+	 * 返回给定属性key的值，没有为null
+	 * @param key the property name to resolve
+	 * @see #getProperty(String, String)
+	 * @see #getProperty(String, Class)
+	 * @see #getRequiredProperty(String)
+	 */
+	String getProperty(String key);
+
+	/**
+	 * 返回给定属性key的值，没有返回默认值defaultValue
+	 * @param key the property name to resolve
+	 * @param defaultValue the default value to return if no value is found
+	 * @see #getRequiredProperty(String)
+	 * @see #getProperty(String, Class)
+	 */
+	String getProperty(String key, String defaultValue);
+
+	/**
+	 * 返回是给定类型属性key的值，没有为null
+	 * @param key the property name to resolve
+	 * @param targetType the expected type of the property value
+	 * @see #getRequiredProperty(String, Class)
+	 */
+	<T> T getProperty(String key, Class<T> targetType);
+
+	/**
+	 * 返回是给定类型属性key的值，没有返回默认值defaultValue
+	 * @param key the property name to resolve
+	 * @param targetType the expected type of the property value
+	 * @param defaultValue the default value to return if no value is found
+	 * @see #getRequiredProperty(String, Class)
+	 */
+	<T> T getProperty(String key, Class<T> targetType, T defaultValue);
+
+	/**
+	 * 返回是给定类型属性key的值,如果值得类型不同，则进行转换，转换异常，则抛出ConversionException，没有对应的值，则返回null
+	 * @see #getProperty(String, Class)
+	 * @deprecated as of 4.3, in favor of {@link #getProperty} with manual conversion
+	 * to {@code Class} via the application's {@code ClassLoader}
+	 */
+	@Deprecated
+	<T> Class<T> getPropertyAsClass(String key, Class<T> targetType);
+
+	/**
+	 * 返回是给定属性key的值，没有抛出IllegalStateException
+	 * @throws IllegalStateException if the key cannot be resolved
+	 * @see #getRequiredProperty(String, Class)
+	 */
+	String getRequiredProperty(String key) throws IllegalStateException;
+
+	/**
+	 * 返回是给定类型属性key的值，没有抛出IllegalStateException
+	 * @throws IllegalStateException if the given key cannot be resolved
+	 */
+	<T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException;
+
+	/**
+	 * 在给定上文本中，替换引用属性“${...}”，没有默认的情况下，则忽略，不做任何改变
+	 * @param text the String to resolve
+	 * @return the resolved String (never {@code null})
+	 * @throws IllegalArgumentException if given text is {@code null}
+	 * @see #resolveRequiredPlaceholders
+	 * @see org.springframework.util.SystemPropertyUtils#resolvePlaceholders(String)
+	 */
+	String resolvePlaceholders(String text);
+
+	/**
+	 * 此方法，与上面方法不同的是，没有匹配的值，则抛出异常IllegalArgumentException
+	 * @return the resolved String (never {@code null})
+	 * @throws IllegalArgumentException if given text is {@code null}
+	 * or if any placeholders are unresolvable
+	 * @see org.springframework.util.SystemPropertyUtils#resolvePlaceholders(String, boolean)
+	 */
+	String resolveRequiredPlaceholders(String text) throws IllegalArgumentException;
+
+}
+
 ```
 
+从上面可以看出从spring3.1开始，PropertyResolver才出现，PropertyResolver注意根据属性源，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
+
+### MessageSource
+
+
+
+### ResourceLoader
+
+### ResourcePatternResolver
 
 ### InitializingBean
 
@@ -471,11 +576,10 @@ public interface Environment extends PropertyResolver {
 
 ### BeanNameAware
 
-### ResourceLoader
 
-### ResourcePatternResolver
 
-### MessageSource
+
+
 
 ### Lifecycle
 
@@ -503,5 +607,7 @@ ApplicationEvent用于表示应用发生的事件，事件包括事件发生的�
 EnvironmentCapable接口，表示包括或暴露一个Environment环境引用的组件。Spring的所有应用上下文都是EnvironmentCapable接口实现，用于应用上下文与环境交互。需要注意的是，ApplicationContext扩展了EnvironmentCapable接口，通过getEnvironment方法暴露环境配置；然而 *ConfigurableApplicationContext* 将会重定义getEnvironment方法，返回一个*ConfigurableEnvironment*。 两种方法带来的效果是，在环境配置Environment对象在 *ConfigurableApplicationContext* 可访问以前，都是自读的，可以理解为 *ConfigurableApplicationContext* 的getEnvironment方法返回的环境象时可修改的。接口提供了获取环境配置操作。
 
 Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活配置 *Profiles* 和默认配置的操作，同时提供了判断配置是否激活操作。应用环境Environment有一个或多个配置 *Profiles*，配置可以理解为配置集或类型，比如开发，测试，体验，生产等环境。当应用存在需要引用属性的情况，我们可以从环境中获取，应为环境是一个 *PropertyResolver*。环境配置对象必须通过ConfigurableEnvironment接口进行配置，所有AbstractApplicationContext的子类，都可通过getEnvironment方法返回一个可配置环境接口ConfigurableEnvironment。
+
+PropertyResolver注意根据属性源，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
 ## 附
