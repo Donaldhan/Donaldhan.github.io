@@ -560,7 +560,7 @@ public interface PropertyResolver {
 
 ```
 
-从上面可以看出从spring3.1开始，PropertyResolver才出现，PropertyResolver注意根据属性源，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
+从上面可以看出从spring3.1开始，PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含给定属性，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
 ### MessageSource
 
@@ -608,6 +608,6 @@ EnvironmentCapable接口，表示包括或暴露一个Environment环境引用的
 
 Environment接口同时是一个 *PropertyResolver* 接口,提供了获取激活配置 *Profiles* 和默认配置的操作，同时提供了判断配置是否激活操作。应用环境Environment有一个或多个配置 *Profiles*，配置可以理解为配置集或类型，比如开发，测试，体验，生产等环境。当应用存在需要引用属性的情况，我们可以从环境中获取，应为环境是一个 *PropertyResolver*。环境配置对象必须通过ConfigurableEnvironment接口进行配置，所有AbstractApplicationContext的子类，都可通过getEnvironment方法返回一个可配置环境接口ConfigurableEnvironment。
 
-PropertyResolver注意根据属性源，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
+PropertyResolver才出现，PropertyResolver注意根据属性源，是否包含给定属性，获取相关属性的值及获取给定类型属性的值操作，同时提供了替换给定上文本中的引用属性“${...}”操作。
 
 ## 附
