@@ -17,9 +17,10 @@ tags:
 
 [ClassPathXmlApplicationContext声明]: https://donaldhan.github.io/spring-framework/2017/12/16/ClassPathXmlApplicationContext%E5%A3%B0%E6%98%8E.html "ClassPathXmlApplicationContext声明"
 
-上一篇文中我们，我们看了ClassPathXmlApplicationContext声明，并整理出ClassPathXmlApplicationContext的类图，ClassPathXmlApplicationContext直接或间接地实现了 *EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean，DisposableBean* 。
+上一篇文中我们，我们看了ClassPathXmlApplicationContext声明，并整理出ClassPathXmlApplicationContext的类图，ClassPathXmlApplicationContext直接或间接地实现了 *EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,MessageSource, ApplicationEventPublisher, ResourceLoader，Lifecycle，Closeable，BeanNameAware，InitializingBean，DisposableBean* 。今天我们先来看一应用上下文ApplicationContext接口及其父接口的定义。
 
 ![ClassPathXmlApplicationContext](/image/spring-context/ClassPathXmlApplicationContext.png)
+
 
 
 # 目录
@@ -987,9 +988,100 @@ public interface InputStreamSource {
 [MessageSource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/MessageSource.java "MessageSource"
 
 ```java
+package org.springframework.context;
 
+import java.util.Locale;
+
+/**
+ *MessageSource接口用于解决消息，支持参数化和国际化消息。
+ *spring提供了两种开箱即用的实现，基于标准java.util.ResourceBundle的实现ResourceBundleMessageSource
+ *和在虚拟机没有重启的情况下可以重新加载消息定义的ReloadableResourceBundleMessageSource。
+ * @author Rod Johnson
+ * @author Juergen Hoeller
+ * @see org.springframework.context.support.ResourceBundleMessageSource
+ * @see org.springframework.context.support.ReloadableResourceBundleMessageSource
+ */
+public interface MessageSource {
+
+	/**
+	 * 尝试解决消息，如果没有消息发现，则返回默认的消息
+	 * @param code
+	 * 需要寻找的消息代码，比如'calculator.noRateSet'。使用此类，鼓励使用相关类型全限定的类型名
+	 * 作为base的name，这样可以避免冲突，确保最大的清晰。
+	 * @param args
+	 * 参数值，用于填充消息中的占位符，比如 "{0}", "{1,date}", "{2,time}"，没有则为null。
+	 * @param defaultMessage
+	 * 如果寻找失败，则返回默认的消息
+	 * @param locale the locale in which to do the lookup
+	 * 本地化参数
+	 * @return the resolved message if the lookup was successful;
+	 * otherwise the default message passed as a parameter
+	 * @see java.text.MessageFormat
+	 */
+	String getMessage(String code, Object[] args, String defaultMessage, Locale locale);
+
+	/**
+	 * 与上面方法不同的是，当消息不存在时，抛出NoSuchMessageException异常
+	 * @see java.text.MessageFormat
+	 */
+	String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException;
+
+	/**
+	 * 尝试解决MessageSourceResolvable中消息及消息中的参数。
+	 * @throws NoSuchMessageException if the message wasn't found
+	 * @see java.text.MessageFormat
+	 */
+	String getMessage(MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException;
+
+}
 ```
+从上面可以看出，MessageSource接口提供了获取指定 *Locale* 的消息操作，消息支持占位符和国际化。同时提供了解决
+*MessageSourceResolvable*  中的消息。
 
+再来看MessageSourceResolvable接口的定义。
+
+#### MessageSourceResolvable
+
+具体源码参见：[MessageSourceResolvable][]
+
+[MessageSourceResolvable]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/MessageSourceResolvable.java "MessageSourceResolvable"
+
+```java
+package org.springframework.context;
+
+/**
+ *MessageSourceResolvable接口在MessageSource接口中用于消息解决。
+ *Spring的字节错误验证validation类实现了此接口
+ * @author Juergen Hoeller
+ * @see MessageSource#getMessage(MessageSourceResolvable, java.util.Locale)
+ * @see org.springframework.validation.ObjectError
+ * @see org.springframework.validation.FieldError
+ */
+public interface MessageSourceResolvable {
+
+	/**
+	 * 返回消息关联的code
+	 * @return a String array of codes which are associated with this message
+	 */
+	String[] getCodes();
+
+	/**
+	 * 返回消息中所有的参数
+	 * @return an array of objects to be used as parameters to replace
+	 * placeholders within the message text
+	 * @see java.text.MessageFormat
+	 */
+	Object[] getArguments();
+
+	/**
+	 * 返回默认的消息，如果没有则为null
+	 * @return the default message, or {@code null} if no default
+	 */
+	String getDefaultMessage();
+
+}
+```
+从上面可以看出，MessageSourceResolvable主要用于MessageSource接口的消息解决，提供了获取消息code，参数及默认消息操作。
 ## ApplicationContext接口定义
 
 ### InitializingBean
@@ -1034,6 +1126,11 @@ ResourceLoader接口用于加载资源class路径或文件系统等类型资源�
 Resource实际为一个输入流资源 *InputStreamSource* 接口，主要提供了获取资源URL，URI，对应的文件，文件名，上次修改时间戳，文件描述符操作，以及判断资源是否存在，是否可读，是否打开等操作。需要注意的是在读取资源后，要关闭资源，以防内存泄漏。
 
 InputStreamSource主要提供了获取底层物理资源对应的输入流操作。
+
+MessageSource接口提供了获取指定 *Locale* 的消息操作，消息支持占位符和国际化。同时提供了解决
+*MessageSourceResolvable*  中的消息。
+
+MessageSourceResolvable主要用于MessageSource接口的消息解决，提供了获取消息code，参数及默认消息操作。
 
 ## 附
 
