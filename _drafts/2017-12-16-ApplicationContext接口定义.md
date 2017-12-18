@@ -926,17 +926,52 @@ public interface Resource extends InputStreamSource {
 ```
 从上面可以看出，Resource实际为一个输入流资源 *InputStreamSource* 接口，主要提供了获取资源URL，URI，对应的文件，文件名，上次修改时间戳，文件描述符操作，以及判断资源是否存在，是否可读，是否打开等操作。需要注意的是在读取资源后，要关闭资源，以防内存泄漏。
 
-再来看一些Resource的父接口Resource。
+再来看一些Resource的父接口InputStreamSource。
 
 #### InputStreamSource
 具体源码参见：[InputStreamSource][]
 
-[InputStreamSource]: "InputStreamSource"
+[InputStreamSource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/InputStreamSource.java "InputStreamSource"
 
 
 ```java
+package org.springframework.core.io;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ *InputStreamSource是一个JDK的InputStream的源对象接口。
+ *此接口是资源拓展接口的基础接口。
+ * 对于一种用途的流，InputStreamResource可以用于任何给定的输入流InputStream。Spring的
+ * ByteArrayResource或其他基于文件的资源的实现都是一个具体的实例，允许多次读取底层流内容。
+ * 这个接口对于抽象流内容非常有用，比如mail的附加物。
+ *
+ * @author Juergen Hoeller
+ * @since 20.01.2004
+ * @see java.io.InputStream
+ * @see Resource
+ * @see InputStreamResource
+ * @see ByteArrayResource
+ */
+public interface InputStreamSource {
+
+	/**
+	 * 返回底层资源内容的输入流。期望每次调用创建一个fresh流。当考虑到API，比如JavaMail的时候，
+	 * 输入流特别的重要，当创建mail的attachments时，需要多次读取流。在这种情况下，需要每次
+	 * 调用返回一个fresh流。
+	 * @return the input stream for the underlying resource (must not be {@code null})
+	 * @throws java.io.FileNotFoundException if the underlying resource doesn't exist
+	 * @throws IOException if the content stream could not be opened
+	 */
+	InputStream getInputStream() throws IOException;
+
+}
 ```
+
+从上可以看出，InputStreamSource主要提供了获取底层物理资源对应的输入流操作。
+
+再来看MessageSource接口
 
 ### MessageSource
 
@@ -990,6 +1025,8 @@ ResourcePatternResolver拓展了 *ResourceLoader* 接口，主要用于解决或
 ResourceLoader接口用于加载资源class路径或文件系统等类型资源，提供获取给定位置的资源操作和获取系统ClassLoader。ResourceLoader获取类加载器，首先获取当前线程类加载器,如果没有当前线程上下文，则使用当前类的类加载器，如果当前类没有类加载器，则获取系统的类加载器。
 
 Resource实际为一个输入流资源 *InputStreamSource* 接口，主要提供了获取资源URL，URI，对应的文件，文件名，上次修改时间戳，文件描述符操作，以及判断资源是否存在，是否可读，是否打开等操作。需要注意的是在读取资源后，要关闭资源，以防内存泄漏。
+
+InputStreamSource主要提供了获取底层物理资源对应的输入流操作。
 
 ## 附
 
