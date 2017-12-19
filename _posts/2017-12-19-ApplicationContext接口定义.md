@@ -1,6 +1,6 @@
 ---
 layout: page
-title: ApplicationContext接口的定义
+title: ApplicationContext接口定义
 subtitle: ApplicationContext接口的定义及父类接口定义
 date: 2017-12-19 10:30:19
 author: donaldhan

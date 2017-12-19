@@ -14,6 +14,6 @@ tags:
 
 # 引言
 
-[ApplicationContext接口][]
+[ApplicationContext接口定义][]
 
 [ApplicationContext接口定义]:  "ApplicationContext接口定义"
