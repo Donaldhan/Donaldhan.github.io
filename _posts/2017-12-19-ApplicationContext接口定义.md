@@ -1,8 +1,8 @@
 ---
 layout: page
-title: ClassPathXmlApplicationContext实现接口的定义
-subtitle: Spring基于xml的类型路径应用上下文的实现接口的定义
-date: 2017-12-16 13:16:19
+title: ApplicationContext接口的定义
+subtitle: ApplicationContext接口的定义及父类接口定义
+date: 2017-12-19 10:30:19
 author: donaldhan
 catalog: true
 category: spring-framework
