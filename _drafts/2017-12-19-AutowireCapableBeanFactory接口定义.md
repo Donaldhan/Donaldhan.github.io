@@ -17,3 +17,7 @@ tags:
 [ApplicationContext接口定义][]
 
 [ApplicationContext接口定义]:  "ApplicationContext接口定义"
+
+[AutowireCapableBeanFactory][]
+[AutowireCapableBeanFactory]:
+https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/AutowireCapableBeanFactory.java "AutowireCapableBeanFactory"
