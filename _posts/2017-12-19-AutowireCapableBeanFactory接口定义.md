@@ -539,8 +539,12 @@ public interface BeanPostProcessor {
 }
 
 ```
-从上面可以看出，bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 *InitializingBean* 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
-工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation}方法触发以后，回调也会触发。
+从上面可以看出，bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 [InitializingBean][] 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
+工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link [InstantiationAwareBeanPostProcessor][]#postProcessBeforeInstantiation}方法触发以后，回调也会触发。
+
+[InitializingBean]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/InitializingBean.java "InitializingBean"   
+[InstantiationAwareBeanPostProcessor]:
+https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/InstantiationAwareBeanPostProcessor.java "InstantiationAwareBeanPostProcessor"
 
 在AutowireCapableBeanFactory获取指定类型的唯一bean实例操作中，有一个NamedBeanHolder，我们再来看一下NamedBeanHolder的定义。
 
@@ -642,6 +646,6 @@ public interface NamedBean {
 
 AutowireCapableBeanFactory接口，主要提供的创建bean实例，自动装配bean属性，应用bean配置属性，初始化bean，应用bean后处理器 *BeanPostProcessor* ，解决bean依赖和销毁bean操作。对于自动装配，主要提供了根据bean的name，类型和构造自动装配方式。一般不建议在
 在代码中直接使用AutowireCapableBeanFactory接口，我们可以通过应用上下文的ApplicationContext#getAutowireCapableBeanFactory()方法或者通过实现BeanFactoryAware，获取暴露的bean工厂，然后转换为AutowireCapableBeanFactory。  
-bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 *InitializingBean* 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
-工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation}方法触发以后，回调也会触发。  
+bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 [InitializingBean][] 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
+工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link [InstantiationAwareBeanPostProcessor][]#postProcessBeforeInstantiation}方法触发以后，回调也会触发。  
 NamedBeanHolder用于表示bean的name和实例的关系句柄。NamedBeanHolder可以用于Spring的根据bean的name自动装配和AOP相关的功能，避免产生不可靠的依赖。
