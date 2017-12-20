@@ -5,7 +5,3 @@
 ### DisposableBean
 
 ### BeanNameAware
-
-### Lifecycle
-
-### Closeable
