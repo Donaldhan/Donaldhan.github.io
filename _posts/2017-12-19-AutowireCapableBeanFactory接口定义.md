@@ -27,6 +27,8 @@ ApplicationContext接口主要提供了获取父上下文，自动装配bean工�
 
 # 目录
 * [AutowireCapableBeanFactory接口定义](#AutowireCapableBeanFactory接口定义)
+    * [BeanPostProcessor](#BeanPostProcessor)
+    * [NamedBeanHolder](#NamedBeanHolder)
 * [总结](#总结)
 
 
@@ -469,7 +471,78 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 从上面可看出，AutowireCapableBeanFactory接口，主要提供的创建bean实例，自动装配bean属性，应用bean配置属性，初始化bean，应用bean后处理器 *BeanPostProcessor* ，解决bean依赖和销毁bean操作。对于自动装配，主要提供了根据bean的name，类型和构造自动装配方式。一般不建议在
 在代码中直接使用AutowireCapableBeanFactory接口，我们可以通过应用上下文的ApplicationContext#getAutowireCapableBeanFactory()方法或者通过实现BeanFactoryAware，获取暴露的bean工厂，然后转换为AutowireCapableBeanFactory。
 
-在获取指定类型的唯一bean实例方法中，有一个NamedBeanHolder，我们再来看一下NamedBeanHolder的定义。
+AutowireCapableBeanFactory应用bean后处理器的操作中，涉及到一个接口为 *BeanPostProcessor*，在AutowireCapableBeanFactory获取指定类型的唯一bean实例操作中，有一个 *NamedBeanHolder*，我们再来看一下NamedBeanHolder的定义。
+
+我们先来看一下bean后处理器BeanPostProcessor接口
+### BeanPostProcessor
+
+
+具体源码参见：[BeanPostProcessor][]
+
+[BeanPostProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/BeanPostProcessor.java "BeanPostProcessor"
+
+```java
+package org.springframework.beans.factory.config;
+
+import org.springframework.beans.BeansException;
+
+/**
+ *bean后处理器BeanPostProcessor是一个运行修改bean实例的工厂Hook。
+ *应用上下文ApplicationContexts，可以在bean的定义中，自动探测bean后处理，并应用它到后续创建的bean。
+ *空白的bean工厂允许编程上注册bean后处理器，应用到所有工厂创建的bean。
+ *典型应用为，通过实现{@link #postProcessBeforeInitialization}方法标记接口，
+ *通过实现{@link #postProcessAfterInitialization}方法，使用代理包装初始化后的bean实例。
+ * @author Juergen Hoeller
+ * @since 10.10.2003，
+ * @see InstantiationAwareBeanPostProcessor
+ * @see DestructionAwareBeanPostProcessor
+ * @see ConfigurableBeanFactory#addBeanPostProcessor
+ * @see BeanFactoryPostProcessor
+ */
+public interface BeanPostProcessor {
+
+	/**
+	 * 在任何bean初始化回调（比如初始beanInitializingBean的{@code afterPropertiesSet}方法，和
+	 * 一般的初始化方法）之前，应用bean后处理器到给定的bean实例。bean将会配置属性值。
+	 * 返回的bean实例可能是一个原始bean的包装。
+	 * @param bean the new bean instance
+	 * 新创建的bean实例
+	 * @param beanName the name of the bean
+	 * bean的name
+	 * @return the bean instance to use, either the original or a wrapped one;
+	 * if {@code null}, no subsequent BeanPostProcessors will be invoked
+	 * 返回bean的实例，有可能是原始类，也有可能是原始类包装。
+	 * @throws org.springframework.beans.BeansException in case of errors
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
+	 */
+	Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
+
+	/**
+	 *  在任何bean初始化回调（比如初始beanInitializingBean的{@code afterPropertiesSet}方法，和
+	 * 一般的初始化方法）之后，应用bean后处理器到给定的bean实例。bean将会配置属性值。
+	 * 返回的bean实例可能是一个原始bean的包装。
+	 * 在工厂bean的情况下，从spring2.0开始，工厂bean创建对象和工厂bean初始化的时候，
+	 * 都会调用此回调。bean后处理器，通过相关{@code bean instanceof FactoryBean}，即bean是否为
+	 * 工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调。
+	 * 与其他bean形成鲜明对比的是，{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation}
+	 * 方法触发以后，回调也会触发。
+	 * @param bean the new bean instance
+	 * @param beanName the name of the bean
+	 * @return the bean instance to use, either the original or a wrapped one;
+	 * if {@code null}, no subsequent BeanPostProcessors will be invoked
+	 * @throws org.springframework.beans.BeansException in case of errors
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
+	 * @see org.springframework.beans.factory.FactoryBean
+	 */
+	Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
+
+}
+
+```
+从上面可以看出，bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 *InitializingBean* 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
+工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation}方法触发以后，回调也会触发。
+
+在AutowireCapableBeanFactory获取指定类型的唯一bean实例操作中，有一个NamedBeanHolder，我们再来看一下NamedBeanHolder的定义。
 
 ```java
 <T> NamedBeanHolder<T> resolveNamedBean(Class<T> requiredType) throws BeansException;
@@ -568,4 +641,7 @@ public interface NamedBean {
 ## 总结
 
 AutowireCapableBeanFactory接口，主要提供的创建bean实例，自动装配bean属性，应用bean配置属性，初始化bean，应用bean后处理器 *BeanPostProcessor* ，解决bean依赖和销毁bean操作。对于自动装配，主要提供了根据bean的name，类型和构造自动装配方式。一般不建议在
-在代码中直接使用AutowireCapableBeanFactory接口，我们可以通过应用上下文的ApplicationContext#getAutowireCapableBeanFactory()方法或者通过实现BeanFactoryAware，获取暴露的bean工厂，然后转换为AutowireCapableBeanFactory。NamedBeanHolder用于表示bean的name和实例的关系句柄。NamedBeanHolder可以用于Spring的根据bean的name自动装配和AOP相关的功能，避免产生不可靠的依赖。
+在代码中直接使用AutowireCapableBeanFactory接口，我们可以通过应用上下文的ApplicationContext#getAutowireCapableBeanFactory()方法或者通过实现BeanFactoryAware，获取暴露的bean工厂，然后转换为AutowireCapableBeanFactory。  
+bean后处理器BeanPostProcessor，提供了初始化bean的操作，一个是在 *InitializingBean* 的{@code afterPropertiesSet}方法之前，一个是在之后。初始化之后的操作，对于bean为工厂bean的情况，通过判断bean是否为
+工厂bean的检查，来决定是否应用到工厂bean或创建的对象，或两者都会调用此回调，与其他bean形成鲜明对比的是，{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation}方法触发以后，回调也会触发。  
+NamedBeanHolder用于表示bean的name和实例的关系句柄。NamedBeanHolder可以用于Spring的根据bean的name自动装配和AOP相关的功能，避免产生不可靠的依赖。
