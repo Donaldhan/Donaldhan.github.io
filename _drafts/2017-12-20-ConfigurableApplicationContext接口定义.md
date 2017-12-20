@@ -23,7 +23,12 @@ tags:
 # 目录
 * [Lifecycle](#Lifecycle)
 * [ConfigurableApplicationContext接口定义](#ConfigurableApplicationContext接口定义)
+    * [BeanFactoryPostProcessor](#BeanFactoryPostProcessor)
+    * [ProtocolResolver](#ProtocolResolver)
+    * [ConfigurableEnvironment](#ConfigurableEnvironment)
+    * [ConfigurableListableBeanFactory](#ConfigurableListableBeanFactory)
 * [总结](#总结)
+* [附](#附)
 
 看完了AutowireCapableBeanFactory和ApplicationContext接口的定义，我们接着，来看 *ConfigurableApplicationContext* 接口的定义，再看之前先看一下父类接口Lifecycle和Closeable的定义：
 先来看Lifecycle
@@ -307,9 +312,51 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 提供了设置应用id，设置父类上下文，设置环境 *ConfigurableEnvironment*，添加应用监听器，添加bean工厂后处理器 *BeanFactoryPostProcessor*，添加协议解决器 *ProtocolResolver*，刷新应用上下文，关闭应用上下文，判断上下文状态，以及注册虚拟机关闭Hook等操作，同时重写了获取环境操作，此操作返回的为可配置环境 *ConfigurableEnvironment*。最关键的是提供了获取内部bean工厂的访问操作，
 方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。
 
+下面我们依次来看一下ConfigurableApplicationContext接口关联的接口，*BeanFactoryPostProcessor*，*ProtocolResolver*，*ConfigurableEnvironment*，*ConfigurableListableBeanFactory*。
+
+我们先来看BeanFactoryPostProcessor接口。
 ### BeanFactoryPostProcessor
 
+源码参见：[BeanFactoryPostProcessor][]
+
+[BeanFactoryPostProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/BeanFactoryPostProcessor.java "BeanFactoryPostProcessor"
+
+```java
+```
+
 ### ProtocolResolver
+
+源码参见：[ProtocolResolver][]
+
+[ProtocolResolver]: "ProtocolResolver"
+
+```java
+```
+
+### ConfigurableEnvironment
+
+源码参见：[ConfigurableEnvironment][]
+
+[ConfigurableEnvironment]: "ConfigurableEnvironment"
+
+```java
+```
+
+
+```java
+```
+
+
+### ConfigurableListableBeanFactory
+
+源码参见：[ConfigurableListableBeanFactory][]
+
+[ConfigurableListableBeanFactory]: "ConfigurableListableBeanFactory"
+
+```java
+```
+
+
 
 
 
@@ -319,3 +366,94 @@ Lifecycle接口提供了启动和关闭操作，以及判断当前组件是否�
 ConfigurableApplicationContext具备应用上下文 *ApplicationContex* 相关操作以外，同时具有了生命周期和流属性。除此之外，
 提供了设置应用id，设置父类上下文，设置环境 *ConfigurableEnvironment*，添加应用监听器，添加bean工厂后处理器 *BeanFactoryPostProcessor*，添加协议解决器 *ProtocolResolver*，刷新应用上下文，关闭应用上下文，判断上下文状态，以及注册虚拟机关闭Hook等操作，同时重写了获取环境操作，此操作返回的为可配置环境 *ConfigurableEnvironment*。最关键的是提供了获取内部bean工厂的访问操作，
 方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。
+
+
+# 附
+应用上下文相关事件：
+## ContextRefreshedEvent
+```java
+package org.springframework.context.event;
+
+import org.springframework.context.ApplicationContext;
+
+/**
+ * Event raised when an {@code ApplicationContext} gets initialized or refreshed.
+ *
+ * @author Juergen Hoeller
+ * @since 04.03.2003
+ * @see ContextClosedEvent
+ */
+@SuppressWarnings("serial")
+public class ContextRefreshedEvent extends ApplicationContextEvent {
+
+	/**
+	 * Create a new ContextRefreshedEvent.
+	 * @param source the {@code ApplicationContext} that has been initialized
+	 * or refreshed (must not be {@code null})
+	 */
+	public ContextRefreshedEvent(ApplicationContext source) {
+		super(source);
+	}
+}
+```
+
+## ContextClosedEvent
+```java
+package org.springframework.context.event;
+
+import org.springframework.context.ApplicationContext;
+
+/**
+ * Event raised when an {@code ApplicationContext} gets closed.
+ * @author Juergen Hoeller
+ * @since 12.08.2003
+ * @see ContextRefreshedEvent
+ */
+@SuppressWarnings("serial")
+public class ContextClosedEvent extends ApplicationContextEvent {
+
+	/**
+	 * Creates a new ContextClosedEvent.
+	 * @param source the {@code ApplicationContext} that has been closed
+	 * (must not be {@code null})
+	 */
+	public ContextClosedEvent(ApplicationContext source) {
+		super(source);
+	}
+}
+```
+## ApplicationContextEvent
+
+```java
+package org.springframework.context.event;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+
+/**
+ * Base class for events raised for an {@code ApplicationContext}.
+ *
+ * @author Juergen Hoeller
+ * @since 2.5
+ */
+@SuppressWarnings("serial")
+public abstract class ApplicationContextEvent extends ApplicationEvent {
+
+	/**
+	 * Create a new ContextStartedEvent.
+	 * @param source the {@code ApplicationContext} that the event is raised for
+	 * (must not be {@code null})
+	 */
+	public ApplicationContextEvent(ApplicationContext source) {
+		super(source);
+	}
+
+	/**
+	 * Get the {@code ApplicationContext} that the event was raised for.
+	 */
+	public final ApplicationContext getApplicationContext() {
+		return (ApplicationContext) getSource();
+	}
+
+}
+```
