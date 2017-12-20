@@ -379,10 +379,34 @@ public interface BeanFactoryPostProcessor {
 
 源码参见：[ProtocolResolver][]
 
-[ProtocolResolver]: "ProtocolResolver"
+[ProtocolResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/ProtocolResolver.java  "ProtocolResolver"
 
 ```java
+package org.springframework.core.io;
+
+/**
+ *ProtocolResolver接口是一个特殊协议资源的解决策略处理器。
+ *默认资源加载器的系统包接口SPI，在没有子类资源加载器和应用上下文的实现的情况下，
+ *运行处理一般的资源协议。
+ * @author Juergen Hoeller
+ * @since 4.3
+ * @see DefaultResourceLoader#addProtocolResolver
+ */
+public interface ProtocolResolver {
+
+	/**
+	 * 如果协议的实现匹配，则根据资源加载器，解决给定位置的资源。
+	 * @param location the user-specified resource location
+	 * @param resourceLoader the associated resource loader
+	 * @return a corresponding {@code Resource} handle if the given location
+	 * matches this resolver's protocol, or {@code null} otherwise
+	 */
+	Resource resolve(String location, ResourceLoader resourceLoader);
+
+}
+
 ```
+从上面可以看出，ProtocolResolver接口，主要提供了根据资源位置加载相应资源的操作，在没有子类资源加载器和应用上下文的实现的情况下，默认资源加载器 *DefaultResourceLoader* 的系统包接口SPI，允许处理一般的资源协议。
 
 ### ConfigurableEnvironment
 
@@ -420,6 +444,8 @@ ConfigurableApplicationContext具备应用上下文 *ApplicationContex* 相关�
 
 bean工厂后处理器BeanFactoryPostProcessor，主要提供了修改上下文的内部bean工厂操作，可以修改bean的定义，
 而不能修改bean的实例属性。如果要与bean的实例交互，可以实现bean后处理器BeanPostProcessor。bean工厂后处理器一般用系统级的配置，比如 *PropertyResourceConfigurer*，并重写bean定义的属性。
+
+ProtocolResolver接口，主要提供了根据资源位置加载相应资源的操作，在没有子类资源加载器和应用上下文的实现的情况下，默认资源加载器 *DefaultResourceLoader* 的系统包接口SPI，允许处理一般的资源协议。
 
 # 附
 应用上下文相关事件：
