@@ -415,11 +415,149 @@ public interface ProtocolResolver {
 [ConfigurableEnvironment]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/ConfigurableEnvironment.java "ConfigurableEnvironment"
 
 ```java
+package org.springframework.core.env;
 
+import java.util.Map;
+
+/**
+ *配置环境接口ConfigurableEnvironment是大多数环境类型需要实现的配置接口。为设置激活和默认配置，及操纵底层属性源提供了
+ *便利。允许客户端通过定制转换服务设置和校验需要的属性，更多的通过{@link ConfigurablePropertyResolver}。
+ * 操纵属性源。
+ * 属性源可以被移除，重排序或替换；另外属性源可以通过 {@link #getPropertySources()}方法返回的{@link MutablePropertySources}
+ * 添加到环境中。下面是一个可配置环境的标准实现{@link StandardEnvironment}，尽管一些特殊的默认属性源不同，但一般情况下，适合所有实现。
+ *
+ * <h4>Example: adding a new property source with highest search priority</h4>
+ * 添加一个最高优先级的属性源
+ * <pre class="code">
+ * ConfigurableEnvironment environment = new StandardEnvironment();
+ * MutablePropertySources propertySources = environment.getPropertySources();
+ * Map<String, String> myMap = new HashMap<String, String>();
+ * myMap.put("xyz", "myValue");
+ * propertySources.addFirst(new MapPropertySource("MY_MAP", myMap));
+ * </pre>
+ *
+ * <h4>Example: removing the default system properties property source</h4>
+ * 移除默认系统属性源。
+ * <pre class="code">
+ * MutablePropertySources propertySources = environment.getPropertySources();
+ * propertySources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME)
+ * </pre>
+ *
+ * <h4>Example: mocking the system environment for testing purposes</h4>
+ * mock系统环境
+ * <pre class="code">
+ * MutablePropertySources propertySources = environment.getPropertySources();
+ * MockPropertySource mockEnvVars = new MockPropertySource().withProperty("xyz", "myValue");
+ * propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
+ * </pre>
+ *
+ * 当一个环境被应用上下文使用时，比较重要的是，{@code PropertySource}的所有操作必须在{@link
+ * org.springframework.context.support.AbstractApplicationContext#refresh() refresh()}
+ * 调用之前。这可以确保，在容器启动的过程中，所有的属性源都可用，包括{@linkplain
+ * org.springframework.context.support.PropertySourcesPlaceholderConfigurer property
+ * placeholder configurers}.
+ *
+ * @author Chris Beams
+ * @since 3.1
+ * @see StandardEnvironment
+ * @see org.springframework.context.ConfigurableApplicationContext#getEnvironment
+ */
+public interface ConfigurableEnvironment extends Environment, ConfigurablePropertyResolver {
+
+	/**
+	 * 设置环境的激活配置集。在容器启动的过程中，可以根据配置来决定是否将bean定义注册到容器中。
+	 * <p>Any existing active profiles will be replaced with the given arguments; call
+	 * 任何已经存在的激活配置，将会被参数指定的配置集替代；当参数为0时，则清除当前激活的配置。如果先要保护已经激活的
+	 * 配置集，可以使用{@link #addActiveProfile}方法。
+	 * @see #addActiveProfile
+	 * @see #setDefaultProfiles
+	 * @see org.springframework.context.annotation.Profile
+	 * @see AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
+	 * @throws IllegalArgumentException if any profile is null, empty or whitespace-only
+	 */
+	void setActiveProfiles(String... profiles);
+
+	/**
+	 * 添加配置到当前激活的配置集。
+	 * @see #setActiveProfiles
+	 * @throws IllegalArgumentException if the profile is null, empty or whitespace-only
+	 */
+	void addActiveProfile(String profile);
+
+	/**
+	 * 设置默认的配置集
+	 * 如果没有任何配置显示地通过{@link #setActiveProfiles}设置配置，则使用默认的配置集。
+	 * @see AbstractEnvironment#DEFAULT_PROFILES_PROPERTY_NAME
+	 * @throws IllegalArgumentException if any profile is null, empty or whitespace-only
+	 */
+	void setDefaultProfiles(String... profiles);
+
+	/**
+	 * 返回当前环境的mutable形式属性源{@link PropertySources}，当根据环境对象解决属性的时候，可以使用
+	 * 属性源集合。
+	 * 多样属性源{@link MutablePropertySources}的相关方法，如下，
+	 * {@link MutablePropertySources#addFirst addFirst},
+	 * {@link MutablePropertySources#addLast addLast},
+	 * {@link MutablePropertySources#addBefore addBefore} and
+	 * {@link MutablePropertySources#addAfter addAfter}，
+	 * 如果需要的话，我们可以控制这些属性源的顺序。这种 策略非常有用，比如，确保用户定义的属性源由系统属性集或者系统环境
+	 * 变量集。
+	 * @see AbstractEnvironment#customizePropertySources
+	 */
+	MutablePropertySources getPropertySources();
+
+	/**
+	 * Return the value of {@link System#getenv()} if allowed by the current
+	 * {@link SecurityManager}, otherwise return a map implementation that will attempt
+	 * to access individual keys using calls to {@link System#getenv(String)}.
+	 * 如果当前安全管理器允许，返回系统环境变量{@link System#getenv()}的值，否则将尝试使用{@link System#getenv(String)}，
+	 * 方法获取每个key的属性值，再放入到Map集合中。
+	 * 需要注意的是，大多数的{@link Environment}的实现，将会包括系统环境变量Map作为一个可以搜索的属性源PropertySource。
+	 * 因此强烈建议，除非有明确的需要添加其他属性源，否则此方法不建议直接调用。
+	 * 调用{@link Map#get(Object)}方法，不会返回一个非法访问异常；比如当安全管理禁止访问属性值，null将会返回，
+	 * 同时一个INFO级的日志信息将会通知这个异常。
+	 */
+	Map<String, Object> getSystemEnvironment();
+
+	/**
+	 * 如果当前安全管理器允许，将返回系统属性{@link System#getProperties()}的值，否则将调用{@link System#getProperty(String)}.
+	 * 方法获取每个key的值，添加的结果集中。
+	 * 需要注意的是，大多数的{@link Environment}的实现，将会包括系统属性Map作为一个可以搜索的属性源PropertySource。
+	 * 因此强烈建议，除非有明确的需要添加其他属性源，否则此方法不建议直接调用。
+	 * 调用{@link Map#get(Object)}方法，不会返回一个非法访问异常；比如当安全管理禁止访问属性值，null将会返回，
+	 * 同时一个INFO级的日志信息将会通知这个异常。
+	 */
+	Map<String, Object> getSystemProperties();
+
+	/**
+	 * 添加给定父类环境激活配置，默认配置和属性源到当前环境（child）的各自的集合中。
+	 * 在父类和子类中，如果任何相同命名的属性源实例已经存在，则子类的属性源实例将会保留，父类的实例将会被丢弃。
+	 * 通过这种方法，运行子类重新父类的属性源，可以避免通过一般属性源类型冗余的搜索。比如系统环境变量和系统属性。
+	 * 激活和默认的配置名也将过滤，以避免多余副本的存在，引起冲突。
+	 * 在任何情况下父类的环境是不可修改的。注意，在调用{@code merge}方法后，任何父类环境修改的发生，将不会影响其子类的环境。
+	 * 因此，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息。
+	 * @param parent the environment to merge with
+	 * @since 3.1.2
+	 * @see org.springframework.context.support.AbstractApplicationContext#setParent
+	 */
+	void merge(ConfigurableEnvironment parent);
+
+}
 ```
+从上面可以看出，ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配置，获取属性源 *MutablePropertySources*，获取系统环境变量，获取系统属性，及合并环境。注意设置环境配置，会覆盖先前的配置，如果要添加配置到当前配置集，要使用添加环境配置方法。另外需要注意的是，父类的环境是不可修改，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息，同时子类的环境配置中的属性源将会时父类中的同名数据源失效。
 
+关于 *MutablePropertySources* ，如果篇幅够的话，我们会在这篇讲，否则将放在后续文章中。
+
+在来看一下ConfigurableEnvironment的父类接口ConfigurablePropertyResolver
+
+#### ConfigurablePropertyResolver
+
+源码参见：[ConfigurablePropertyResolver][]
+
+[ConfigurablePropertyResolver]: "ConfigurablePropertyResolver"
 
 ```java
+
 ```
 
 
@@ -449,6 +587,8 @@ bean工厂后处理器BeanFactoryPostProcessor，主要提供了修改上下文�
 而不能修改bean的实例属性。如果要与bean的实例交互，可以实现bean后处理器BeanPostProcessor。bean工厂后处理器一般用系统级的配置，比如 *PropertyResourceConfigurer*，并重写bean定义的属性。
 
 ProtocolResolver接口，主要提供了根据资源位置加载相应资源的操作，在没有子类资源加载器和应用上下文的实现的情况下，默认资源加载器 *DefaultResourceLoader* 的系统包接口SPI，允许处理一般的资源协议。
+
+ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配置，获取属性源 *MutablePropertySources*，获取系统环境变量，获取系统属性，及合并环境。注意设置环境配置，会覆盖先前的配置，如果要添加配置到当前配置集，要使用添加环境配置方法。另外需要注意的是，父类的环境是不可修改，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息，同时子类的环境配置中的属性源将会时父类中的同名数据源失效。
 
 # 附
 应用上下文相关事件：
