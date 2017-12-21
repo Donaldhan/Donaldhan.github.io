@@ -310,8 +310,8 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 ```
 从上可以看出，ConfigurableApplicationContext具备应用上下文 *ApplicationContex* 相关操作以外，同时具有了生命周期和流属性。除此之外，
 提供了设置应用id，设置父类上下文，设置环境 *ConfigurableEnvironment*，添加应用监听器，添加bean工厂后处理器 *BeanFactoryPostProcessor*，添加协议解决器 *ProtocolResolver*，刷新应用上下文，关闭应用上下文，判断上下文状态，以及注册虚拟机关闭Hook等操作，同时重写了获取环境操作，此操作返回的为可配置环境 *ConfigurableEnvironment*。最关键的是提供了获取内部bean工厂的访问操作，
-方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。
-
+方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。  
+从ConfigurableApplicationContext的方法，而已看出ConfigurableApplicationContext主要实现的是set相关的操作，而ApplicationContext是get相关的操在，我们可以简单的理解为读写操作分离。   
 下面我们依次来看一下ConfigurableApplicationContext接口关联的接口，*BeanFactoryPostProcessor*，*ProtocolResolver*，*ConfigurableEnvironment*，*ConfigurableListableBeanFactory*。
 
 我们先来看BeanFactoryPostProcessor接口。
@@ -412,9 +412,10 @@ public interface ProtocolResolver {
 
 源码参见：[ConfigurableEnvironment][]
 
-[ConfigurableEnvironment]: "ConfigurableEnvironment"
+[ConfigurableEnvironment]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/ConfigurableEnvironment.java "ConfigurableEnvironment"
 
 ```java
+
 ```
 
 
@@ -440,7 +441,9 @@ Lifecycle接口提供了启动和关闭操作，以及判断当前组件是否�
 
 ConfigurableApplicationContext具备应用上下文 *ApplicationContex* 相关操作以外，同时具有了生命周期和流属性。除此之外，
 提供了设置应用id，设置父类上下文，设置环境 *ConfigurableEnvironment*，添加应用监听器，添加bean工厂后处理器 *BeanFactoryPostProcessor*，添加协议解决器 *ProtocolResolver*，刷新应用上下文，关闭应用上下文，判断上下文状态，以及注册虚拟机关闭Hook等操作，同时重写了获取环境操作，此操作返回的为可配置环境 *ConfigurableEnvironment*。最关键的是提供了获取内部bean工厂的访问操作，
-方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。
+方法返回为 *ConfigurableListableBeanFactory*。需要注意的是，调用关闭操作，并不关闭父类的应用上下文，应用上下文与父类的上下文生命周期，相互独立。  
+
+从ConfigurableApplicationContext的方法，而已看出ConfigurableApplicationContext主要实现的是set相关的操作，而ApplicationContext是get相关的操在，我们可以简单的理解为读写操作分离。
 
 bean工厂后处理器BeanFactoryPostProcessor，主要提供了修改上下文的内部bean工厂操作，可以修改bean的定义，
 而不能修改bean的实例属性。如果要与bean的实例交互，可以实现bean后处理器BeanPostProcessor。bean工厂后处理器一般用系统级的配置，比如 *PropertyResourceConfigurer*，并重写bean定义的属性。
