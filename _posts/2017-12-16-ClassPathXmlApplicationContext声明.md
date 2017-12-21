@@ -223,6 +223,7 @@ eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装A
 3. 我们可以使用shift键或 *Ctrt+A* 选择所有，添加对齐方式或者作色，具体在右下角编辑器 *Editors* 中。
 4. 在画完图以后，我们可以将类图导出为图片或pdf，具体见 *File->Export Diagrams As* 。
 5. 如果想要拷贝一个文件的Diagrams到另外一个文件，可以使用 *Modle Explorer* 中的模型，只要将model中个某个类或接口复制，粘贴到另一个文件的model，再讲类拖到画图板中，即可，如果拷贝的模型在当前画图板中拥有继承和实现关系，相应的也会自动加上。
+6. 在view菜单中，我们可以显示或隐藏，侧边栏，工具箱，工具栏，导航栏，编辑器及状态栏；在工具栏中可以查看类图的小地图，在地图上任意点击，即进入地图上的相应区域。
 
 [enterprise architect]:http://www.sparxsystems.cn/
 [staruml]:http://staruml.io/download
