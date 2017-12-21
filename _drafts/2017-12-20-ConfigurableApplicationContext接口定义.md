@@ -546,6 +546,8 @@ public interface ConfigurableEnvironment extends Environment, ConfigurableProper
 ```
 从上面可以看出，ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配置，获取属性源 *MutablePropertySources*，获取系统环境变量，获取系统属性，及合并环境。注意设置环境配置，会覆盖先前的配置，如果要添加配置到当前配置集，要使用添加环境配置方法。另外需要注意的是，父类的环境是不可修改，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息，同时子类的环境配置中的属性源将会时父类中的同名数据源失效。
 
+ConfigurableEnvironment提供的是环境配置的set相关操作，Environment提供的是环境配置的get相关操作，可以简单理解为读写分离。
+
 关于 *MutablePropertySources* ，如果篇幅够的话，我们会在这篇讲，否则将放在后续文章中。
 
 在来看一下ConfigurableEnvironment的父类接口ConfigurablePropertyResolver
@@ -554,7 +556,7 @@ public interface ConfigurableEnvironment extends Environment, ConfigurableProper
 
 源码参见：[ConfigurablePropertyResolver][]
 
-[ConfigurablePropertyResolver]: "ConfigurablePropertyResolver"
+[ConfigurablePropertyResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/ConfigurablePropertyResolver.java "ConfigurablePropertyResolver"
 
 ```java
 
@@ -589,6 +591,8 @@ bean工厂后处理器BeanFactoryPostProcessor，主要提供了修改上下文�
 ProtocolResolver接口，主要提供了根据资源位置加载相应资源的操作，在没有子类资源加载器和应用上下文的实现的情况下，默认资源加载器 *DefaultResourceLoader* 的系统包接口SPI，允许处理一般的资源协议。
 
 ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配置，获取属性源 *MutablePropertySources*，获取系统环境变量，获取系统属性，及合并环境。注意设置环境配置，会覆盖先前的配置，如果要添加配置到当前配置集，要使用添加环境配置方法。另外需要注意的是，父类的环境是不可修改，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息，同时子类的环境配置中的属性源将会时父类中的同名数据源失效。
+
+ConfigurableEnvironment提供的是环境配置的set相关操作，Environment提供的是环境配置的get相关操作，可以简单理解为读写分离。
 
 # 附
 应用上下文相关事件：
