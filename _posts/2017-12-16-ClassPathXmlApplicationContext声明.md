@@ -222,6 +222,7 @@ eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装A
 2. 当画图的时候，如果想要将两个独立的类或接口添加关系，首先单击继承，实现，组合，聚合等关系，然后在画图板中，单击一个类，出现圆圈，单击过后，不要送，拉倒另外一个类或接口，出现圆圈即可；如果想一次性添加多个类或接口之前的关闭，我们首先要双击工具中的继承，实现，组合，聚合等关系，当出现锁时，表示可添加关系，直接连接独立的类或接口即可。
 3. 我们可以使用shift键或 *Ctrt+A* 选择所有，添加对齐方式或者作色，具体在右下角编辑器 *Editors* 中。
 4. 在画完图以后，我们可以将类图导出为图片或pdf，具体见 *File->Export Diagrams As* 。
+5. 如果想要拷贝一个文件的Diagrams到另外一个文件，可以使用 *Modle Explorer* 中的模型，只要将model中个某个类或接口复制，粘贴到另一个文件的model，再讲类拖到画图板中，即可，如果拷贝的模型在当前画图板中拥有继承和实现关系，相应的也会自动加上。
 
 [enterprise architect]:http://www.sparxsystems.cn/
 [staruml]:http://staruml.io/download
