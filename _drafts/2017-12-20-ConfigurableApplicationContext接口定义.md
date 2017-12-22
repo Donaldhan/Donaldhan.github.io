@@ -560,9 +560,83 @@ ConfigurableEnvironment提供的是环境配置的set相关操作，Environment�
 [ConfigurablePropertyResolver]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/env/ConfigurablePropertyResolver.java "ConfigurablePropertyResolver"
 
 ```java
+package org.springframework.core.env;
+
+import org.springframework.core.convert.support.ConfigurableConversionService;
+
+/**
+ *ConfigurablePropertyResolver是{@link PropertyResolver}的实现必须实现接口。当需要转化一个类型到另外一个类型时，
+ *为访问，和定制类型转换服务的便利。
+ * @author Chris Beams
+ * @since 3.1
+ */
+public interface ConfigurablePropertyResolver extends PropertyResolver {
+
+	/**
+	 * 当执行属性类型转换时，返回使用的可配转换服务ConfigurableConversionService。
+	 * 可配转换服务为添加和移除特殊的转换器实例，提供了便利。
+	 * <pre class="code">
+	 * ConfigurableConversionService cs = env.getConversionService();
+	 * cs.addConverter(new FooConverter());
+	 * </pre>
+	 * @see PropertyResolver#getProperty(String, Class)
+	 * @see org.springframework.core.convert.converter.ConverterRegistry#addConverter
+	 */
+	ConfigurableConversionService getConversionService();
+
+	/**
+	 *设置可以执行类型转换的ConfigurableConversionService
+	 * 需要注意的是，如果我们想替换ConversionService，添加或移除类型转换器，可以从{@link #getConversionService()}，
+	 * 获取可配类型转换服务，比如{@code #addConverter}。
+	 * @see PropertyResolver#getProperty(String, Class)
+	 * @see #getConversionService()
+	 * @see org.springframework.core.convert.converter.ConverterRegistry#addConverter
+	 */
+	void setConversionService(ConfigurableConversionService conversionService);
+
+	/**
+	 * 设置占位符前缀
+	 */
+	void setPlaceholderPrefix(String placeholderPrefix);
+
+	/**
+	 * 设置占位符后缀
+	 */
+	void setPlaceholderSuffix(String placeholderSuffix);
+
+	/**
+	 * 设置被解决器替代占位符和其默认值之间的分割符，如果在处理的过程中，没有这个特殊分割符，则将是使用默认的或null最为分割符。
+	 */
+	void setValueSeparator(String valueSeparator);
+
+	/**
+	 * 此方法用于设置，当遇见一个不能解决的嵌入在给定属性的占位符时，是否抛出异常。如果为false，则预示者，严格控制
+	 * 属性解决，比如抛出一个异常。true表示，如果没有解决${...}形式的属性的，则通过。
+	 * {@link #getProperty(String)}方法的实现，和他的变体，必须监视值集，已决定当属性值集包含未解决的占位符时，
+	 * 纠正占位符属性。
+	 * @since 3.2
+	 */
+	void setIgnoreUnresolvableNestedPlaceholders(boolean ignoreUnresolvableNestedPlaceholders);
+
+	/**
+	 * 设置需要校验的属性
+	 * {@link #validateRequiredProperties()}.
+	 */
+	void setRequiredProperties(String... requiredProperties);
+
+	/**
+	 * 校验每个需要校验的属性，及{@link #setRequiredProperties}设置的属性，并解决非空值。
+	 * @throws MissingRequiredPropertiesException if any of the required
+	 * properties are not resolvable.
+	 */
+	void validateRequiredProperties() throws MissingRequiredPropertiesException;
+
+}
 
 ```
+从上面可以看出，ConfigurablePropertyResolver，主要提供了设置和获取可配类型转换器服务 *ConfigurableConversionService*，设置属性占位符前缀和后缀，设置需要校验的属性，校验需要校验的属性操作，同时，提供了设置当占位符属性，无法解决时，是否抛出异常，设置被解决器替代占位符和其默认值之间的分割符操作。
 
+可配类型转换服务ConfigurableConversionService接口，我们在后续的文章中，将会去单独将这个接口。
 
 ### ConfigurableListableBeanFactory
 
@@ -594,6 +668,7 @@ ProtocolResolver接口，主要提供了根据资源位置加载相应资源的�
 ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配置，获取属性源 *MutablePropertySources*，获取系统环境变量，获取系统属性，及合并环境。注意设置环境配置，会覆盖先前的配置，如果要添加配置到当前配置集，要使用添加环境配置方法。另外需要注意的是，父类的环境是不可修改，在调用{@code merge}方法前，我们应该优先配置父类的属性源和配置信息，同时子类的环境配置中的属性源将会时父类中的同名数据源失效。
 
 ConfigurableEnvironment提供的是环境配置的set相关操作，Environment提供的是环境配置的get相关操作，可以简单理解为读写分离。
+
 
 # 附
 应用上下文相关事件：
