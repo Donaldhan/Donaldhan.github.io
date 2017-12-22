@@ -636,20 +636,11 @@ public interface ConfigurablePropertyResolver extends PropertyResolver {
 ```
 从上面可以看出，ConfigurablePropertyResolver，主要提供了设置和获取可配类型转换器服务 *ConfigurableConversionService*，设置属性占位符前缀和后缀，设置需要校验的属性，校验需要校验的属性操作，同时，提供了设置当占位符属性，无法解决时，是否抛出异常，设置被解决器替代占位符和其默认值之间的分割符操作。
 
-可配类型转换服务ConfigurableConversionService接口，我们在后续的文章中，将会去单独将这个接口。
+可配类型转换服务ConfigurableConversionService接口，我们在后续的文章中，将会去单独将这个接口。   
+今天我们先看到这里，本身想在看一下ConfigurableListableBeanFactory，一看定义，相关知识比较多，我们就放在另外一篇文章中再讲。
 
-### ConfigurableListableBeanFactory
-
-源码参见：[ConfigurableListableBeanFactory][]
-
-[ConfigurableListableBeanFactory]: "ConfigurableListableBeanFactory"
-
-```java
-```
-
-
-
-
+我们以ConfigurableApplicationContext的类图，结束这篇的文章。
+![ConfigurableApplicationContext](/image/spring-context/ConfigurableApplicationContext.png)
 
 ## 总结
 Lifecycle接口提供了启动和关闭操作，以及判断当前组件是否运行操作。需要注意的是启动和停止操作，将会传播给容器中的所有子容器中的组件。对于停止操作，不保证停止通知发生在析构之前。对于判断当前组件是否运行操作，如果组件是容器，只有在容器中所有组件包括子容器中的组件，都在运行的情况下，才返回true。
@@ -669,6 +660,7 @@ ConfigurableEnvironment接口提供设置、添加环境配置，设置默认配
 
 ConfigurableEnvironment提供的是环境配置的set相关操作，Environment提供的是环境配置的get相关操作，可以简单理解为读写分离。
 
+ConfigurablePropertyResolver，主要提供了设置和获取可配类型转换器服务 *ConfigurableConversionService*，设置属性占位符前缀和后缀，设置需要校验的属性，校验需要校验的属性操作，同时，提供了设置当占位符属性，无法解决时，是否抛出异常，设置被解决器替代占位符和其默认值之间的分割符操作。
 
 # 附
 应用上下文相关事件：
