@@ -178,10 +178,10 @@ ConfigurableListableBeanFactory接口继承了 *ListableBeanFactory, AutowireCap
 
 
 
-### ConfigurableBeanFactory
-源码参见：[ConfigurableBeanFactory][]
+### SingletonBeanRegistry
+源码参见：[SingletonBeanRegistry][]
 
-[ConfigurableBeanFactory]: "ConfigurableBeanFactory"
+[SingletonBeanRegistry]: "SingletonBeanRegistry"
 
 ```java
 
