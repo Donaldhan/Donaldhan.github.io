@@ -21,10 +21,10 @@ tags:
 然后在分析ContextLoaderListener。
 
 ## 目录
-* [ClassPathXmlApplicationContext声明](#ClassPathXmlApplicationContext声明)
-* [ClassPathXmlApplicationContext类图](#ClassPathXmlApplicationContext类图)
+* [ClassPathXmlApplicationContext声明](#classpathxmlapplicationcontext声明)
+* [ClassPathXmlApplicationContext类图](#classpathxmlapplicationcontext类图)
 * [总结](#总结)
-* [附：UML工具类](#附：UML工具类)
+* [附：UML工具类](#附：uml工具类)
 
 
 ## ClassPathXmlApplicationContext声明

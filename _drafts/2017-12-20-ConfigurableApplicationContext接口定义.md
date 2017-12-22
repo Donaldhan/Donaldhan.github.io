@@ -21,12 +21,13 @@ tags:
 
 
 # 目录
-* [Lifecycle](#Lifecycle)
-* [ConfigurableApplicationContext接口定义](#ConfigurableApplicationContext接口定义)
-    * [BeanFactoryPostProcessor](#BeanFactoryPostProcessor)
-    * [ProtocolResolver](#ProtocolResolver)
-    * [ConfigurableEnvironment](#ConfigurableEnvironment)
-    * [ConfigurableListableBeanFactory](#ConfigurableListableBeanFactory)
+* [Lifecycle](#lifecycle)
+* [ConfigurableApplicationContext接口定义](#configurableapplicationcontext接口定义)
+    * [BeanFactoryPostProcessor](#beanfactorypostprocessor)
+    * [ProtocolResolver](#protocolresolver)
+    * [ConfigurableEnvironment](#configurableenvironment)
+    * [ConfigurablePropertyResolver](#configurablepropertyresolver)
+    * [ConfigurableListableBeanFactory](#configurablelistablebeanfactory)
 * [总结](#总结)
 * [附](#附)
 

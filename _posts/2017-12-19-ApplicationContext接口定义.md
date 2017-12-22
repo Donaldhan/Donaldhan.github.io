@@ -26,14 +26,14 @@ tags:
 # 目录
 
 * [父接口定义](#父接口定义)
-    * [BeanFactory](#BeanFactory)
-    * [ListableBeanFactory](#ListableBeanFactory)
-    * [HierarchicalBeanFactory](#HierarchicalBeanFactory)
-    * [ApplicationEventPublisher](#ApplicationEventPublisher)
-    * [EnvironmentCapable](#EnvironmentCapable)
-    * [ResourcePatternResolver](#ResourcePatternResolver)
-    * [MessageSource](#MessageSource)
-* [ApplicationContext接口定义](#ApplicationContext接口定义)
+    * [BeanFactory](#beanfactory)
+    * [ListableBeanFactory](#listablebeanfactory)
+    * [HierarchicalBeanFactory](#hierarchicalbeanfactory)
+    * [ApplicationEventPublisher](#applicationeventpublisher)
+    * [EnvironmentCapable](#environmentcapable)
+    * [ResourcePatternResolver](#resourcepatternresolver)
+    * [MessageSource](#messagesource)
+* [ApplicationContext接口定义](#applicationcontext接口定义)
 * [总结](#总结)
 * [附](#附)
 

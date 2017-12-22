@@ -26,9 +26,9 @@ ApplicationContext接口主要提供了获取父上下文，自动装配bean工�
 今天我么来看一下*AutowireCapableBeanFactory* 接口的定义
 
 # 目录
-* [AutowireCapableBeanFactory接口定义](#AutowireCapableBeanFactory接口定义)
-    * [BeanPostProcessor](#BeanPostProcessor)
-    * [NamedBeanHolder](#NamedBeanHolder)
+* [AutowireCapableBeanFactory接口定义](#autowirecapablebeanfactory接口定义)
+    * [BeanPostProcessor](#beanpostprocessor)
+    * [NamedBeanHolder](#namedbeanholder)
 * [总结](#总结)
 
 
