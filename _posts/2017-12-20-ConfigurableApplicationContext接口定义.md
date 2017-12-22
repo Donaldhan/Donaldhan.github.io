@@ -27,7 +27,6 @@ tags:
     * [ProtocolResolver](#protocolresolver)
     * [ConfigurableEnvironment](#configurableenvironment)
     * [ConfigurablePropertyResolver](#configurablepropertyresolver)
-    * [ConfigurableListableBeanFactory](#configurablelistablebeanfactory)
 * [总结](#总结)
 * [附](#附)
 

@@ -14,6 +14,20 @@ tags:
     - java  
 ---
 
+# 引言
+
+# 目录
+* [Lifecycle](#lifecycle)
+* [ConfigurableApplicationContext接口定义](#configurableapplicationcontext接口定义)
+    * [BeanFactoryPostProcessor](#beanfactorypostprocessor)
+    * [ProtocolResolver](#protocolresolver)
+    * [ConfigurableEnvironment](#configurableenvironment)
+    * [ConfigurablePropertyResolver](#configurablepropertyresolver)
+    * [ConfigurableListableBeanFactory](#configurablelistablebeanfactory)
+* [总结](#总结)
+* [附](#附)
+
+
 template， start ...
 
 ### ConfigurableListableBeanFactory
