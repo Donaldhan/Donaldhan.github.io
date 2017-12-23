@@ -169,7 +169,7 @@ ConfigurableListableBeanFactory接口继承了 *ListableBeanFactory, AutowireCap
 ### ConfigurableBeanFactory
 源码参见：[ConfigurableBeanFactory][]
 
-[ConfigurableBeanFactory]: "ConfigurableBeanFactory"
+[ConfigurableBeanFactory]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/ConfigurableBeanFactory.java "ConfigurableBeanFactory"
 
 ```java
 
