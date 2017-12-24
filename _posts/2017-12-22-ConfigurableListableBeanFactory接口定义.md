@@ -22,7 +22,7 @@ ConfigurableApplicationContext具备应用上下文 *ApplicationContex* 相关�
 
 今天我们来看一下ConfigurableListableBeanFactory接口的定义。
 # 目录
-* [ConfigurableApplicationContext接口定义](#configurableapplicationcontext接口定义)
+* [ConfigurableListableBeanFactory接口定义](#configurablelistablebeanfactory接口定义)
     * [ConfigurableBeanFactory](#configurablebeanfactory)
     * [SingletonBeanRegistry](#singletonbeanregistry)
 * [总结](#总结)
