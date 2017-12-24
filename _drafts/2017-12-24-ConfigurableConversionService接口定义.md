@@ -60,10 +60,82 @@ public interface ConfigurableConversionService extends ConversionService, Conver
 再来看ConversionService接口的定义。
 ### ConversionService
 源码参见：[ConversionService][]
-[ConversionService]: "ConversionService"
+[ConversionService]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/convert/ConversionService.java "ConversionService"
 
 ```java
+package org.springframework.core.convert;
+
+/**
+ *ConversionService为类型转换接口。同时为转换系统的入口点。调用此系统可以执行一个线程安全的类型转换。
+ * @author Keith Donald
+ * @author Phillip Webb
+ * @since 3.0
+ */
+public interface ConversionService {
+
+	/**
+	 * 如果源类型可以转换为目标类型，则返回true。如果方法返回true表示， {@link #convert(Object, Class)}方法
+	 * 可以将源类型额一个实例转换为目标类型。
+	 * 需要注意集合、数组、Map这些类型：
+	 * 对于集合、数组、Map这些类型之间的转化，即使底层元素不可转换，甚至转换时会抛出异常，此方法也可能返回true。
+	 * 当出现异常时，调用者可以处理这些异常情况。
+	 * @param sourceType the source type to convert from (may be {@code null} if source is {@code null})
+	 * @param targetType the target type to convert to (required)
+	 * @return {@code true} if a conversion can be performed, {@code false} if not
+	 * @throws IllegalArgumentException if {@code targetType} is {@code null}
+	 */
+	boolean canConvert(Class<?> sourceType, Class<?> targetType);
+
+	/**
+	 * 如果源类型描述对象可以转换为目标描述对象，则返回true。类型描述TypeDescriptor提供了源类型和目标类型的
+	 * 额外的上下文信息，比如对象的fields，属性位置等。
+	 * is capable of converting an instance of {@code sourceType} to {@code targetType}.
+	 * 如果方法返回true表示， {@link #convert(Object, TypeDescriptor, TypeDescriptor)}方法
+	 * 可以将源类型额一个实例转换为目标类型。
+	 * 需要注意集合、数组、Map这些类型：
+	 * 对于集合、数组、Map这些类型之间的转化，即使底层元素不可转换，甚至转换时会抛出异常，此方法也可能返回true。
+	 * 当出现异常时，调用者可以处理这些异常情况。
+	 * @param sourceType context about the source type to convert from
+	 * (may be {@code null} if source is {@code null})
+	 * @param targetType context about the target type to convert to (required)
+	 * @return {@code true} if a conversion can be performed between the source and target types,
+	 * {@code false} if not
+	 * @throws IllegalArgumentException if {@code targetType} is {@code null}
+	 */
+	boolean canConvert(TypeDescriptor sourceType, TypeDescriptor targetType);
+
+	/**
+	 * 转换给定源对象为目标类型。
+	 * @param source the source object to convert (may be {@code null})
+	 * @param targetType the target type to convert to (required)
+	 * @return the converted object, an instance of targetType
+	 * @throws ConversionException if a conversion exception occurred
+	 * @throws IllegalArgumentException if targetType is {@code null}
+	 */
+	<T> T convert(Object source, Class<T> targetType);
+
+	/**
+	 * 根据给定的源对象，及源对象类型描述，将源对象转换为目标类型。
+	 * 类型描述TypeDescriptor提供了源类型和目标类型的
+	 * 额外的上下文信息，比如对象的fields，属性位置等。
+	 * @param source the source object to convert (may be {@code null})
+	 * @param sourceType context about the source type to convert from
+	 * (may be {@code null} if source is {@code null})
+	 * @param targetType context about the target type to convert to (required)
+	 * @return the converted object, an instance of {@link TypeDescriptor#getObjectType() targetType}
+	 * @throws ConversionException if a conversion exception occurred
+	 * @throws IllegalArgumentException if targetType is {@code null},
+	 * or {@code sourceType} is {@code null} but source is not {@code null}
+	 */
+	Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType);
+
+}
+
 ```
+从上面可以看出，ConversionService接口提供了判断两种类型或类型描述 *TypeDescriptor* 是否可以转换的操作和将源对象转换为目标类型的操作。需要注意的是，判断是否可以转换操作返回true，并不表示可以转换成功，比如集合、数组、Map这些类型：对于集合、数组、Map这些类型之间的转化，即使底层元素不可转换，甚至转换时会抛出异常，判断方法也可能返回true。
+当出现异常时，调用者可以处理这些异常情况。
+
+再来看一下转换注册器ConverterRegistry：
 
 ### ConverterRegistry
 源码参见：[ConverterRegistry][]
@@ -76,5 +148,7 @@ public interface ConfigurableConversionService extends ConversionService, Conver
 ConfigurableConversionService接口主要是用于加强 *ConversionService*
 暴露的可读操作，为添加和移除转换器Converter提供便利，而没有提供除 *ConversionService* 和 *ConverterRegistry* 之外的操作。
 
+ConversionService接口提供了判断两种类型或类型描述 *TypeDescriptor* 是否可以转换的操作和将源对象转换为目标类型的操作。需要注意的是，判断是否可以转换操作返回true，并不表示可以转换成功，比如集合、数组、Map这些类型：对于集合、数组、Map这些类型之间的转化，即使底层元素不可转换，甚至转换时会抛出异常，判断方法也可能返回true。
+当出现异常时，调用者可以处理这些异常情况。
 
 ## 附
