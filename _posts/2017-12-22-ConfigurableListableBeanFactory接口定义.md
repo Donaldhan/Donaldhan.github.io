@@ -527,16 +527,110 @@ ConfigurableBeanFactory有两个父接口，一个为HierarchicalBeanFactory，�
 源码参见：[SingletonBeanRegistry][]
 
 
-[SingletonBeanRegistry]: "SingletonBeanRegistry"
+[SingletonBeanRegistry]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/SingletonBeanRegistry.java "SingletonBeanRegistry"
 
 ```java
+package org.springframework.beans.factory.config;
 
+/**
+ *SingletonBeanRegistry接口为共享bean实例的注册器。可以被{@link org.springframework.beans.factory.BeanFactory}，
+ *实现，以统一的方式暴露单例管理器。
+ *ConfigurableBeanFactory接口拓展了此接口
+ * @author Juergen Hoeller
+ * @since 2.0
+ * @see ConfigurableBeanFactory
+ * @see org.springframework.beans.factory.support.DefaultSingletonBeanRegistry
+ * @see org.springframework.beans.factory.support.AbstractBeanFactory
+ */
+public interface SingletonBeanRegistry {
+
+	/**
+	 * 注册给定存在的单例对象到bean注册器的给定bean的name下。
+	 * 给定的实例，应该完全初始化；注册器不会执行任何初始化回调（在特殊情况下，不会调用
+	 * InitializingBean的 {@code afterPropertiesSet} 方法。
+	 * 给定的实例不会接口任何析构回调（如DisposableBean的{@code destroy}方法）。
+	 * 当一个完全运行的bean工厂的内部，如果bean应该接受初始化和析构回调，应该注册一个bean定义，
+	 * 而不是已经存在的实例。
+	 * 在注册配置的过程中，会被调用，但是也可以用在单例运行时注册。因此注册器应该实现单例访问的同步；
+	 * 如果支持单例的bean工厂懒加载初始化，不得不实现同步。
+	 * @param beanName the name of the bean
+	 * @param singletonObject the existing singleton object
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
+	 * @see org.springframework.beans.factory.DisposableBean#destroy
+	 * @see org.springframework.beans.factory.support.BeanDefinitionRegistry#registerBeanDefinition
+	 */
+	void registerSingleton(String beanName, Object singletonObject);
+
+	/**
+	 * 返回给定bean的名称下的注册单例对象。仅仅检查已经初始化的单例对象，而不会返回还没有初始化
+	 * 的单例bean定义。
+	 * 此方法的主要目的为访问手动注册(see {@link #registerSingleton})的单例bean。
+	 * 亦可以用于以bean定义形式的已创建的单例bean定义。
+	 * 需要注意的是:此方法不能识别工厂bean的前缀或别名。在获取单例实例前，必须解决bean的name先。
+	 * @param beanName the name of the bean to look for
+	 * @return the registered singleton object, or {@code null} if none found
+	 * @see ConfigurableListableBeanFactory#getBeanDefinition
+	 */
+	Object getSingleton(String beanName);
+
+	/**
+	 * 检查当前注册器是否包括给定name的单例实例。仅仅检查已经初始化的单例对象，而不会返回还没有初始化
+	 * 的单例bean定义。
+	 *  此方法的主要目的为访问手动注册(see {@link #registerSingleton})的单例bean。
+	 * 亦可以用于检查是否存在以bean定义形式的已创建的单例bean定义。
+	 * 检查bean工厂是否包含给定name的bean定义，可以使用ListableBeanFactory的{@code containsBeanDefinition}
+	 * 方法。使用{@code containsBeanDefinition}和{@code containsSingleton}方法，可以判断bean工厂是否一个
+	 * 本地的bean实例。一般使用bean工厂的 {@code containsBean}方法，检查bean工厂是否知道给定name对应的bean（无论
+	 * 是手动注册的单例bean，还是通过bean定义创建的bean），也可以用于检查祖先工厂
+	 * 需要注意的是:此方法不能识别工厂bean的前缀或别名。在检查单例实例状态前，必须解决bean的name先
+	 * @param beanName the name of the bean to look for
+	 * @return if this bean factory contains a singleton instance with the given name
+	 * @see #registerSingleton
+	 * @see org.springframework.beans.factory.ListableBeanFactory#containsBeanDefinition
+	 * @see org.springframework.beans.factory.BeanFactory#containsBean
+	 */
+	boolean containsSingleton(String beanName);
+
+	/**
+	 * 返回注册到注册器的单例bean的name。仅仅检查已经初始化的单例对象，而不会返回还没有初始化
+	 * 的单例bean定义。
+	 * 此方法的主要目的为访问手动注册(see {@link #registerSingleton})的单例bean。
+	 *  亦可以用于检查是否存在以bean定义形式的已创建的单例bean定义。
+	 * @return the list of names as a String array (never {@code null})
+	 * @see #registerSingleton
+	 * @see org.springframework.beans.factory.support.BeanDefinitionRegistry#getBeanDefinitionNames
+	 * @see org.springframework.beans.factory.ListableBeanFactory#getBeanDefinitionNames
+	 */
+	String[] getSingletonNames();
+
+	/**
+	 * 返回注册到注册器的单例bean数量。仅仅检查已经初始化的单例对象，而不会返回还没有初始化
+	 * 的单例bean定义。
+	 * 此方法的主要目的为访问手动注册(see {@link #registerSingleton})的单例bean。
+	 * 亦可以用于检查是否存在以bean定义形式的已创建的单例bean定义。
+	 * @return the number of singleton beans
+	 * @see #registerSingleton
+	 * @see org.springframework.beans.factory.support.BeanDefinitionRegistry#getBeanDefinitionCount
+	 * @see org.springframework.beans.factory.ListableBeanFactory#getBeanDefinitionCount
+	 */
+	int getSingletonCount();
+
+	/**
+	 * 返回注册器使用的单例互质锁。
+	 * @return the mutex object (never {@code null})
+	 * @since 4.2
+	 */
+	Object getSingletonMutex();
+
+}
 ```
+从上面可以看出，SingletonBeanRegistry接口主要提供了，注册单例bean实例，根据name获取对应的单例bean实例，判断是否包含单例bean，
+获取注册器中的单例bean实例数操作，同时提供了获取注册器单例互斥锁的操作。需要注意是与单例bean有关系的方法，仅仅检查已经初始化的单例对象，不包括没有初始化，同时可以用于手动注册的单例bean。亦可以用于以bean定义形式的已创建的单例bean。 检查bean工厂是否包含给定name的bean定义，可以使用ListableBeanFactory的{@code containsBeanDefinition}方法。使用{@code containsBeanDefinition}和{@code containsSingleton}方法，可以判断bean工厂是否一个本地的bean实例。一般使用bean工厂的 {@code containsBean}方法，检查bean工厂是否包含给定name对应的bean（无论是手动注册的单例bean，还是通过bean定义创建的bean），也可以用于检查祖先工厂
+需要注意的是:此方法不能识别工厂bean的前缀或别名。在检查单例实例状态前，必须解决bean的name先。
 
-HierarchicalBeanFactory, SingletonBeanRegistry
+最后我们以ConfigurableListableBeanFactory的类图结束这篇文章。
 
-SingletonBeanRegistry
-
+![ConfigurableListableBeanFactory](/image/spring-context/ConfigurableListableBeanFactory.png)
 
 
 
@@ -546,3 +640,6 @@ ConfigurableListableBeanFactory接口主要提供了，注册给定自动注入�
 
 ConfigurableBeanFactory接口主要提供了，bean作用域，类加载器，临时类加载器，Spring EL解决器，转换服务 *ConversionService*，属性编辑器注册器，嵌入值解决器，bean后处理的配置操作，同时提供了，是否缓存bean的元数据，设置bean的创建状态，判断bean是否为工厂bean，拷贝bean工厂的配置，获取bean的定义，设置bean的别名，解决基于bean的name的依赖，获取bean的依赖bean信息和获取依赖于bean的bean的name操作，还有有销毁给定作用域的bean。需要注意的是，设置bean的创建状态操作属于容器的内部操作，获取作用域时，不包括单例和原型作用域。此接口不能够在应用中直接调用，要配合{@link org.springframework.beans.factory.BeanFactory}
   或@link org.springframework.beans.factory.ListableBeanFactory}使用。此接口的扩展接口，运行框架内部使用，用于访问bean工厂的配置方法。
+
+ SingletonBeanRegistry接口主要提供了，注册单例bean实例，根据name获取对应的单例bean实例，判断是否包含单例bean，获取注册器中的单例bean实例数操作，同时提供了获取注册器单例互斥锁的操作。需要注意是与单例bean有关系的方法，仅仅检查已经初始化的单例对象，不包括没有初始化，同时可以用于手动注册的单例bean。亦可以用于以bean定义形式的已创建的单例bean。 检查bean工厂是否包含给定name的bean定义，可以使用ListableBeanFactory的{@code containsBeanDefinition}方法。使用{@code containsBeanDefinition}和{@code containsSingleton}方法，可以判断bean工厂是否一个本地的bean实例。一般使用bean工厂的 {@code containsBean}方法，检查bean工厂是否包含给定name对应的bean（无论是手动注册的单例bean，还是通过bean定义创建的bean），也可以用于检查祖先工厂
+ 需要注意的是:此方法不能识别工厂bean的前缀或别名。在检查单例实例状态前，必须解决bean的name先。
