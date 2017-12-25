@@ -230,10 +230,33 @@ public interface ConverterFactory<S, R> {
 ### Converter
 源码参见：[Converter][]
 
-[Converter]: "Converter"
+[Converter]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/convert/converter/Converter.java "Converter"
 
 ```java
+package org.springframework.core.convert.converter;
+
+/**
+ *Converter接口用于转换源类型S对象，到目标类型T。
+ *接口的实现必须是线程安全且可以共享。
+ *具体实现可以同时实现{@link ConditionalConverter}接口.
+ * @author Keith Donald
+ * @since 3.0
+ * @param <S> the source type
+ * @param <T> the target type
+ */
+public interface Converter<S, T> {
+
+	/**
+	 * 转换源类型S对象，到目标类型T
+	 * @param source the source object to convert, which must be an instance of {@code S} (never {@code null})
+	 * @return the converted object, which must be an instance of {@code T} (potentially {@code null})
+	 * @throws IllegalArgumentException if the source cannot be converted to the desired target type
+	 */
+	T convert(S source);
+
+}
 ```
+从上面可以看出，Converter接口主要提供了，转换源类型S对象，到目标类型T的操作，具体的实现必须是线程安全且可以共享。
 
 ### GenericConverter
 源码参见：[GenericConverter][]
@@ -255,3 +278,5 @@ ConversionService接口提供了判断两种类型或类型描述 *TypeDescripto
 ConverterRegistry接口主要提供了，添加转换器 *Converter，GenericConverter* ，添加转换器工厂 *ConverterFactory* 以及移除转换器操作。
 
 ConverterFactory接口主要提供了，获取源类型S到目标类型R的子类的转换器操作。
+
+Converter接口主要提供了，转换源类型S对象，到目标类型T的操作，具体的实现必须是线程安全且可以共享。
