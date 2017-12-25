@@ -13,7 +13,7 @@ tags:
 ---
 
 # 引言
-[ConfigurableConversionService][]接口主要是用于加强 *ConversionService*
+[ConfigurableConversionService接口][]主要是用于加强 *ConversionService*
 暴露的可读操作，为添加和移除转换器Converter提供便利，而没有提供除 *ConversionService* 和 *ConverterRegistry* 之外的操作。
 
 ![ConfigurableConversionService](/image/spring-context/ConfigurableConversionService.png)
