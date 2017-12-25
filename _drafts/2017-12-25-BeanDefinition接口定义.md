@@ -441,7 +441,7 @@ BeanDefinition的角色种类有3中一种用户定义的bean，一种适用于�
 ## ComponentDefinition
 源码参见：[ComponentDefinition][]
 
-[ComponentDefinition]: "ComponentDefinition"
+[ComponentDefinition]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/parsing/BeanComponentDefinition.java "ComponentDefinition"
 
 ```java
 ```
@@ -450,7 +450,7 @@ BeanDefinition的角色种类有3中一种用户定义的bean，一种适用于�
 
 源码参见：[BeanReference][]
 
-[BeanReference]: "BeanReference"
+[BeanReference]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/config/BeanReference.java "BeanReference"
 
 ```java
 import org.springframework.beans.BeanMetadataElement;
