@@ -25,8 +25,11 @@ tags:
 * [ConfigurableConversionService接口定义](#configurableconversionservice接口定义)
     * [ConversionService](#conversionservice)
     * [ConverterRegistry](#converterregistry)
+    * [ConverterFactory](#converterfactory)
+    * [Converter](#converter)
+    * [GenericConverter](#genericconverter)
 * [总结](#总结)
-* [附](#附)
+
 ## ConfigurableConversionService接口定义
 
 源码参见：[ConfigurableConversionService][]
@@ -140,9 +143,74 @@ public interface ConversionService {
 ### ConverterRegistry
 源码参见：[ConverterRegistry][]
 
-[ConverterRegistry]: "ConverterRegistry"
+[ConverterRegistry]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/convert/converter/ConverterRegistry.java "ConverterRegistry"
+
 ```java
+package org.springframework.core.convert.converter;
+
+/**
+ *注册转换器到类型转换系统。
+ * @author Keith Donald
+ * @author Juergen Hoeller
+ * @since 3.0
+ */
+public interface ConverterRegistry {
+
+	/**
+	 * 添加一个空白的转换器到注册器。可转换源、目标类型对从转换器的参数化类型中提取。
+	 * @throws IllegalArgumentException if the parameterized types could not be resolved
+	 */
+	void addConverter(Converter<?, ?> converter);
+
+	/**
+	 * 添加一个空白的转换器到注册器。源、目标类型对显示地添加。在不用创建转换对的情况下，可以重用转换器。
+	 * @since 3.1
+	 */
+	<S, T> void addConverter(Class<S> sourceType, Class<T> targetType, Converter<? super S, ? extends T> converter);
+
+	/**
+	 * 添加GenericConverter到注册器
+	 */
+	void addConverter(GenericConverter converter);
+
+	/**
+	 * 添加转换器工厂到注册器
+	 * @throws IllegalArgumentException if the parameterized types could not be resolved
+	 */
+	void addConverterFactory(ConverterFactory<?, ?> factory);
+
+	/**
+	 * 移除所有从源类型到目的类型的转换器。
+	 * @param sourceType the source type
+	 * @param targetType the target type
+	 */
+	void removeConvertible(Class<?> sourceType, Class<?> targetType);
+
+}
+
 ```
+从上面可以看出，ConverterRegistry接口主要提供了，添加转换器 *Converter，GenericConverter* ，添加转换器工厂 *ConverterFactory* 以及移除转换器操作。
+
+### ConverterFactory
+源码参见：[ConverterFactory][]
+
+[ConverterFactory]: "ConverterFactory"
+
+
+### Converter
+源码参见：[Converter][]
+
+[Converter]: "Converter"
+
+
+### GenericConverter
+源码参见：[GenericConverter][]
+
+[GenericConverter]: "GenericConverter"
+
+
+
+
 
 ## 总结
 ConfigurableConversionService接口主要是用于加强 *ConversionService*
@@ -151,4 +219,4 @@ ConfigurableConversionService接口主要是用于加强 *ConversionService*
 ConversionService接口提供了判断两种类型或类型描述 *TypeDescriptor* 是否可以转换的操作和将源对象转换为目标类型的操作。需要注意的是，判断是否可以转换操作返回true，并不表示可以转换成功，比如集合、数组、Map这些类型：对于集合、数组、Map这些类型之间的转化，即使底层元素不可转换，甚至转换时会抛出异常，判断方法也可能返回true。
 当出现异常时，调用者可以处理这些异常情况。
 
-## 附
+ConverterRegistry接口主要提供了，添加转换器 *Converter，GenericConverter* ，添加转换器工厂 *ConverterFactory* 以及移除转换器操作。
