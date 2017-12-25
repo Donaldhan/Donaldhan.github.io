@@ -409,11 +409,30 @@ public interface AttributeAccessor {
 ### BeanMetadataElement
 源码参见：[BeanMetadataElement][]
 
-[BeanMetadataElement]: "BeanMetadataElement"
+[BeanMetadataElement]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/BeanMetadataElement.java "BeanMetadataElement"
 
 ```java
-```
+package org.springframework.beans;
 
+/**
+ * Interface to be implemented by bean metadata elements
+ * that carry a configuration source object.
+ * BeanMetadataElement接口的实现可以是一个携带配置源的bean元数据元素。
+ * @author Juergen Hoeller
+ * @since 2.0
+ */
+public interface BeanMetadataElement {
+
+	/**
+	 * Return the configuration source {@code Object} for this metadata element
+	 * (may be {@code null}).
+	 * 返回当前bean元数据的配置数据源，没有则返回null
+	 */
+	Object getSource();
+
+}
+```
+从上可以看出，BeanMetadataElement接口主要提供了获取bean元数据元素配置源的操作。
 
 
 ## 总结
@@ -422,3 +441,5 @@ BeanDefinition接口用于描述一个bean实例的属性及构造参数等元�
 bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设置与获取操作。同时提供了判断bean是否为单例、原型模式、抽象bean的操作，及获取bean的描述，资源描述，属性源，构造参数，原始bean定义等操作。
 
 AttributeAccessor接口主要提供了，设置获取属性值，移除属性，判断是否包含给定的属性等操作。
+
+BeanMetadataElement接口主要提供了获取bean元数据元素配置源的操作。
