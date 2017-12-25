@@ -261,11 +261,105 @@ public interface Converter<S, T> {
 ### GenericConverter
 源码参见：[GenericConverter][]
 
-[GenericConverter]: "GenericConverter"
+[GenericConverter]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/convert/converter/GenericConverter.java "GenericConverter"
 
 ```java
-```
+package org.springframework.core.convert.converter;
 
+import java.util.Set;
+
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.util.Assert;
+
+/**
+ *GenericConverter是一个两种或多种类型进行转换的转换器接口。
+ * GenericConverter是一个灵活的系统转换器接口，但是也有复杂的。灵活的GenericConverter，可以支持多种多种源和目标类型之间的转换，
+ * 可以通过{@link #getConvertibleTypes()获取，另外在类型转换的过程中，具体的实现可以访问源目标类型描述的field上下文。
+ * 这个可以允许解决源和目标的field元数据，比如注解和泛型信息，并可以用于转换逻辑。
+ *当{@link Converter}和{@link ConverterFactory}有效时，此接口一般应该不会用到。
+ *具体实现可以同时实现{@link ConditionalConverter}接口.
+ * @author Keith Donald
+ * @author Juergen Hoeller
+ * @since 3.0
+ * @see TypeDescriptor
+ * @see Converter
+ * @see ConverterFactory
+ * @see ConditionalConverter
+ */
+public interface GenericConverter {
+
+	/**
+	 * 返回转换器可以转换的类型转换对。每个转换对是一个源类型到目标类型转换pair。
+	 * 对于条件转换器ConditionalConverter，此方法也许返回null，表示所有的源和目标类型之间的转换将会被考虑。
+	 */
+	Set<ConvertiblePair> getConvertibleTypes();
+
+	/**
+	 * 根据源对象、类型描述及目标类型描述，转换对象为目标类型
+	 * @param source the source object to convert (may be {@code null})
+	 * @param sourceType the type descriptor of the field we are converting from
+	 * @param targetType the type descriptor of the field we are converting to
+	 * @return the converted object
+	 */
+	Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType);
+
+
+	/**
+	 * 源码目标类型转换对。
+	 */
+	final class ConvertiblePair {
+
+		private final Class<?> sourceType;
+
+		private final Class<?> targetType;
+
+		/**
+		 * Create a new source-to-target pair.
+		 * @param sourceType the source type
+		 * @param targetType the target type
+		 */
+		public ConvertiblePair(Class<?> sourceType, Class<?> targetType) {
+			Assert.notNull(sourceType, "Source type must not be null");
+			Assert.notNull(targetType, "Target type must not be null");
+			this.sourceType = sourceType;
+			this.targetType = targetType;
+		}
+
+		public Class<?> getSourceType() {
+			return this.sourceType;
+		}
+
+		public Class<?> getTargetType() {
+			return this.targetType;
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (this == other) {
+				return true;
+			}
+			if (other == null || other.getClass() != ConvertiblePair.class) {
+				return false;
+			}
+			ConvertiblePair otherPair = (ConvertiblePair) other;
+			return (this.sourceType == otherPair.sourceType && this.targetType == otherPair.targetType);
+		}
+
+		@Override
+		public int hashCode() {
+			return (this.sourceType.hashCode() * 31 + this.targetType.hashCode());
+		}
+
+		@Override
+		public String toString() {
+			return (this.sourceType.getName() + " -> " + this.targetType.getName());
+		}
+	}
+
+}
+
+```
+从上面可以看出，GenericConverter接口提供了类型转换的操作，可以支持多种类型之间的转换。同时提供了类型之间转化的关系句柄ConvertiblePair。另外在类型转换的过程中，具体的实现可以访问源目标类型描述的field上下文元数据，比如注解和泛型信息。
 
 
 ## 总结
@@ -280,3 +374,5 @@ ConverterRegistry接口主要提供了，添加转换器 *Converter，GenericCon
 ConverterFactory接口主要提供了，获取源类型S到目标类型R的子类的转换器操作。
 
 Converter接口主要提供了，转换源类型S对象，到目标类型T的操作，具体的实现必须是线程安全且可以共享。
+
+从上面可以看出，GenericConverter接口提供了类型转换的操作，可以支持多种类型之间的转换。同时提供了类型之间转化的关系句柄ConvertiblePair。另外在类型转换的过程中，具体的实现可以访问源目标类型描述的field上下文元数据，比如注解和泛型信息。
