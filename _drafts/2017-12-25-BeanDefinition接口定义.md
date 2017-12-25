@@ -27,6 +27,8 @@ tags:
 * [BeanDefinition接口定义](#beandefinition接口定义)
     * [AttributeAccessor](#attributeaccessor)
     * [BeanMetadataElement](#beanmetadataelement)
+* [ComponentDefinition](#componentdefinition)
+* [BeanReference](#beanreference)
 * [总结](#总结)
 
 ## BeanDefinition接口定义
@@ -434,6 +436,49 @@ public interface BeanMetadataElement {
 ```
 从上可以看出，BeanMetadataElement接口主要提供了获取bean元数据元素配置源的操作。
 
+BeanDefinition的角色种类有3中一种用户定义的bean，一种适用于配置的组件bean，还有一种bean工厂内部的bean。配置组件bean的定义为ComponentDefinition，我们再来看一组件定义。
+
+## ComponentDefinition
+源码参见：[ComponentDefinition][]
+
+[ComponentDefinition]: "ComponentDefinition"
+
+```java
+```
+
+## BeanReference
+
+源码参见：[BeanReference][]
+
+[BeanReference]: "BeanReference"
+
+```java
+import org.springframework.beans.BeanMetadataElement;
+
+/**
+ * Interface that exposes a reference to a bean name in an abstract fashion.
+ * This interface does not necessarily imply a reference to an actual bean
+ * instance; it just expresses a logical reference to the name of a bean.
+ *BeanReference接口以一种抽象的方式，暴露了bean的name的引用。此接口不需要引用实际的bean的实例；
+ *仅仅表示一个bean的name的逻辑引用。
+ * <p>Serves as common interface implemented by any kind of bean reference
+ * holder, such as {@link RuntimeBeanReference RuntimeBeanReference} and
+ * {@link RuntimeBeanNameReference RuntimeBeanNameReference}.
+ * Spring提供了多种bean引用的实现，比如运行时bean应用RuntimeBeanReference和运行时bean name引用RuntimeBeanNameReference
+ * @author Juergen Hoeller
+ * @since 2.0
+ */
+public interface BeanReference extends BeanMetadataElement {
+
+	/**
+	 * Return the target bean name that this reference points to (never {@code null}).
+	 * 返回应用bean的name
+	 */
+	String getBeanName();
+
+}
+```
+从上可以看出，BeanReference接口提供了获取bean的name的操作。
 
 ## 总结
 
@@ -443,3 +488,5 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 AttributeAccessor接口主要提供了，设置获取属性值，移除属性，判断是否包含给定的属性等操作。
 
 BeanMetadataElement接口主要提供了获取bean元数据元素配置源的操作。
+
+BeanReference接口提供了获取bean的name的操作。
