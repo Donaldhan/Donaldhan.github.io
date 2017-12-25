@@ -361,6 +361,9 @@ public interface GenericConverter {
 ```
 从上面可以看出，GenericConverter接口提供了类型转换的操作，可以支持多种类型之间的转换。同时提供了类型之间转化的关系句柄ConvertiblePair。另外在类型转换的过程中，具体的实现可以访问源目标类型描述的field上下文元数据，比如注解和泛型信息。
 
+最后我们以ConfigurableConversionService的类图结束这篇文章。
+
+![ConfigurableConversionService](/image/spring-context/ConfigurableConversionService.png)
 
 ## 总结
 ConfigurableConversionService接口主要是用于加强 *ConversionService*
