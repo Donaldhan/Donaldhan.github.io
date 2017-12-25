@@ -343,11 +343,68 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 ### AttributeAccessor
 源码参见：[AttributeAccessor][]
 
-[AttributeAccessor]: "AttributeAccessor"
+[AttributeAccessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/AttributeAccessor.java "AttributeAccessor"
 
 ```java
-```
+package org.springframework.core;
 
+/**
+ * Interface defining a generic contract for attaching and accessing metadata
+ * to/from arbitrary objects.
+ *AttributeAccessor接口定义了设置和访问对象属性的一般方式。
+ * @author Rob Harrop
+ * @since 2.0
+ */
+public interface AttributeAccessor {
+
+	/**
+	 * Set the attribute defined by {@code name} to the supplied	{@code value}.
+	 * If {@code value} is {@code null}, the attribute is {@link #removeAttribute removed}.
+	 * 设置name的属性值为value。如果值为null，则属性将被#removeAttribute方法移除。
+	 * <p>In general, users should take care to prevent overlaps with other
+	 * metadata attributes by using fully-qualified names, perhaps using
+	 * class or package names as prefix.
+	 * 在一般情况下，用户应该考虑使用全限定name，以避免被覆盖，可以考虑使用类型或包名做前缀。
+	 * @param name the unique attribute key
+	 * @param value the attribute value to be attached
+	 */
+	void setAttribute(String name, Object value);
+
+	/**
+	 * Get the value of the attribute identified by {@code name}.
+	 * Return {@code null} if the attribute doesn't exist.
+	 * 获取属性name对应的值，没有则为null。
+	 * @param name the unique attribute key
+	 * @return the current value of the attribute, if any
+	 */
+	Object getAttribute(String name);
+
+	/**
+	 * Remove the attribute identified by {@code name} and return its value.
+	 * Return {@code null} if no attribute under {@code name} is found.
+	 * 移除name对应的属性，并返回对应值。如果没有对应的属性，将会返回null。
+	 * @param name the unique attribute key
+	 * @return the last value of the attribute, if any
+	 */
+	Object removeAttribute(String name);
+
+	/**
+	 * Return {@code true} if the attribute identified by {@code name} exists.
+	 * Otherwise return {@code false}.
+	 * 判断是否存在对应的name属性。
+	 * @param name the unique attribute key
+	 */
+	boolean hasAttribute(String name);
+
+	/**
+	 * Return the names of all attributes.
+	 * 返回所有的属性
+	 */
+	String[] attributeNames();
+
+}
+```
+从上面可以看出，AttributeAccessor接口主要提供了，设置获取属性值，移除属性，判断是否包含给定的属性等操作。
 
 ### BeanMetadataElement
 源码参见：[BeanMetadataElement][]
@@ -363,3 +420,5 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 
 BeanDefinition接口用于描述一个bean实例的属性及构造参数等元数据；主要提供了父beanname，bean类型名，作用域，懒加载，
 bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设置与获取操作。同时提供了判断bean是否为单例、原型模式、抽象bean的操作，及获取bean的描述，资源描述，属性源，构造参数，原始bean定义等操作。
+
+AttributeAccessor接口主要提供了，设置获取属性值，移除属性，判断是否包含给定的属性等操作。
