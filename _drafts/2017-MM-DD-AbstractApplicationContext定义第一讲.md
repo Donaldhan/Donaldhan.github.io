@@ -329,10 +329,41 @@ public class UrlResource extends AbstractFileResolvingResource {
 
 源码参见：[ContextResource][]
 
-[ContextResource]: "ContextResource"
+[ContextResource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/ContextResource.java "ContextResource"
 
 ```java
+package org.springframework.core.io;
+
+/**
+ * Extended interface for a resource that is loaded from an enclosing
+ * 'context', e.g. from a {@link javax.servlet.ServletContext} or a
+ * {@link javax.portlet.PortletContext} but also from plain classpath paths
+ * or relative file system paths (specified without an explicit prefix,
+ * hence applying relative to the local {@link ResourceLoader}'s context).
+ *上下文资源接口ContextResource，是一个从封闭上下文加载的拓展资源接口。
+ *比如Servlet上下文{@link javax.servlet.ServletContext}及Portlet上下文，
+ *类路径，文件系统的相对路径（没有明确的前缀，因此为一个本地的资源加载器上下文）。
+ *
+ *
+ * @author Juergen Hoeller
+ * @since 2.5
+ * @see org.springframework.web.context.support.ServletContextResource
+ * @see org.springframework.web.portlet.context.PortletContextResource
+ */
+public interface ContextResource extends Resource {
+
+	/**
+	 * Return the path within the enclosing 'context'.
+	 * 返回上下文中的资源路径。
+	 * <p>This is typically path relative to a context-specific root directory,
+	 * 典型的是相对于上下文根目录的路径的路径，比如Servlet上下文Context
+	 * e.g. a ServletContext root or a PortletContext root.
+	 */
+	String getPathWithinContext();
+
+}
 ```
+从上面可以看出，ContextResource表示一个封闭上下文中的资源，提供了相对于上下文根目录的相对路径操作。
 
 ### AbstractResource
 
@@ -402,5 +433,6 @@ DisposableBean主要提供的销毁操作，一般用于在bean析构单例bean�
 获取给定位置的资源方法，首先遍历协议解决器集，如果可以解决，则返回位置相应的资源，否则，如果资源位置以"/"开头，则获取路径资源 *ClassPathContextResource*
 否则，如果资源位置以 *"classpath:"* 开头，创建路径位置的的类路径资源 *ClassPathResource* 否则返回给定位置的URL资源 *UrlResource* 。
 
+ContextResource表示一个封闭上下文中的资源，提供了相对于上下文根目录的相对路径操作。
 
 ## 附
