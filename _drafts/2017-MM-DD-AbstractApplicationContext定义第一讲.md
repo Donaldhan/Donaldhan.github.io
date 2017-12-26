@@ -41,7 +41,7 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 ### DisposableBean
 源码参见：[DisposableBean][]
 
-[DisposableBean]: "DisposableBean"
+[DisposableBean]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/DisposableBean.java "DisposableBean"
 
 ```java
 ```
@@ -55,5 +55,9 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 ```java
 ```
 
+
+
+最后我们以BeanDefinition的类图结束这篇文章。
+![BeanDefinition](/image/spring-context/BeanDefinition.png)
 
 ## 总结
