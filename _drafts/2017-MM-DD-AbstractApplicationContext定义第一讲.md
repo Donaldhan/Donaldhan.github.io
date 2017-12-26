@@ -27,7 +27,15 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 * [AbstractApplicationContext定义](abstractapplicationcontext定义)
     * [DisposableBean](#disposablebean)
     * [DefaultResourceLoader](#defaultresourceloader)
+    * [ContextResource](#contextresource)
+    * [AbstractResource](#abstractresource)
+    * [AbstractFileResolvingResource](#abstractfileresolvingresource)
+    * [ClassPathResource](#classpathresource)
+    * [ClassPathContextResource](#classpathcontextresource)
+    * [UrlResource](#urlresource)
 * [总结](#总结)
+* [附](#附)
+
 
 ## AbstractApplicationContext定义
 我们先来看一下，DisposableBean接口和默认的资源加载器DefaultResourceLoader
@@ -238,9 +246,138 @@ public abstract class ClassUtils {
 再来看默认资源加载器的获取给定位置资源的方法：
 
 ```java
+@Override
+	public Resource getResource(String location) {
+		Assert.notNull(location, "Location must not be null");
+        //遍历协议解决器集，如果可以解决，则返回位置相应的资源
+		for (ProtocolResolver protocolResolver : this.protocolResolvers) {
+			Resource resource = protocolResolver.resolve(location, this);
+			if (resource != null) {
+				return resource;
+			}
+		}
+        //如果资源位置以"/"开头，则获取路径资源
+		if (location.startsWith("/")) {
+			return getResourceByPath(location);
+		}
+		else if (location.startsWith(CLASSPATH_URL_PREFIX)) {
+			//如果资源位置以"classpath:"开头，创建路径位置的的类路径资源ClassPathResource
+			return new ClassPathResource(location.substring(CLASSPATH_URL_PREFIX.length()), getClassLoader());
+		}
+		else {
+			try {
+				//否则创建URL资源
+				// Try to parse the location as a URL...
+				URL url = new URL(location);
+				return new UrlResource(url);
+			}
+			catch (MalformedURLException ex) {
+				// No URL -> resolve as resource path.
+				return getResourceByPath(location);
+			}
+		}
+	}
+
+	/**
+	 * Return a Resource handle for the resource at the given path.
+	 * 返回给定路径位置的资源Handle。
+	 * <p>The default implementation supports class path locations. This should
+	 * be appropriate for standalone implementations but can be overridden,
+	 * e.g. for implementations targeted at a Servlet container.
+	 * 默认实现支持类路径位置。这个应该使用与独立的版本实现，但是可以被重写。比如针对Servlet容器的实现。
+	 * @param path the path to the resource
+	 * @return the corresponding Resource handle
+	 * @see ClassPathResource
+	 * @see org.springframework.context.support.FileSystemXmlApplicationContext#getResourceByPath
+	 * @see org.springframework.web.context.support.XmlWebApplicationContext#getResourceByPath
+	 */
+	protected Resource getResourceByPath(String path) {
+		return new ClassPathContextResource(path, getClassLoader());
+	}
+```
+从上面可以看出，获取给定位置的资源方法，首先遍历协议解决器集，如果可以解决，则返回位置相应的资源，否则，如果资源位置以"/"开头，则获取路径资源 *ClassPathContextResource*
+否则，如果资源位置以 *"classpath:"* 开头，创建路径位置的的类路径资源 *ClassPathResource* 否则返回给定位置的URL资源 *UrlResource* 。
+
+再来看一下默认资源加载器的静态内部类 *ClassPathContextResource* 的声明定义。
+
+```java
+protected static class ClassPathContextResource extends ClassPathResource implements ContextResource {
+}
+public interface ContextResource extends Resource {
+}
+```
+再来看另外一个分支：
+```java
+public class ClassPathResource extends AbstractFileResolvingResource {
+}
+public abstract class AbstractFileResolvingResource extends AbstractResource {
+
+}
+public abstract class AbstractResource implements Resource {
+}
 ```
 
+URL资源声明：
+```java
+public class UrlResource extends AbstractFileResolvingResource {
+}
+```
+有了上面分析我们对 *ClassPathContextResource* 有一个概念性的了解，下面，我们将从 *ContextResource->AbstractResource->AbstractFileResolvingResource->ClassPathResource/UrlResource->ClassPathContextResource* 来分析 *ClassPathContextResource*
 
+
+### ContextResource
+
+源码参见：[ContextResource][]
+
+[ContextResource]: "ContextResource"
+
+```java
+```
+
+### AbstractResource
+
+源码参见：[AbstractResource][]
+
+[AbstractResource]: "AbstractResource"
+
+```java
+```
+
+### AbstractFileResolvingResource
+
+
+源码参见：[AbstractFileResolvingResource][]
+
+[AbstractFileResolvingResource]: "AbstractFileResolvingResource"
+
+```java
+```
+
+### ClassPathResource
+
+源码参见：[ClassPathResource][]
+
+[ClassPathResource]: "ClassPathResource"
+
+```java
+```
+
+### ClassPathContextResource
+
+源码参见：[ClassPathContextResource][]
+
+[ClassPathContextResource]: "ClassPathContextResource"
+
+```java
+```
+### UrlResource
+
+源码参见：[UrlResource][]
+
+[UrlResource]: "UrlResource"
+
+```java
+```
 
 源码参见：[AbstractApplicationContext][]
 
@@ -261,3 +398,9 @@ DisposableBean主要提供的销毁操作，一般用于在bean析构单例bean�
 默认资源加载器DefaultResourceLoader内部有两个变量，一个为类加载器 *classLoader（ClassLoader）*，一个为协议解决器集合 *protocolResolvers（LinkedHashSet<ProtocolResolver>(4)）* ，协议解决器集合初始size为4。默认资源加载器提供了类加载器属性的set与get方法，提供了协议解决器集添加和获取方法。
 
 默认资源加载器的默认类型加载器为当前线程上下文类加载器，如果当前线程上下文类加载器为空，则获取 *ClassUtils* 类的类加载，如果*ClassUtils*类的类加载为空，则获取系统类加载器。
+
+获取给定位置的资源方法，首先遍历协议解决器集，如果可以解决，则返回位置相应的资源，否则，如果资源位置以"/"开头，则获取路径资源 *ClassPathContextResource*
+否则，如果资源位置以 *"classpath:"* 开头，创建路径位置的的类路径资源 *ClassPathResource* 否则返回给定位置的URL资源 *UrlResource* 。
+
+
+## 附
