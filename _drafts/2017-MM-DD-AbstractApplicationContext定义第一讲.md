@@ -71,7 +71,171 @@ public interface DisposableBean {
 ### DefaultResourceLoader
 源码参见：[DefaultResourceLoader][]
 
-[DefaultResourceLoader]: "DefaultResourceLoader"
+[DefaultResourceLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/DefaultResourceLoader.java "DefaultResourceLoader"
+
+```java
+package org.springframework.core.io;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+
+/**
+ *默认资源加载器DefaultResourceLoader为资源加载器接口的默认使用，可以通过资源编辑器使用，作为
+ * {@link org.springframework.context.support.AbstractApplicationContext}的基类，
+ * 也可以单独使用。
+ * <p>Will return a {@link UrlResource} if the location value is a URL,
+ * and a {@link ClassPathResource} if it is a non-URL path or a
+ * "classpath:" pseudo-URL.
+ *如果资源为值为URL则返回URL资源
+ * @author Juergen Hoeller
+ * @since 10.03.2004
+ * @see FileSystemResourceLoader
+ * @see org.springframework.context.support.ClassPathXmlApplicationContext
+ */
+public class DefaultResourceLoader implements ResourceLoader {
+
+	private ClassLoader classLoader;
+
+	private final Set<ProtocolResolver> protocolResolvers = new LinkedHashSet<ProtocolResolver>(4);
+
+
+	/**
+	 * Create a new DefaultResourceLoader.
+	 * <p>ClassLoader access will happen using the thread context class loader
+	 * at the time of this ResourceLoader's initialization.
+	 * 创建一默认的资源加载器。在资源加载器初始化的时候，线程类上下文加载器将会访问类加载器。
+	 * @see java.lang.Thread#getContextClassLoader()
+	 */
+	public DefaultResourceLoader() {
+		this.classLoader = ClassUtils.getDefaultClassLoader();
+	}
+
+	/**
+	 * Create a new DefaultResourceLoader.
+	 * @param classLoader the ClassLoader to load class path resources with, or {@code null}
+	 * for using the thread context class loader at the time of actual resource access
+	 */
+	public DefaultResourceLoader(ClassLoader classLoader) {
+		this.classLoader = classLoader;
+	}
+
+
+	/**
+	 * Specify the ClassLoader to load class path resources with, or {@code null}
+	 * for using the thread context class loader at the time of actual resource access.
+	 * <p>The default is that ClassLoader access will happen using the thread context
+	 * class loader at the time of this ResourceLoader's initialization.
+	 */
+	public void setClassLoader(ClassLoader classLoader) {
+		this.classLoader = classLoader;
+	}
+
+	/**
+	 * Return the ClassLoader to load class path resources with.
+	 * <p>Will get passed to ClassPathResource's constructor for all
+	 * ClassPathResource objects created by this resource loader.
+	 * @see ClassPathResource
+	 */
+	@Override
+	public ClassLoader getClassLoader() {
+		return (this.classLoader != null ? this.classLoader : ClassUtils.getDefaultClassLoader());
+	}
+
+	/**
+	 * Register the given resolver with this resource loader, allowing for
+	 * additional protocols to be handled.
+	 * 注册跟定的资源协议解决器到资源加载器，以允许额外的协议被处理。
+	 * <p>Any such resolver will be invoked ahead of this loader's standard
+	 * resolution rules. It may therefore also override any default rules.
+	 * 任何协议解决器将会加载器的标准解决规则前被调用。因此有可能重写默认的规则。
+	 * @since 4.3
+	 * @see #getProtocolResolvers()
+	 */
+	public void addProtocolResolver(ProtocolResolver resolver) {
+		Assert.notNull(resolver, "ProtocolResolver must not be null");
+		this.protocolResolvers.add(resolver);
+	}
+
+	/**
+	 * Return the collection of currently registered protocol resolvers,
+	 * allowing for introspection as well as modification.
+	 * 返回当前注册到资源加载器的协议解决器集，允许监视和修改。
+	 * @since 4.3
+	 */
+	public Collection<ProtocolResolver> getProtocolResolvers() {
+		return this.protocolResolvers;
+	}
+}
+```
+从上面可以，默认资源加载器DefaultResourceLoader内部有两个变量，一个为类加载器 *classLoader（ClassLoader）*，一个为协议解决器集合 *protocolResolvers（LinkedHashSet<ProtocolResolver>(4)）* ，协议解决器集合初始size为4。默认资源加载器提供了类加载器属性的set与get方法，提供了协议解决器集添加和获取方法。
+
+在我们在来看一下默认资源加载器的无参构造中，默认的类加载器。
+
+```java
+public DefaultResourceLoader() {
+    this.classLoader = ClassUtils.getDefaultClassLoader();
+}
+```
+
+再来看ClassUtils的获取默认类加载器方法。
+
+```java
+public abstract class ClassUtils {
+/**
+	 * Return the default ClassLoader to use: typically the thread context
+	 * ClassLoader, if available; the ClassLoader that loaded the ClassUtils
+	 * class will be used as fallback.
+	 * 返回默认的类型加载器：如果可用的话，返回当前线程上下文加载器，否则返回ClassUtils的类的类加载。
+	 * <p>Call this method if you intend to use the thread context ClassLoader
+	 * in a scenario where you clearly prefer a non-null ClassLoader reference:
+	 * for example, for class path resource loading (but not necessarily for
+	 * {@code Class.forName}, which accepts a {@code null} ClassLoader
+	 * reference as well).
+	 *
+	 * @return the default ClassLoader (only {@code null} if even the system
+	 * ClassLoader isn't accessible)
+	 * 如果系统类加载器不可访问你，则默认的类加载器为null。
+	 * @see Thread#getContextClassLoader()
+	 * @see ClassLoader#getSystemClassLoader()
+	 */
+	public static ClassLoader getDefaultClassLoader() {
+		ClassLoader cl = null;
+		try {
+			//获取当前线程上下文类加载器
+			cl = Thread.currentThread().getContextClassLoader();
+		}
+		catch (Throwable ex) {
+			// Cannot access thread context ClassLoader - falling back...
+		}
+		if (cl == null) {
+			// No thread context class loader -> use class loader of this class.
+			//如果当前线程上下文类加载器为空，则获取ClassUtils类的类加载
+			cl = ClassUtils.class.getClassLoader();
+			if (cl == null) {
+				// getClassLoader() returning null indicates the bootstrap ClassLoader
+				try {
+					//如果ClassUtils类的类加载为空，则获取系统类加载器
+					cl = ClassLoader.getSystemClassLoader();
+				}
+				catch (Throwable ex) {
+					// Cannot access system ClassLoader - oh well, maybe the caller can live with null...
+				}
+			}
+		}
+		return cl;
+	}
+}
+```
+从上面可以看出，默认资源加载器的默认类型加载器为当前线程上下文类加载器，如果当前线程上下文类加载器为空，则获取 *ClassUtils* 类的类加载，如果*ClassUtils*类的类加载为空，则获取系统类加载器。
+
+再来看默认资源加载器的获取给定位置资源的方法：
 
 ```java
 ```
@@ -86,14 +250,14 @@ public interface DisposableBean {
 ```
 
 
-
-
 最后我们以BeanDefinition的类图结束这篇文章。
 ![BeanDefinition](/image/spring-context/BeanDefinition.png)
-
-
 
 
 ## 总结
 
 DisposableBean主要提供的销毁操作，一般用于在bean析构单例bean的时候调用，以释放bean关联的资源。
+
+默认资源加载器DefaultResourceLoader内部有两个变量，一个为类加载器 *classLoader（ClassLoader）*，一个为协议解决器集合 *protocolResolvers（LinkedHashSet<ProtocolResolver>(4)）* ，协议解决器集合初始size为4。默认资源加载器提供了类加载器属性的set与get方法，提供了协议解决器集添加和获取方法。
+
+默认资源加载器的默认类型加载器为当前线程上下文类加载器，如果当前线程上下文类加载器为空，则获取 *ClassUtils* 类的类加载，如果*ClassUtils*类的类加载为空，则获取系统类加载器。
