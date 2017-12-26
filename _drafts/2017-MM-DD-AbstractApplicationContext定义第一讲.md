@@ -369,10 +369,284 @@ public interface ContextResource extends Resource {
 
 源码参见：[AbstractResource][]
 
-[AbstractResource]: "AbstractResource"
+[AbstractResource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/AbstractResource.java "AbstractResource"
 
 ```java
+package org.springframework.core.io;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+import org.springframework.core.NestedIOException;
+import org.springframework.util.Assert;
+import org.springframework.util.ResourceUtils;
+
+/**
+ * Convenience base class for {@link Resource} implementations,
+ * pre-implementing typical behavior.
+ *AbstractResource资源实现的基础类，与实现了典型的行为。
+ * <p>The "exists" method will check whether a File or InputStream can
+ * be opened; "isOpen" will always return false; "getURL" and "getFile"
+ * throw an exception; and "toString" will return the description.
+ * 判断资源是否存在方法，将会检查文件或输入流是否可以打开。isOpen方法总是返回false，
+ * getURL和getFile方法，将抛出异常，toString将会资源的描述。
+ * @author Juergen Hoeller
+ * @since 28.12.2003
+ */
+public abstract class AbstractResource implements Resource {
+
+	/**
+	 * This implementation checks whether a File can be opened,
+	 * falling back to whether an InputStream can be opened.
+	 * This will cover both directories and content resources.
+	 * 当前检查文件是否存在的实现为，检查文件是否能打开，不能则查看
+	 * 输入流是否能够打开。此方法将覆盖文件目录和内容资源。
+	 */
+	@Override
+	public boolean exists() {
+		// Try file existence: can we find the file in the file system?
+		try {
+			return getFile().exists();
+		}
+		catch (IOException ex) {
+			// Fall back to stream existence: can we open the stream?
+			try {
+				InputStream is = getInputStream();
+				is.close();
+				return true;
+			}
+			catch (Throwable isEx) {
+				return false;
+			}
+		}
+	}
+
+	/**
+	 * This implementation always returns {@code true}.
+	 * 可读性总是返回true
+	 */
+	@Override
+	public boolean isReadable() {
+		return true;
+	}
+
+	/**
+	 * This implementation always returns {@code false}.
+	 * 可打开性总是返回false
+	 */
+	@Override
+	public boolean isOpen() {
+		return false;
+	}
+
+	/**
+	 * This implementation throws a FileNotFoundException, assuming
+	 * that the resource cannot be resolved to a URL.
+	 * 不支持获取URL操作
+	 */
+	@Override
+	public URL getURL() throws IOException {
+		throw new FileNotFoundException(getDescription() + " cannot be resolved to URL");
+	}
+
+	/**
+	 * This implementation builds a URI based on the URL returned
+	 * by {@link #getURL()}.
+	 * 获取URI,从URL中获取URI
+	 */
+	@Override
+	public URI getURI() throws IOException {
+		URL url = getURL();
+		try {
+			return ResourceUtils.toURI(url);
+		}
+		catch (URISyntaxException ex) {
+			throw new NestedIOException("Invalid URI [" + url + "]", ex);
+		}
+	}
+
+	/**
+	 * This implementation throws a FileNotFoundException, assuming
+	 * that the resource cannot be resolved to an absolute file path.
+	 * 获取文件不支持
+	 */
+	@Override
+	public File getFile() throws IOException {
+		throw new FileNotFoundException(getDescription() + " cannot be resolved to absolute file path");
+	}
+
+	/**
+	 * This implementation reads the entire InputStream to calculate the
+	 * content length. Subclasses will almost always be able to provide
+	 * a more optimal version of this, e.g. checking a File length.
+	 * 获取整个资源输入流的可读内容长度，子类可以提供一个更优的方式检查文件可读内容长度。
+	 * @see #getInputStream()
+	 */
+	@Override
+	public long contentLength() throws IOException {
+		InputStream is = getInputStream();
+		Assert.state(is != null, "Resource InputStream must not be null");
+		try {
+			long size = 0;
+			byte[] buf = new byte[255];
+			int read;
+			while ((read = is.read(buf)) != -1) {
+				size += read;
+			}
+			return size;
+		}
+		finally {
+			try {
+				is.close();
+			}
+			catch (IOException ex) {
+			}
+		}
+	}
+
+	/**
+	 * This implementation checks the timestamp of the underlying File,
+	 * if available.
+	 * 如果可用，检查底层文件的时间戳
+	 * @see #getFileForLastModifiedCheck()
+	 */
+	@Override
+	public long lastModified() throws IOException {
+		//获取文件的上次修改的时间戳
+		long lastModified = getFileForLastModifiedCheck().lastModified();
+		if (lastModified == 0L) {
+			throw new FileNotFoundException(getDescription() +
+					" cannot be resolved in the file system for resolving its last-modified timestamp");
+		}
+		return lastModified;
+	}
+
+	/**
+	 * Determine the File to use for timestamp checking.
+	 * 获取文件时间戳检查的文件
+	 * <p>The default implementation delegates to {@link #getFile()}.
+	 * 默认的时间委托给{@link #getFile()}方法。
+	 * @return the File to use for timestamp checking (never {@code null})
+	 * @throws FileNotFoundException if the resource cannot be resolved as
+	 * an absolute file path, i.e. is not available in a file system
+	 * @throws IOException in case of general resolution/reading failures
+	 */
+	protected File getFileForLastModifiedCheck() throws IOException {
+		return getFile();
+	}
+
+	/**
+	 * This implementation throws a FileNotFoundException, assuming
+	 * that relative resources cannot be created for this resource.
+	 */
+	@Override
+	public Resource createRelative(String relativePath) throws IOException {
+		throw new FileNotFoundException("Cannot create a relative resource for " + getDescription());
+	}
+
+	/**
+	 * This implementation always returns {@code null},
+	 * assuming that this resource type does not have a filename.
+	 * 文件文件名，默认为空
+	 */
+	@Override
+	public String getFilename() {
+		return null;
+	}
+
+
+	/**
+	 * This implementation returns the description of this resource.
+	 * @see #getDescription()
+	 */
+	@Override
+	public String toString() {
+		return getDescription();
+	}
+
+	/**
+	 * This implementation compares description strings.
+	 * 根据资源描述判断两个资源对象是否相等
+	 * @see #getDescription()
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		return (obj == this ||
+			(obj instanceof Resource && ((Resource) obj).getDescription().equals(getDescription())));
+	}
+
+	/**
+	 * This implementation returns the description's hash code.
+	 * 返回描述的的哈希值
+	 * @see #getDescription()
+	 */
+	@Override
+	public int hashCode() {
+		return getDescription().hashCode();
+	}
+
+}
 ```
+我们简单来看一下 获取URI操作：
+```java
+/**
+ * This implementation builds a URI based on the URL returned
+ * by {@link #getURL()}.
+ * 获取URI,从URL中获取URI
+ */
+@Override
+public URI getURI() throws IOException {
+    URL url = getURL();
+    try {
+        return ResourceUtils.toURI(url);
+    }
+    catch (URISyntaxException ex) {
+        throw new NestedIOException("Invalid URI [" + url + "]", ex);
+    }
+}
+```
+再来看ResourceUtils的toURI方法
+```java
+public abstract class ResourceUtils {
+/**
+	 * Create a URI instance for the given URL,
+	 * replacing spaces with "%20" URI encoding first.
+	 * 从给定的URL，创建一个URI实例，并使用"%20"，替代空格符。
+	 * @param url the URL to convert into a URI instance
+	 * @return the URI instance
+	 * @throws URISyntaxException if the URL wasn't a valid URI
+	 * @see java.net.URL#toURI()
+	 */
+	public static URI toURI(URL url) throws URISyntaxException {
+		return toURI(url.toString());
+	}
+
+	/**
+	 * Create a URI instance for the given location String,
+	 * replacing spaces with "%20" URI encoding first.
+	 * 根据给定的位置，建一个URI实例，并使用"%20"，替代空格符。
+	 * @param location the location String to convert into a URI instance
+	 * @return the URI instance
+	 * @throws URISyntaxException if the location wasn't a valid URI
+	 */
+	public static URI toURI(String location) throws URISyntaxException {
+		return new URI(StringUtils.replace(location, " ", "%20"));
+	}
+}
+```
+
+从上面可以看出，AbstractResource资源实现了资源的典型行为操作，判断资源是否存在操作，获取资源URI，获取资源内容大小，获取资源上次修改时间。
+判断资源是否存在方法，将会先检查文件是否存在，如果文件不可打开，再检查输入流是否可以打开。获取资源URI方法，委托给 *ResourceUtils* 将资源的URL，
+转化为URI。获取资源内容大小操作，即读取文件字节内容直到不可读，子类的提供更优的实现。获取资源上次修改时间，实际上是获取资源文件的上次修改时间。
+由于AbstractResource描述的是一个抽象资源，牵涉到底层资源的方法isOpen、getURL、getFile，要么是不支持，要么false，要么为空，这些待具体的资源实现。
+
+
+来看抽象文件资源AbstractFileResolvingResource
 
 ### AbstractFileResolvingResource
 
@@ -434,5 +708,10 @@ DisposableBean主要提供的销毁操作，一般用于在bean析构单例bean�
 否则，如果资源位置以 *"classpath:"* 开头，创建路径位置的的类路径资源 *ClassPathResource* 否则返回给定位置的URL资源 *UrlResource* 。
 
 ContextResource表示一个封闭上下文中的资源，提供了相对于上下文根目录的相对路径操作。
+
+AbstractResource资源实现了资源的典型行为操作，判断资源是否存在操作，获取资源URI，获取资源内容大小，获取资源上次修改时间。
+判断资源是否存在方法，将会先检查文件是否存在，如果文件不可打开，再检查输入流是否可以打开。获取资源URI方法，委托给 *ResourceUtils* 将资源的URL，
+转化为URI。获取资源内容大小操作，即读取文件字节内容直到不可读，子类的提供更优的实现。获取资源上次修改时间，实际上是获取资源文件的上次修改时间。
+由于AbstractResource描述的是一个抽象资源，牵涉到底层资源的方法isOpen、getURL、getFile，要么是不支持，要么false，要么为空，这些待具体的资源实现。
 
 ## 附
