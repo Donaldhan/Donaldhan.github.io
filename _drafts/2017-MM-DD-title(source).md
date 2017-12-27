@@ -26,8 +26,8 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 
 # 目录
 * [AbstractApplicationContext定义](abstractapplicationcontext定义)
-    * [DisposableBean](#disposablebean)
-    * [DefaultResourceLoader](#defaultresourceloader)
+    * [](#)
+    * [](#)
 * [总结](#总结)
 
 ## AbstractApplicationContext定义
@@ -39,19 +39,19 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
 ```
 
 
-### DisposableBean接口定义
-源码参见：[DisposableBean][]
+###
+源码参见：[][]
 
-[DisposableBean]: "DisposableBean"
+[]: ""
 
 ```java
 ```
 
 
-### DefaultResourceLoader
-源码参见：[DefaultResourceLoader][]
+###
+源码参见：[][]
 
-[DefaultResourceLoader]: "DefaultResourceLoader"
+[]: ""
 
 ```java
 ```
