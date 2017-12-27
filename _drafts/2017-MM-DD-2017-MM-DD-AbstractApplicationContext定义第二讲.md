@@ -730,7 +730,7 @@ ClassPathResource内部有3变量，一个为类资源路径path（String），�
 
 源码参见：[ClassPathContextResource][]
 
-[ClassPathContextResource]: "ClassPathContextResource"
+[ClassPathContextResource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/DefaultResourceLoader.java "ClassPathContextResource"
 
 ```java
 /**
@@ -758,11 +758,66 @@ ClassPathResource内部有3变量，一个为类资源路径path（String），�
 ```
 从上面可以看出，ClassPathContextResource表示一个上下文相对路径的类路径资源。
 
+在回到默认资源加载器DefaultResourceLoader的根据给定位置加载资源的方法
+```java
+@Override
+	public Resource getResource(String location) {
+		Assert.notNull(location, "Location must not be null");
+        //遍历协议解决器集，如果可以解决，则返回位置相应的资源
+		for (ProtocolResolver protocolResolver : this.protocolResolvers) {
+			Resource resource = protocolResolver.resolve(location, this);
+			if (resource != null) {
+				return resource;
+			}
+		}
+        //如果资源位置以"/"开头，则获取路径资源
+		if (location.startsWith("/")) {
+			return getResourceByPath(location);
+		}
+		else if (location.startsWith(CLASSPATH_URL_PREFIX)) {
+			//如果资源位置以"classpath:"开头，创建路径位置的的类路径资源ClassPathResource
+			return new ClassPathResource(location.substring(CLASSPATH_URL_PREFIX.length()), getClassLoader());
+		}
+		else {
+			try {
+				//否则创建URL资源
+				// Try to parse the location as a URL...
+				URL url = new URL(location);
+				return new UrlResource(url);
+			}
+			catch (MalformedURLException ex) {
+				// No URL -> resolve as resource path.
+				return getResourceByPath(location);
+			}
+		}
+	}
+    /**
+	 * Return a Resource handle for the resource at the given path.
+	 * 返回给定路径位置的资源Handle。
+	 * <p>The default implementation supports class path locations. This should
+	 * be appropriate for standalone implementations but can be overridden,
+	 * e.g. for implementations targeted at a Servlet container.
+	 * 默认实现支持类路径位置。这个应该使用与独立的版本实现，但是可以被重写。比如针对Servlet容器的实现。
+	 * @param path the path to the resource
+	 * @return the corresponding Resource handle
+	 * @see ClassPathResource
+	 * @see org.springframework.context.support.FileSystemXmlApplicationContext#getResourceByPath
+	 * @see org.springframework.web.context.support.XmlWebApplicationContext#getResourceByPath
+	 */
+	protected Resource getResourceByPath(String path) {
+		return new ClassPathContextResource(path, getClassLoader());
+	}
+```
+从上面可以看出，默认资源加载器DefaultResourceLoader的根据给定位置加载资源的方法，当给定资源的位置以资源位置以"/"开头，加载的资源类型为ClassPathContextResource。
+ClassPathContextResource表示一个上下文相对路径的类路径资源。
+
+我们再来看一下URL资源：
+
 ### UrlResource
 
 源码参见：[UrlResource][]
 
-[UrlResource]: "UrlResource"
+[UrlResource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/UrlResource.java "UrlResource"
 
 ```java
 ```
@@ -784,7 +839,8 @@ ClassPathResource内部有3变量，一个为类资源路径path（String），�
 ClassPathResource内部有3变量，一个为类资源路径path（String），一个类机载器classLoader（ClassLoader），一个为资源类clazz（Class<?> ），
 同时提供根据3个内部变量构成类路径资源的构造。获取类路径资源URL，如果资源类不为空，从资源类的类加载器获取资源，否则从从类加载器加载资源，如果还不能加载资源，则从从系统类加载器加载资源。针对类的加载器不存在的情况，则获取系统类加载器加载资源，如果系统类加载器为空，则使用Bootstrap类加载器加载资源。打开类路径资源输入流的思路和获取文件URL的方法类似，如果资源类不为空，从资源类的类加载器打开输入流，否则从类加载器打开输入流，如果类加载器为空，则从系统类加载器加载资源，打开输入流。打开类路径资源输入流，先获取类路径资源URL，在委托URL打开输入流。
 
-
+默认资源加载器DefaultResourceLoader的根据给定位置加载资源的方法，当给定资源的位置以资源位置以"/"开头，加载的资源类型为ClassPathContextResource。
+ClassPathContextResource表示一个上下文相对路径的类路径资源。
 
 
 ## 附
