@@ -1,8 +1,8 @@
 ---
 layout: page
-title: my blog
-subtitle: sub title
-date: 2017-12-27 10:53:30
+title: AbstractApplicationContext源码解析第二讲
+subtitle: ClassPathResource，UrlResource解析
+date: 2017-12-27 17:12:30
 author: donaldhan
 catalog: true
 category: spring-framework
@@ -50,7 +50,6 @@ AbstractFileResolvingResource获取文件操作，首先检查文件是否为JBO
     * [ClassPathContextResource](#classpathcontextresource)
     * [UrlResource](#urlresource)
 * [总结](#总结)
-* [附](#附)
 
 ## AbstractApplicationContext定义
 
@@ -820,18 +819,281 @@ ClassPathContextResource表示一个上下文相对路径的类路径资源。
 [UrlResource]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-core/src/main/java/org/springframework/core/io/UrlResource.java "UrlResource"
 
 ```java
+package org.springframework.core.io;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+
+import org.springframework.util.Assert;
+import org.springframework.util.ResourceUtils;
+import org.springframework.util.StringUtils;
+
+/**
+ * {@link Resource} implementation for {@code java.net.URL} locators.
+ * Supports resolution as a {@code URL} and also as a {@code File} in
+ * case of the {@code "file:"} protocol.
+ *UrlResource作为 {@code java.net.URL}定位器的资源实现，支持在{@code "file:"} 协议的情况下，
+ *支持URL和FILE形式
+ * @author Juergen Hoeller
+ * @since 28.12.2003
+ * @see java.net.URL
+ */
+public class UrlResource extends AbstractFileResolvingResource {
+
+	/**
+	 * Original URI, if available; used for URI and File access.
+	 * 原始URI，如果可用，用于URI和文件访问
+	 */
+	private final URI uri;
+
+	/**
+	 * Original URL, used for actual access.
+	 * 原始URL，用于实际访问
+	 */
+	private final URL url;
+
+	/**
+	 * Cleaned URL (with normalized path), used for comparisons.
+	 * 正常路径的干净URL，用于比较
+	 */
+	private final URL cleanedUrl;
+
+
+	/**
+	 * Create a new {@code UrlResource} based on the given URI object.
+	 * 根据URi，创建UrlResource资源
+	 * @param uri a URI
+	 * @throws MalformedURLException if the given URL path is not valid
+	 * @since 2.5
+	 */
+	public UrlResource(URI uri) throws MalformedURLException {
+		Assert.notNull(uri, "URI must not be null");
+		this.uri = uri;
+		this.url = uri.toURL();
+		this.cleanedUrl = getCleanedUrl(this.url, uri.toString());
+	}
+
+	/**
+	 * Create a new {@code UrlResource} based on the given URL object.
+	 * 根据URL，创建UrlResource资源
+	 * @param url a URL
+	 */
+	public UrlResource(URL url) {
+		Assert.notNull(url, "URL must not be null");
+		this.url = url;
+		this.cleanedUrl = getCleanedUrl(this.url, url.toString());
+		this.uri = null;
+	}
+
+	/**
+	 * Create a new {@code UrlResource} based on a URL path.
+	 * <p>Note: The given path needs to be pre-encoded if necessary.
+	 * 根据给定的路径，创建UrlResource资源，如果需要给定的路径需要预编码
+	 * @param path a URL path
+	 * @throws MalformedURLException if the given URL path is not valid
+	 * @see java.net.URL#URL(String)
+	 */
+	public UrlResource(String path) throws MalformedURLException {
+		Assert.notNull(path, "Path must not be null");
+		this.uri = null;
+		this.url = new URL(path);
+		this.cleanedUrl = getCleanedUrl(this.url, path);
+	}
+
+	/**
+	 * Create a new {@code UrlResource} based on a URI specification.
+	 * 根据URI创建UrlResource
+	 * <p>The given parts will automatically get encoded if necessary.
+	 * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
+	 * also known as "scheme"
+	 * 协议机制scheme，比如jar或file，没有冒号
+	 * @param location the location (e.g. the file path within that protocol);
+	 * also known as "scheme-specific part"
+	 * 定位位置，比如协议中的文件路径，比较熟悉的为scheme-specific part。
+	 * @throws MalformedURLException if the given URL specification is not valid
+	 * @see java.net.URI#URI(String, String, String)
+	 */
+	public UrlResource(String protocol, String location) throws MalformedURLException  {
+		this(protocol, location, null);
+	}
+
+	/**
+	 * Create a new {@code UrlResource} based on a URI specification.
+	 * 根据URI创建UrlResource
+	 * <p>The given parts will automatically get encoded if necessary.
+	 * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
+	 * also known as "scheme"
+	 * @param location the location (e.g. the file path within that protocol);
+	 * also known as "scheme-specific part"
+	 * @param fragment the fragment within that location (e.g. anchor on an HTML page,
+	 * as following after a "#" separator)
+	 * 片段，在位置中的片段，比如HTML页面中的锚点
+	 * @throws MalformedURLException if the given URL specification is not valid
+	 * @see java.net.URI#URI(String, String, String)
+	 */
+	public UrlResource(String protocol, String location, String fragment) throws MalformedURLException  {
+		try {
+			this.uri = new URI(protocol, location, fragment);
+			this.url = this.uri.toURL();
+			this.cleanedUrl = getCleanedUrl(this.url, this.uri.toString());
+		}
+		catch (URISyntaxException ex) {
+			MalformedURLException exToThrow = new MalformedURLException(ex.getMessage());
+			exToThrow.initCause(ex);
+			throw exToThrow;
+		}
+	}
+
+
+	/**
+	 * Determine a cleaned URL for the given original URL.
+	 * 跟定给定原始URL，获取干净的URL
+	 * @param originalUrl the original URL
+	 * @param originalPath the original URL path
+	 * @return the cleaned URL
+	 * @see org.springframework.util.StringUtils#cleanPath
+	 */
+	private URL getCleanedUrl(URL originalUrl, String originalPath) {
+		try {
+			return new URL(StringUtils.cleanPath(originalPath));
+		}
+		catch (MalformedURLException ex) {
+			// Cleaned URL path cannot be converted to URL
+			// -> take original URL.
+			return originalUrl;
+		}
+	}
+
+	/**
+	 * This implementation opens an InputStream for the given URL.
+	 * <p>It sets the {@code useCaches} flag to {@code false},
+	 * mainly to avoid jar file locking on Windows.
+	 * 获取URL资源输入流
+	 * @see java.net.URL#openConnection()
+	 * @see java.net.URLConnection#setUseCaches(boolean)
+	 * @see java.net.URLConnection#getInputStream()
+	 */
+	@Override
+	public InputStream getInputStream() throws IOException {
+		URLConnection con = this.url.openConnection();
+		ResourceUtils.useCachesIfNecessary(con);
+		try {
+			return con.getInputStream();
+		}
+		catch (IOException ex) {
+			// Close the HTTP connection (if applicable).
+			if (con instanceof HttpURLConnection) {
+				((HttpURLConnection) con).disconnect();
+			}
+			throw ex;
+		}
+	}
+
+	/**
+	 * This implementation returns the underlying URL reference.
+	 */
+	@Override
+	public URL getURL() throws IOException {
+		return this.url;
+	}
+
+	/**
+	 * This implementation returns the underlying URI directly,
+	 * if possible.
+	 */
+	@Override
+	public URI getURI() throws IOException {
+		if (this.uri != null) {
+			return this.uri;
+		}
+		else {
+			return super.getURI();
+		}
+	}
+
+	/**
+	 * This implementation returns a File reference for the underlying URL/URI,
+	 * provided that it refers to a file in the file system.
+	 * 获取文件系统中，URL/URI对应的底层文件。
+	 * @see org.springframework.util.ResourceUtils#getFile(java.net.URL, String)
+	 */
+	@Override
+	public File getFile() throws IOException {
+		if (this.uri != null) {
+			return super.getFile(this.uri);
+		}
+		else {
+			return super.getFile();
+		}
+	}
+
+	/**
+	 * This implementation creates a {@code UrlResource}, applying the given path
+	 * relative to the path of the underlying URL of this resource descriptor.
+	 * 根据相对路径创建URL资源
+	 * @see java.net.URL#URL(java.net.URL, String)
+	 */
+	@Override
+	public Resource createRelative(String relativePath) throws MalformedURLException {
+		if (relativePath.startsWith("/")) {
+			relativePath = relativePath.substring(1);
+		}
+		return new UrlResource(new URL(this.url, relativePath));
+	}
+
+	/**
+	 * This implementation returns the name of the file that this URL refers to.
+	 * @see java.net.URL#getPath()
+	 */
+	@Override
+	public String getFilename() {
+		return StringUtils.getFilename(this.cleanedUrl.getPath());
+	}
+
+	/**
+	 * This implementation returns a description that includes the URL.
+	 */
+	@Override
+	public String getDescription() {
+		return "URL [" + this.url + "]";
+	}
+
+
+	/**
+	 * This implementation compares the underlying URL references.
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		return (obj == this ||
+			(obj instanceof UrlResource && this.cleanedUrl.equals(((UrlResource) obj).cleanedUrl)));
+	}
+
+	/**
+	 * This implementation returns the hash code of the underlying URL reference.
+	 */
+	@Override
+	public int hashCode() {
+		return this.cleanedUrl.hashCode();
+	}
+
+}
 ```
-
-源码参见：[AbstractApplicationContext][]
-
-[AbstractApplicationContext]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/AbstractApplicationContext.java "AbstractApplicationContext"
-
-```java
-```
+从上面可以看出，UrlResource内部有3个变量，一个为资源的URI，一个为资源URL，另外一个为干净的URL，提供提供了根据资源URL，URI和资源协议、位置、分片来构建UrlResource
+资源的构造方法，获取资源输入流，及获取文件都是委托给内部的URL。
 
 
-最后我们以BeanDefinition的类图结束这篇文章。
-![BeanDefinition](/image/spring-context/BeanDefinition.png)
+
+
+
+最后我们以ClassPathResource的类图结束这篇文章。
+![ClassPathResource](/image/spring-context/ClassPathResource.png)
 
 
 
@@ -842,5 +1104,5 @@ ClassPathResource内部有3变量，一个为类资源路径path（String），�
 默认资源加载器DefaultResourceLoader的根据给定位置加载资源的方法，当给定资源的位置以资源位置以"/"开头，加载的资源类型为ClassPathContextResource。
 ClassPathContextResource表示一个上下文相对路径的类路径资源。
 
-
-## 附
+UrlResource内部有3个变量，一个为资源的URI，一个为资源URL，另外一个为干净的URL，提供提供了根据资源URL，URI和资源协议、位置、分片来构建UrlResource
+资源的构造方法，获取资源输入流，及获取文件都是委托给内部的URL。
