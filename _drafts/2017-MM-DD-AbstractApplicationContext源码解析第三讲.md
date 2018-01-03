@@ -700,12 +700,172 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 ### DefaultLifecycleProcessor
 源码参见：[DefaultLifecycleProcessor][]
 
-[DefaultLifecycleProcessor]: "DefaultLifecycleProcessor"
+[DefaultLifecycleProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/DefaultLifecycleProcessor.java "DefaultLifecycleProcessor"
+
+在看DefaultLifecycleProcessor之前，为了便于理解，我们来看器父接口，及关联接口的定义：
+#### BeanFactoryAware
+源码参见：[BeanFactoryAware][]
+
+[BeanFactoryAware]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/BeanFactoryAware.java "BeanFactoryAware"
+```java
+package org.springframework.beans.factory;
+
+import org.springframework.beans.BeansException;
+
+/**
+ *BeanFactoryAware接口的实现bean，可以获取其所属的bean工厂。
+ *比如，bean可以通过bean工厂搜索协作的bean（依赖搜索）。注意大多数的bean将会选择bean属性or构造形式的
+ *依赖注入协作bean引用形式。
+ * 所有bean的声明周期方法，见@link BeanFactory BeanFactory javadocs}。
+ * @author Rod Johnson
+ * @author Chris Beams
+ * @since 11.03.2003
+ * @see BeanNameAware
+ * @see BeanClassLoaderAware
+ * @see InitializingBean
+ * @see org.springframework.context.ApplicationContextAware
+ */
+public interface BeanFactoryAware extends Aware {
+
+	/**
+	 * Callback that supplies the owning factory to a bean instance.
+	 *提供所属bean工厂对应的bean实例回调。
+	 * <p>Invoked after the population of normal bean properties
+	 * but before an initialization callback such as
+	 * {@link InitializingBean#afterPropertiesSet()} or a custom init-method.
+	 * 在正常的bean属性初始化后，但在{@link InitializingBean#afterPropertiesSet()}初始化回调或者
+	 * 一般的初始化方法之前。
+	 * @param beanFactory owning BeanFactory (never {@code null}).
+	 * The bean can immediately call methods on the factory.
+	 * @throws BeansException in case of initialization errors
+	 * @see BeanInitializationException
+	 */
+	void setBeanFactory(BeanFactory beanFactory) throws BeansException;
+
+}
+```
+从上面可以看出，BeanFactoryAware接口主要提供设置bean工厂操作。
+#### LifecycleProcessor
+源码参见：[LifecycleProcessor][]
+
+[LifecycleProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/LifecycleProcessor.java "LifecycleProcessor"
+
+```java
+package org.springframework.context;
+
+/**
+ * Strategy interface for processing Lifecycle beans within the ApplicationContext.
+ * LifecycleProcessor用于处理应用上下文中的生命周期bean
+ *
+ * @author Mark Fisher
+ * @author Juergen Hoeller
+ * @since 3.0
+ */
+public interface LifecycleProcessor extends Lifecycle {
+
+	/**
+	 * Notification of context refresh, e.g. for auto-starting components.
+	 * 通知上下文刷新，比如自动启动组件
+	 */
+	void onRefresh();
+	/**
+	 * Notification of context close phase, e.g. for auto-stopping components.
+	 * 通知上下文关闭阶段，比如自动停止组件
+	 */
+	void onClose();
+
+}
+```
+
+从上面可以看，LifecycleProcessor接口主要提供了通知上下文刷新和关闭的操作。
+
+
+#### SmartLifecycle
+源码参见：[SmartLifecycle][]
+
+[SmartLifecycle]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/SmartLifecycle.java "SmartLifecycle"
+
+```java
+package org.springframework.context;
+
+/**
+ *SmartLifecycle是生命周期接口的拓展，用于需要在应用上下文刷新和关闭时，以特地的顺序启动的对象。
+ *{@link #isAutoStartup()}方法，返回值预示着对象是否应该在上下文刷新的时候启动。回调{@link #stop(Runnable)}方法，
+ *用于需要异步关闭的对象。此方法的任何实现，在完全关闭时，必须调用回调线程的run方法，以避免上下文关闭时，不必要的延时。
+ * 此接口拓展了{@link Phased}接口，{@link #getPhase()}方法返回的值，预示着生命周期组件应该启动还是停止状态过程的阶段值。
+ * 启动过程以一个低的阶段值开始，并以一个高的阶段值结束（Integer.MIN_VALUE是最低的，Integer.MAX_VALUE为最高）。
+ * 关闭过程则相反。所有拥有相同阶段值的组件应该在相同阶段强制排序。
+ *
+ *比如：如果组件B依赖组件A，组件A已经启动，组件A拥有比组件B小的阶段值。在关闭过程中，组件B将会在组件A之前关闭。
+ * 任何显示的依赖关系将会优先考虑启动阶段顺序，依赖bean将会在被依赖的bean启动后，启动；在被依赖的bean关闭前，
+ * 关闭。
+ *
+ *任何没有实现SmartLifecycle接口的上下文中的生命周期组件，阶段值将会以0对待。实现SmartLifecycle的组件如果阶段值为负，
+ *也许将会在生命周期组件之前启动，也许在拥有正阶段值的组件后启动。
+ *
+ * 需要注意的是：由于SmartLifecycle支持自动启动，一个SmartLifecycle bean实例无论如何将会在上下文的启动的过程中
+ * 初始化。因此bean定义的懒加载表示将会限制SmartLifecycle bean的实际效果。
+ *
+ * @author Mark Fisher
+ * @since 3.0
+ * @see LifecycleProcessor
+ * @see ConfigurableApplicationContext
+ */
+public interface SmartLifecycle extends Lifecycle, Phased {
+
+	/**
+	 * 在应用上下文容器刷新时，如果容器中的生命周期组件自动启动，则此方法返回true
+	 * 返回false，预示者组件需要显示调用{@link #start()} 方法启动，类似于空白的生命周期实现。
+	 * @see #start()
+	 * @see #getPhase()
+	 * @see LifecycleProcessor#onRefresh()
+	 * @see ConfigurableApplicationContext#refresh()
+	 */
+	boolean isAutoStartup();
+
+	/**
+	 * 如果组件当前正在运行，调用此方法表示生命周期组件必须停止。
+	 * 此回调用于支持生命周期处理器{@link LifecycleProcessor}顺序，潜在并发，以一般的顺序值关闭所有组件。
+	 * 此回调必须在{@code SmartLifecycle}组件实际停止后执行。
+	 * 生命周期处理器仅仅回调用此方法的变体，比如{@link Lifecycle#stop()} 不会调用{@code SmartLifecycle}的实现，
+	 * 除非显示地代理此方法的内部实现。
+	 * @see #stop()
+	 * @see #getPhase()
+	 */
+	void stop(Runnable callback);
+
+}
+```
+从上面来看，SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用回调接口。并提供了判断组件在容器上下文刷新时，组件是否自动刷新的操作。
+
+#### Phased
+源码参见：[Phased][]
+
+[Phased]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/Phased.java "Phased"
+```java
+package org.springframework.context;
+
+/**
+ *Phased用于表示可以参加阶段处理过程的对象，比如生命周期管理。
+ * @author Mark Fisher
+ * @since 3.0
+ * @see SmartLifecycle
+ */
+public interface Phased {
+	/**
+	 * 返回对象所处的阶段值
+	 */
+	int getPhase();
+
+}
+```
+从上面可以看出，Phased主要提供了获取组件阶段值操作。
+
+现在我们回到DefaultLifecycleProcessor
+
 
 ```java
 ```
-
-
 
 ### ApplicationEventMulticaster
 源码参见：[ApplicationEventMulticaster][]
@@ -757,6 +917,12 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 
 
 路径匹配资源模式解决器PathMatchingResourcePatternResolver内部有一个Ant路径匹配器 *AntPathMatcher*，和一个资源类加载器，资源加载器可以
-使用所属上下文中的资源加载器，也可以为给定类加载器的DefaultResourceLoader。路径匹配资源模式解决器主要提供了加载给定路径位置的资源方法，此方法可以解决无通配符的路径位置模式
-（{@code file:C:/context.xml}，{@code classpath:/context.xml}，{@code /WEB-INF/context.xml}"），也可以解决包含Ant风格的通配符路径位置模式资源（{@code classpath*:META-INF/beans.xml}），主要以classpath*为前缀的路径位置模式，资源加载器将会查找类路径下所有相同name对应的资源文件，包括子目录和jar包。如果明确的加载资源，
-可以使用{@code classpath:/context.xml}形式路径模式，如果想要探测类路径下的所有name对应的资源文件，可以使用形式路径模式。
+使用所属上下文中的资源加载器，也可以为给定类加载器的DefaultResourceLoader。路径匹配资源模式解决器主要提供了加载给定路径位置的资源方法，此方法可以解决无通配符的路径位置模式（{@code file:C:/context.xml}，{@code classpath:/context.xml}，{@code /WEB-INF/context.xml}"），也可以解决包含Ant风格的通配符路径位置模式资源（{@code classpath*:META-INF/beans.xml}），主要以classpath*为前缀的路径位置模式，资源加载器将会查找类路径下所有相同name对应的资源文件，包括子目录和jar包。如果明确的加载资源，可以使用{@code classpath:/context.xml}形式路径模式，如果想要探测类路径下的所有name对应的资源文件，可以使用形式路径模式。
+
+BeanFactoryAware接口主要提供设置bean工厂操作。
+
+LifecycleProcessor接口主要提供了通知上下文刷新和关闭的操作。
+
+Phased主要提供了获取组件阶段值操作。
+
+SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用回调接口。并提供了判断组件在容器上下文刷新时，组件是否自动刷新的操作。
