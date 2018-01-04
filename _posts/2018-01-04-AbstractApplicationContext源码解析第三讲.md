@@ -25,11 +25,10 @@ UrlResource内部有3个变量，一个为资源的URI，一个为资源URL，�
 
 ![ClassPathResource](/image/spring-context/ClassPathResource.png)
 
-上述为我们上一篇[AbstractApplicationContext源码解析第二讲][]所讲的内容，今天我们正式进入
+上述为我们上一篇[AbstractApplicationContext源码解析第二讲][]所讲的内容，今天我们正式进入抽象应用上下文的源码分析阶段。
 
 [AbstractApplicationContext源码解析第二讲]:https://donaldhan.github.io/spring-framework/2017/12/27/AbstractApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%AC%AC%E4%BA%8C%E8%AE%B2.html "AbstractApplicationContext源码解析第二讲"
 
-上一篇文章我们看了，BeanDefinition接口的定义，截止到上一篇文章我们将应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
 
 
 # 目录
