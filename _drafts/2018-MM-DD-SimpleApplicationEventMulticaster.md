@@ -35,8 +35,9 @@ SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用
 
 # 目录
 * [SimpleApplicationEventMulticaster定义](simpleapplicationeventmulticaster定义)
-    * [](#)
-    * [](#)
+    * [ApplicationEventMulticaster](#applicationeventmulticaster)
+    * [BeanClassLoaderAware](#beanclassloaderaware)
+    * [AbstractApplicationEventMulticaster](#abstractapplicationeventmulticaster)
 * [总结](#总结)
 
 
@@ -44,30 +45,113 @@ SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用
 ## SimpleApplicationEventMulticaster定义
 源码参见：[SimpleApplicationEventMulticaster][]
 
-[SimpleApplicationEventMulticaster]: "SimpleApplicationEventMulticaster"
+[SimpleApplicationEventMulticaster]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/event/SimpleApplicationEventMulticaster.java "SimpleApplicationEventMulticaster"
+
+在看SimpleApplicationEventMulticaster定义之前，我们来看一下其父接口定义
+
+### ApplicationEventMulticaster
+源码参见：ApplicationEventMulticaster][]
+
+[ApplicationEventMulticaster]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/event/ApplicationEventMulticaster.java "ApplicationEventMulticaster"
+
+```java
+package org.springframework.context.event;
+
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.ResolvableType;
+
+/**
+ *应用事件多播器ApplicationEventMulticaster的实现可以管理多个应用监听器对象，
+ *并发布事件到相关监听器。
+ *应用事件多播器的使用典型场景，应用上下文可以使用应用事件多播器代理事件的发布事件操作。
+ * @author Rod Johnson
+ * @author Juergen Hoeller
+ * @author Stephane Nicoll
+ */
+public interface ApplicationEventMulticaster {
+
+	/**
+	 * 添加监听器
+	 * @param listener the listener to add
+	 */
+	void addApplicationListener(ApplicationListener<?> listener);
+
+	/**
+	 * 添加监听器bean
+	 * @param listenerBeanName the name of the listener bean to add
+	 */
+	void addApplicationListenerBean(String listenerBeanName);
+
+	/**
+	 * 移除监听器
+	 * @param listener the listener to remove
+	 */
+	void removeApplicationListener(ApplicationListener<?> listener);
+
+	/**
+	 * 移除监听器bean
+	 * @param listenerBeanName the name of the listener bean to add
+	 */
+	void removeApplicationListenerBean(String listenerBeanName);
+
+	/**
+	 * 移除所有注册到多播器的监听器。
+	 * 在移除所有监听器操作调用后，多播器对于发生的事件不做任何处理，直到有新的监听器注册
+	 */
+	void removeAllListeners();
+
+	/**
+	 * 多播给定的应用事件到相关监听器
+	 * 如果想要尽可能中的支持一般的事件，可以考虑使用{@link #multicastEvent(ApplicationEvent, ResolvableType)}
+	 * 方法。
+	 * @param event the event to multicast
+	 */
+	void multicastEvent(ApplicationEvent event);
+
+	/**
+	 * Multicast the given application event to appropriate listeners.
+	 * 多播给定的事件到关联监听器。
+	 * 如果eventType类型为空，则将基于event实例 构建一个默认的类型
+	 * @param event the event to multicast
+	 * @param eventType the type of event (can be null)
+	 * @since 4.2
+	 */
+	void multicastEvent(ApplicationEvent event, ResolvableType eventType);
+
+}
+
+```
+从上面可以看出，应用事件多播器ApplicationEventMulticaster主要提供了应用事件监听器的管理操作（添加、移除），同时提供了发布应用事件到所管理的应用监听器的操作。
+应用事件多播器典型应用，为代理应用上下文，发布相关应用事件。
+
+### BeanClassLoaderAware
+源码参见：[BeanClassLoaderAware][]
+
+[BeanClassLoaderAware]: "BeanClassLoaderAware"
 
 ```java
 ```
 
-###
-源码参见：[][]
 
-[]: ""
+### AbstractApplicationEventMulticaster
+源码参见：[AbstractApplicationEventMulticaster][]
 
-```java
-```
-
-
-###
-源码参见：[][]
-
-[]: ""
+[AbstractApplicationEventMulticaster]: "AbstractApplicationEventMulticaster"
 
 ```java
 ```
 
+
+
+我们回到SimpleApplicationEventMulticaster
+```java
+```
 
 最后我们以BeanDefinition的类图结束这篇文章。
 ![BeanDefinition](/image/spring-context/BeanDefinition.png)
 
 ## 总结
+
+应用事件多播器ApplicationEventMulticaster主要提供了应用事件监听器的管理操作（添加、移除），同时提供了发布应用事件到所管理的应用监听器的操作。
+应用事件多播器典型应用，为代理应用上下文，发布相关应用事件。
