@@ -2,7 +2,7 @@
 layout: page
 title: my blog
 subtitle: sub title
-date: 2017-11-04 15:17:19
+date: 2018-11-04 15:17:19
 author: donaldhan
 catalog: true
 category: spring-framework
@@ -27,20 +27,21 @@ SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用
 
 ![DefaultLifecycleProcessor](/image/spring-context/DefaultLifecycleProcessor.png)
 
-[抽象应用上下文]:https://donaldhan.github.io/spring-framework/2017/12/26/BeanDefinition%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89.html "抽象应用上下文第三讲"
+[抽象应用上下文]:https://donaldhan.github.io/spring-framework/2018/01/04/AbstractApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%AC%AC%E4%B8%89%E8%AE%B2.html "抽象应用上下文第三讲"
 
-上一篇文章我们看了，BeanDefinition接口的定义，截止到上一篇文章我们将应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
+上一篇文章我们看了抽象应用上下文的内部变量声明与构造函数，同时看了一下默认的路径匹配资源模式解决器PathMatchingResourcePatternResolver和生命周期处理器DefaultLifecycleProcessor。
+由于抽象应用上下文所设计的模块较多，我们不得不分模块来分析，今天我们来看另一个模块应用事件多播器。
 
 
 # 目录
-* [AbstractApplicationContext定义](abstractapplicationcontext定义)
+* [SimpleApplicationEventMulticaster定义](simpleapplicationeventmulticaster定义)
     * [](#)
     * [](#)
 * [总结](#总结)
 
 
 
-## SimpleApplicationEventMulticaster
+## SimpleApplicationEventMulticaster定义
 源码参见：[SimpleApplicationEventMulticaster][]
 
 [SimpleApplicationEventMulticaster]: "SimpleApplicationEventMulticaster"

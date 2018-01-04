@@ -2,7 +2,7 @@
 layout: page
 title: my blog
 subtitle: sub title
-date: 2017-11-04 15:17:19
+date: 2018-11-04 15:17:19
 author: donaldhan
 catalog: true
 category: spring-framework
@@ -30,10 +30,10 @@ bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设�
     * [](#)
 * [总结](#总结)
 
-## StandardEnvironment
-源码参见：[StandardEnvironment][]
+## AbstractApplicationContext定义
+源码参见：[AbstractApplicationContext][]
 
-[StandardEnvironment]: "StandardEnvironment"
+[AbstractApplicationContext]: "AbstractApplicationContext"
 
 ```java
 ```
