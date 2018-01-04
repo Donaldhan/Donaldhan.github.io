@@ -128,16 +128,51 @@ public interface ApplicationEventMulticaster {
 ### BeanClassLoaderAware
 源码参见：[BeanClassLoaderAware][]
 
-[BeanClassLoaderAware]: "BeanClassLoaderAware"
+[BeanClassLoaderAware]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/BeanClassLoaderAware.java "BeanClassLoaderAware"
 
 ```java
+package org.springframework.beans.factory;
+
+/**
+ * BeanClassLoaderAware接口回调，允许bean访问其的类加载器；也就是说当前bean工厂加载
+ * bean 类的类加载器。
+ * 主要用于框架实现类想要根据bean的name获取bean的应用类型，尽管框架实现类可能被共享类加载器加载。
+ * <p>For a list of all bean lifecycle methods, see the
+ * {@link BeanFactory BeanFactory javadocs}.
+ *
+ * @author Juergen Hoeller
+ * @author Chris Beams
+ * @since 2.0
+ * @see BeanNameAware
+ * @see BeanFactoryAware
+ * @see InitializingBean
+ */
+public interface BeanClassLoaderAware extends Aware {
+
+	/**
+	 * 提供bean实例的类加载器回调。
+	 * method or a custom init-method.
+	 * 在正常的bean属性初始化之后，在是在
+	 * {@link InitializingBean InitializingBean's}
+	 * {@link InitializingBean#afterPropertiesSet()}和一般初始化方法调用之前。
+	 *
+	 * @param classLoader the owning class loader; may be {@code null} in
+	 * which case a default {@code ClassLoader} must be used, for example
+	 * the {@code ClassLoader} obtained via
+	 * {@link org.springframework.util.ClassUtils#getDefaultClassLoader()}
+	 */
+	void setBeanClassLoader(ClassLoader classLoader);
+
+}
+
 ```
+从上面可以看出，BeanClassLoaderAware主要体用了设置bean类加载器的操作，主要用于框架实现类想用根据的name获取bean的应用类型的场景。
 
 
 ### AbstractApplicationEventMulticaster
 源码参见：[AbstractApplicationEventMulticaster][]
 
-[AbstractApplicationEventMulticaster]: "AbstractApplicationEventMulticaster"
+[AbstractApplicationEventMulticaster]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/event/AbstractApplicationEventMulticaster.java "AbstractApplicationEventMulticaster"
 
 ```java
 ```
@@ -155,3 +190,4 @@ public interface ApplicationEventMulticaster {
 
 应用事件多播器ApplicationEventMulticaster主要提供了应用事件监听器的管理操作（添加、移除），同时提供了发布应用事件到所管理的应用监听器的操作。
 应用事件多播器典型应用，为代理应用上下文，发布相关应用事件。
+BeanClassLoaderAware主要体用了设置bean类加载器的操作，主要用于框架实现类想用根据的name获取bean的应用类型的场景。
