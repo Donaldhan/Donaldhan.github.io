@@ -50,7 +50,7 @@ SmartLifecycle接口主要提供关闭回调操作，在组件停止后，调用
 在看SimpleApplicationEventMulticaster定义之前，我们来看一下其父接口定义
 
 ### ApplicationEventMulticaster
-源码参见：ApplicationEventMulticaster][]
+源码参见：[ApplicationEventMulticaster][]
 
 [ApplicationEventMulticaster]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/event/ApplicationEventMulticaster.java "ApplicationEventMulticaster"
 
