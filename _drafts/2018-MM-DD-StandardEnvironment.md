@@ -40,7 +40,8 @@ AbstractApplicationEventMulticaster内部有一个存放监听器的集合 *List
 # 目录
 * [StandardEnvironment定义](standardenvironment定义)
     * [AbstractEnvironment](#abstractenvironment)
-    * [](#)
+    * [AbstractPropertyResolver](#abstractpropertyresolver)
+    * [PropertySourcesPropertyResolver](#propertysourcespropertyresolver)
 * [总结](#总结)
 
 
@@ -62,14 +63,22 @@ AbstractApplicationEventMulticaster内部有一个存放监听器的集合 *List
 ```
 
 
-###
-源码参见：[][]
+### AbstractPropertyResolver
+源码参见：[AbstractPropertyResolver][]
 
-[]: ""
+[AbstractPropertyResolver]: "AbstractPropertyResolver"
 
 ```java
 ```
 
+
+### PropertySourcesPropertyResolver
+源码参见：[PropertySourcesPropertyResolver][]
+
+[PropertySourcesPropertyResolver]: "PropertySourcesPropertyResolver"
+
+```java
+```
 
 最后我们以StandardEnvironment的类图结束这篇文章。
 ![StandardEnvironment](/image/spring-context/StandardEnvironment.png)
