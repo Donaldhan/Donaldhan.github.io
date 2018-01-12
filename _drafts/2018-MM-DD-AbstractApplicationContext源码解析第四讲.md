@@ -292,7 +292,7 @@ public void refresh() throws BeansException, IllegalStateException {
 			invokeBeanFactoryPostProcessors(beanFactory);
 
 			// Register bean processors that intercept bean creation.
-			//注册bean后处理器拦截bean的创建
+			//注册拦截bean创建的bean后处理器
 			registerBeanPostProcessors(beanFactory);
 
 			// Initialize message source for this context.
@@ -347,6 +347,419 @@ public void refresh() throws BeansException, IllegalStateException {
 	}
 }
 ```
+刷新应用上下文方法，我们有一下几点需要关注
+
+1. 准备上下文刷新操作
+
+```java
+// Prepare this context for refreshing.
+//准备上下文刷新操作
+prepareRefresh();
+```
+
+2. 告诉子类刷新内部bean工厂
+```java
+// Tell the subclass to refresh the internal bean factory.
+//告诉子类刷新内部bean工厂
+ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+```
+
+3. 准备上下文使用的bean工厂
+```java
+//准备上下文使用的bean工厂
+prepareBeanFactory(beanFactory);
+```
+4. 在上下文子类中，允许后处理bean工厂
+```java
+// Allows post-processing of the bean factory in context subclasses.
+//在上下文子类中，允许后处理bean工厂。
+postProcessBeanFactory(beanFactory);
+```
+
+5. 调用注册到上下文中的工厂后处理器
+```java
+// Invoke factory processors registered as beans in the context.
+//调用注册到上下文中的工厂后处理器
+invokeBeanFactoryPostProcessors(beanFactory);
+```
+6. 注册拦截bean创建的bean后处理器
+```java
+// Register bean processors that intercept bean creation.
+//注册拦截bean创建的bean后处理器
+registerBeanPostProcessors(beanFactory);
+```
+
+7. 初始化上下文的消息源
+```java
+// Initialize message source for this context.
+//初始化上下文的消息源
+initMessageSource();
+```
+
+8. 始化上下文的事件多播器
+```java
+// Initialize event multicaster for this context.
+//初始化上下文的事件多播器
+initApplicationEventMulticaster();
+```
+
+9. 初始化上下文子类中的其他特殊的bean
+```java
+// Initialize other special beans in specific context subclasses.
+//初始化上下文子类中的其他特殊的bean
+onRefresh();
+```
+
+10. 检查监听器bean，并注册
+```java
+// Check for listener beans and register them.
+//检查监听器bean，并注册
+registerListeners();
+```
+
+11. 初始化所有遗留的非懒加载单例bean
+```java
+// Instantiate all remaining (non-lazy-init) singletons.
+//初始化所有遗留的非懒加载单例bean
+finishBeanFactoryInitialization(beanFactory);
+```
+
+
+12. 发布相关事件
+```java
+// Last step: publish corresponding event.
+//发布相关事件
+finishRefresh();
+```
+
+13. 销毁已经创建的单例bean，避免资源空占
+```java
+// Destroy already created singletons to avoid dangling resources.
+//销毁已经创建的单例bean，避免资源空占。
+destroyBeans();
+```
+
+14. 置上下文激活状态标志
+```java
+// Reset 'active' flag.
+//重置上下文激活状态标志
+cancelRefresh(ex);
+```
+
+15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存
+```java
+// Reset common introspection caches in Spring's core, since we
+// might not ever need metadata for singleton beans anymore...
+//由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
+resetCommonCaches();
+```
+
+从上面可以看出，应用上下文刷新的过程为：
+1. 准备上下文刷新操作；
+2. 告诉子类刷新内部bean工厂；
+3. 准备上下文使用的bean工厂；
+4. 在上下文子类中，允许后处理bean工厂；
+5. 调用注册到上下文中的工厂后处理器；
+6. 注册拦截bean创建的bean后处理器；
+7. 初始化上下文的消息源；
+8. 始化上下文的事件多播器；
+9. 初始化上下文子类中的其他特殊的bean；
+10. 检查监听器bean，并注册；
+11. 初始化所有遗留的非懒加载单例bean；
+12. 发布相关事件；
+如果刷新过程出现异常则执行13,14步，
+13. 销毁已经创建的单例bean，避免资源空占；
+14. 置上下文激活状态标志；
+最后执行15步，
+15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
+
+下面我们分别来看以上几点：
+1. 准备上下文刷新操作
+
+```java
+// Prepare this context for refreshing.
+//准备上下文刷新操作
+prepareRefresh();
+```
+
+
+```java
+/**
+	 * Prepare this context for refreshing, setting its startup date and
+	 * active flag as well as performing any initialization of property sources.
+	 */
+	protected void prepareRefresh() {
+		//初始化上下文启动时间，更新上下文关闭与激活状态
+		this.startupDate = System.currentTimeMillis();
+		this.closed.set(false);
+		this.active.set(true);
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Refreshing " + this);
+		}
+
+		// Initialize any placeholder property sources in the context environment
+		//初始化应用上下文环境中的占位符属性源
+		initPropertySources();
+
+		// Validate that all properties marked as required are resolvable
+		//验证所有需要可解决的标注属性
+		// see ConfigurablePropertyResolver#setRequiredProperties
+		getEnvironment().validateRequiredProperties();
+
+		// Allow for the collection of early ApplicationEvents,
+		// to be published once the multicaster is available...
+		//创建预发布应用事件集，一旦多播器可用，则发布事件
+		this.earlyApplicationEvents = new LinkedHashSet<ApplicationEvent>();
+	}
+
+	/**
+	 * <p>Replace any stub property sources with actual instances.
+	 * 使用实际的属性源实例替换所有存根属性源
+	 * @see org.springframework.core.env.PropertySource.StubPropertySource
+	 * @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
+	 */
+	protected void initPropertySources() {
+		// For subclasses: do nothing by default.
+	}
+```
+从上面可以看，准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。初始化属性源方法 *#initPropertySources* 待子类实现。
+2. 告诉子类刷新内部bean工厂
+```java
+// Tell the subclass to refresh the internal bean factory.
+//告诉子类刷新内部bean工厂
+ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+```
+
+```java
+/**
+ * Tell the subclass to refresh the internal bean factory.
+ * 通知子类刷新内部bean工厂
+ * @return the fresh BeanFactory instance
+ * @see #refreshBeanFactory()
+ * @see #getBeanFactory()
+ */
+protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+	refreshBeanFactory();//刷新bean工厂，加载配置
+	ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+	if (logger.isDebugEnabled()) {
+		logger.debug("Bean factory for " + getDisplayName() + ": " + beanFactory);
+	}
+	return beanFactory;
+}
+/**
+ * Subclasses must implement this method to perform the actual configuration load.
+ * 子类必须实现此方法，执行实际的配置加载。
+ * The method is invoked by {@link #refresh()} before any other initialization work.
+ * 在任何初始化工作前，此方法被{@link #refresh()}方法调用。
+ * <p>A subclass will either create a new bean factory and hold a reference to it,
+ * or return a single BeanFactory instance that it holds. In the latter case, it will
+ * usually throw an IllegalStateException if refreshing the context more than once.
+ * 子类要么创建一个新的bean工厂，并持有工厂引用，要么返回持有的bean工厂实例。在后一种情况下，
+ * 如果刷新上下文多余一次，将抛出非法状态异常。
+ * @throws BeansException if initialization of the bean factory failed
+ * @throws IllegalStateException if already initialized and multiple refresh
+ * attempts are not supported
+ */
+protected abstract void refreshBeanFactory() throws BeansException, IllegalStateException;
+/**
+ * Subclasses must return their internal bean factory here. They should implement the
+ * lookup efficiently, so that it can be called repeatedly without a performance penalty.
+ * 子类必须他们内部的bean工厂。同时应该实现有效的查找，以便重复调用时，不会影响性能。
+ * <p>Note: Subclasses should check whether the context is still active before
+ * returning the internal bean factory. The internal factory should generally be
+ * considered unavailable once the context has been closed.
+ * 注意：在返回内部bean工厂之前，子类应该检查上下文是否处于激活状态。一旦上下文关闭，内部bean工厂将不可用。
+ * @return this application context's internal bean factory (never {@code null})
+ * @throws IllegalStateException if the context does not hold an internal bean factory yet
+ * (usually if {@link #refresh()} has never been called) or if the context has been
+ * closed already
+ * 如果上下文还没有只有内部bean工厂（通常情况下#refresh方法，还没有调用），或者上下文还没有关闭。
+ * @see #refreshBeanFactory()
+ * @see #closeBeanFactory()
+ */
+@Override
+public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
+```
+从上面可以看出，通知子类刷新内部bean工厂实际操作在 *#refreshBeanFactory* 中，刷新bean工厂操作待子类扩展，在刷新完bean工厂之后，返回当前上下文的bean工厂，
+返回当前上下文的bean工厂 *#getBeanFactory* 待子类实现。
+3. 准备上下文使用的bean工厂
+```java
+//准备上下文使用的bean工厂
+prepareBeanFactory(beanFactory);
+```
+```java
+/**
+ * Configure the factory's standard context characteristics,
+ * such as the context's ClassLoader and post-processors.
+ * 配置bean工厂的标准上下文特征，比如上下文加载器和后处理器
+ * @param beanFactory the BeanFactory to configure
+ */
+protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+	// Tell the internal bean factory to use the context's class loader etc.
+	beanFactory.setBeanClassLoader(getClassLoader());//设置bean工厂的bean加载器
+	//设置bean表达式解决器
+	beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+	//设置bean工厂的属性编辑注册器
+	beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
+
+	// Configure the bean factory with context callbacks.
+	//配置bean工厂上下文回调，忽略上下文回调Aware相关接口
+	beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+	beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
+	beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
+	beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
+	beanFactory.ignoreDependencyInterface(ApplicationEventPublisherAware.class);
+	beanFactory.ignoreDependencyInterface(MessageSourceAware.class);
+	beanFactory.ignoreDependencyInterface(ApplicationContextAware.class);
+
+	// BeanFactory interface not registered as resolvable type in a plain factory.
+	// MessageSource registered (and found for autowiring) as a bean.
+	//bean工厂接口在空白工厂中，没有作为可解决类型。
+	//消息源作为bean注册到工厂中，以便自动装配。
+	beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
+	beanFactory.registerResolvableDependency(ResourceLoader.class, this);
+	beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
+	beanFactory.registerResolvableDependency(ApplicationContext.class, this);
+
+	// Register early post-processor for detecting inner beans as ApplicationListeners.
+	//注册bean后处理器，用于探测内部应用监听器bean。
+	beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
+
+	// Detect a LoadTimeWeaver and prepare for weaving, if found.
+	//探测加载时间织入器，如果发现，准备织入。
+	if (beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
+		beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
+		// Set a temporary ClassLoader for type matching.
+		//配置类型匹配的临时类加载器
+		beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
+	}
+
+	// Register default environment beans.
+	//注册默认的环境，系统属性，系统环境配置bean。
+	if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
+		beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
+	}
+	if (!beanFactory.containsLocalBean(SYSTEM_PROPERTIES_BEAN_NAME)) {
+		beanFactory.registerSingleton(SYSTEM_PROPERTIES_BEAN_NAME, getEnvironment().getSystemProperties());
+	}
+	if (!beanFactory.containsLocalBean(SYSTEM_ENVIRONMENT_BEAN_NAME)) {
+		beanFactory.registerSingleton(SYSTEM_ENVIRONMENT_BEAN_NAME, getEnvironment().getSystemEnvironment());
+	}
+}
+```
+
+4. 在上下文子类中，允许后处理bean工厂
+```java
+// Allows post-processing of the bean factory in context subclasses.
+//在上下文子类中，允许后处理bean工厂。
+postProcessBeanFactory(beanFactory);
+```
+
+5. 调用注册到上下文中的工厂后处理器
+```java
+// Invoke factory processors registered as beans in the context.
+//调用注册到上下文中的工厂后处理器
+invokeBeanFactoryPostProcessors(beanFactory);
+```
+6. 注册拦截bean创建的bean后处理器
+```java
+// Register bean processors that intercept bean creation.
+//注册拦截bean创建的bean后处理器
+registerBeanPostProcessors(beanFactory);
+```
+
+7. 初始化上下文的消息源
+```java
+// Initialize message source for this context.
+//初始化上下文的消息源
+initMessageSource();
+```
+
+8. 始化上下文的事件多播器
+```java
+// Initialize event multicaster for this context.
+//初始化上下文的事件多播器
+initApplicationEventMulticaster();
+```
+
+9. 初始化上下文子类中的其他特殊的bean
+```java
+// Initialize other special beans in specific context subclasses.
+//初始化上下文子类中的其他特殊的bean
+onRefresh();
+```
+
+10. 检查监听器bean，并注册
+```java
+// Check for listener beans and register them.
+//检查监听器bean，并注册
+registerListeners();
+```
+
+11. 初始化所有遗留的非懒加载单例bean
+```java
+// Instantiate all remaining (non-lazy-init) singletons.
+//初始化所有遗留的非懒加载单例bean
+finishBeanFactoryInitialization(beanFactory);
+```
+
+
+12. 发布相关事件
+```java
+// Last step: publish corresponding event.
+//发布相关事件
+finishRefresh();
+```
+
+13. 销毁已经创建的单例bean，避免资源空占
+```java
+// Destroy already created singletons to avoid dangling resources.
+//销毁已经创建的单例bean，避免资源空占。
+destroyBeans();
+```
+
+14. 置上下文激活状态标志
+```java
+// Reset 'active' flag.
+//重置上下文激活状态标志
+cancelRefresh(ex);
+```
+
+15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存
+```java
+// Reset common introspection caches in Spring's core, since we
+// might not ever need metadata for singleton beans anymore...
+//由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
+resetCommonCaches();
+```
+
+
+从上面可以看出，应用上下文刷新的过程为：
+1. 准备上下文刷新操作；
+准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。
+初始化属性源方法 *#initPropertySources* 待子类实现。
+2. 告诉子类刷新内部bean工厂；
+通知子类刷新内部bean工厂实际操作在 *#refreshBeanFactory* 中，刷新bean工厂操作待子类扩展，在刷新完bean工厂之后，返回当前上下文的bean工厂，
+返回当前上下文的bean工厂 *#getBeanFactory* 待子类实现。
+3. 准备上下文使用的bean工厂；
+4. 在上下文子类中，允许后处理bean工厂；
+5. 调用注册到上下文中的工厂后处理器；
+6. 注册拦截bean创建的bean后处理器；
+7. 初始化上下文的消息源；
+8. 始化上下文的事件多播器；
+9. 初始化上下文子类中的其他特殊的bean；
+10. 检查监听器bean，并注册；
+11. 初始化所有遗留的非懒加载单例bean；
+12. 发布相关事件；
+如果刷新过程出现异常则执行13,14步，
+13. 销毁已经创建的单例bean，避免资源空占；
+14. 置上下文激活状态标志；
+最后执行15步，
+15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
+
+
+
 ###
 源码参见：[][]
 
