@@ -648,6 +648,13 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 	}
 }
 ```
+从上面可以看出，预备bean工厂畅主要的是设置工厂类加载器，Spring EL表达式解决器 *StandardBeanExpressionResolver*，资源编辑器 *ResourceEditorRegistrar*；
+添加bean后处理器 *ApplicationContextAwareProcessor* 处理与应用上下文关联的Awarebean实例，比如 *EnvironmentAware，EmbeddedValueResolverAware，ResourceLoaderAware
+ApplicationEventPublisherAware，MessageSourceAware，ApplicationContextAware*，并忽略掉这些依赖。同时注册 *BeanFactory，ResourceLoader，ApplicationEventPublisher，
+ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，探测应用监听器bean定义，并添加到应用上下文中。如果bean工厂中包含加载时间织入器，则设置加载时间织入器后处理器
+*LoadTimeWeaverAwareProcessor* ， 并配置类型匹配的临时类加载器。最后如果需要，注册环境，系统属性，系统变量单例bean到bean工厂。
+
+再来看第四点。
 
 4. 在上下文子类中，允许后处理bean工厂
 ```java
@@ -656,11 +663,48 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 postProcessBeanFactory(beanFactory);
 ```
 
+```java
+/**
+ * Modify the application context's internal bean factory after its standard
+ * initialization. All bean definitions will have been loaded, but no beans
+ * will have been instantiated yet. This allows for registering special
+ * BeanPostProcessors etc in certain ApplicationContext implementations.
+ * 在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean
+ * 已完成初始化。允许在确定的应用上下文实现中注册特殊的bean后处理器。
+ *
+ * @param beanFactory the bean factory used by the application context
+ */
+protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+}
+```
+方法postProcessBeanFactory在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean已完成初始化。
+允许在确定的应用上下文实现中注册特殊的bean后处理器。postProcessBeanFactory待子类扩展。
+
 5. 调用注册到上下文中的工厂后处理器
 ```java
 // Invoke factory processors registered as beans in the context.
 //调用注册到上下文中的工厂后处理器
 invokeBeanFactoryPostProcessors(beanFactory);
+```
+```java
+/**
+ * Instantiate and invoke all registered BeanFactoryPostProcessor beans,
+ * respecting explicit order if given.
+ * <p>Must be called before singleton instantiation.
+ * 初始化和调用所有注册的bean工厂后处理器bean，如果显示配置顺序，则按顺序初始化、调用。
+ * 在单例模式bean初始化前，必须调用。
+ */
+protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+	PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
+
+	// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
+	// (e.g. through an @Bean method registered by ConfigurationClassPostProcessor)
+	//如果同时探测到加载时间织入器，准备织入，比如通过ConfigurationClassPostProcessor注册的bean
+	if (beanFactory.getTempClassLoader() == null && beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
+		beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
+		beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
+	}
+}
 ```
 6. 注册拦截bean创建的bean后处理器
 ```java
@@ -739,11 +783,22 @@ resetCommonCaches();
 1. 准备上下文刷新操作；
 准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。
 初始化属性源方法 *#initPropertySources* 待子类实现。
+
 2. 告诉子类刷新内部bean工厂；
 通知子类刷新内部bean工厂实际操作在 *#refreshBeanFactory* 中，刷新bean工厂操作待子类扩展，在刷新完bean工厂之后，返回当前上下文的bean工厂，
 返回当前上下文的bean工厂 *#getBeanFactory* 待子类实现。
+
 3. 准备上下文使用的bean工厂；
+预备bean工厂畅主要的是设置工厂类加载器，Spring EL表达式解决器 *StandardBeanExpressionResolver*，资源编辑器 *ResourceEditorRegistrar*；
+添加bean后处理器 *ApplicationContextAwareProcessor* 处理与应用上下文关联的Awarebean实例，比如 *EnvironmentAware，EmbeddedValueResolverAware，ResourceLoaderAware
+ApplicationEventPublisherAware，MessageSourceAware，ApplicationContextAware*，并忽略掉这些依赖。同时注册 *BeanFactory，ResourceLoader，ApplicationEventPublisher，
+ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，探测应用监听器bean定义，并添加到应用上下文中。如果bean工厂中包含加载时间织入器，则设置加载时间织入器后处理器
+*LoadTimeWeaverAwareProcessor* ， 并配置类型匹配的临时类加载器。最后如果需要，注册环境，系统属性，系统变量单例bean到bean工厂。
+
 4. 在上下文子类中，允许后处理bean工厂；
+在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean已完成初始化。
+允许在确定的应用上下文实现中注册特殊的bean后处理器。方法postProcessBeanFactory待子类扩展。
+
 5. 调用注册到上下文中的工厂后处理器；
 6. 注册拦截bean创建的bean后处理器；
 7. 初始化上下文的消息源；
