@@ -706,12 +706,46 @@ protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory b
 	}
 }
 ```
+[PostProcessorRegistrationDelegate][]用于代理抽象上下文的后处理器处理操作。
+这一步所有的做的事情为调用bean工厂后处理器，处理bean工厂，具体过程为：如果为bean工厂为bean定义注册器实例，
+则调用上下文中的bean定义注册器后处理器,处理工厂，然后调用实现了PriorityOrdered，Ordered接口和剩余的bean定义注册器后处理器，处理bean工厂；
+如果bean工厂不是bean定义注册器实例，则使用上下文中的bean工厂后处理器，处理bean工厂。从bean工厂内获取所有bean工厂处理器实例，
+按实现了PriorityOrdered，Ordered接口和剩余的bean工厂后处理器顺序，处理bean工厂；最后清空bean工厂的元数据缓存。
+如果bean工厂的临时加载器为空，且包含加载时间织入器，则设置bean工厂的加载时间织入器后处理器，设置bean工厂的临时类加载器为[ContextTypeMatchClassLoader][]。
+
+
+[PostProcessorRegistrationDelegate]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/PostProcessorRegistrationDelegate.java "PostProcessorRegistrationDelegate"
+
+[ContextTypeMatchClassLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ContextTypeMatchClassLoader.java "ContextTypeMatchClassLoader"
+
+
+
 6. 注册拦截bean创建的bean后处理器
 ```java
 // Register bean processors that intercept bean creation.
 //注册拦截bean创建的bean后处理器
 registerBeanPostProcessors(beanFactory);
 ```
+```java
+/**
+ * Instantiate and invoke all registered BeanPostProcessor beans,
+ * respecting explicit order if given.
+ * <p>Must be called before any instantiation of application beans.
+ * 如果注册的bean后处理器有顺序，则以顺序，初始化、调用注册的bean后处理器。
+ * 必须在应用bean初始化前调用。
+ */
+protected void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+	PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory, this);
+}
+```
+注册bean工厂的bean后处理操作，主要委托给[PostProcessorRegistrationDelegate][],注册过程为：
+注册实现PriorityOrdered，Ordered和剩余的bean后处理器到bean工厂，然后注册内部bean后处理器[MergedBeanDefinitionPostProcessor][];
+最后添加应用监听器探测器[ApplicationListenerDetector][]。
+
+
+[MergedBeanDefinitionPostProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/support/MergedBeanDefinitionPostProcessor.java "MergedBeanDefinitionPostProcessor"   
+
+[ApplicationListenerDetector]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ApplicationListenerDetector.java "ApplicationListenerDetector"
 
 7. 初始化上下文的消息源
 ```java
@@ -719,6 +753,48 @@ registerBeanPostProcessors(beanFactory);
 //初始化上下文的消息源
 initMessageSource();
 ```
+```java
+/**
+ * Initialize the MessageSource.
+ * Use parent's if none defined in this context.
+ * 初始化消息源，如果上下文中没有定义，则使用父类的
+ */
+protected void initMessageSource() {
+	ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+	if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {
+		//如果当前bean工厂配置了消息源，则获取消息源
+		this.messageSource = beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME, MessageSource.class);
+		// Make MessageSource aware of parent MessageSource.
+		//如果消息源为层级消息源，则设置消息源的父类消息源
+		if (this.parent != null && this.messageSource instanceof HierarchicalMessageSource) {
+			HierarchicalMessageSource hms = (HierarchicalMessageSource) this.messageSource;
+			if (hms.getParentMessageSource() == null) {
+				// Only set parent context as parent MessageSource if no parent MessageSource
+				// registered already.
+				hms.setParentMessageSource(getInternalParentMessageSource());
+			}
+		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Using MessageSource [" + this.messageSource + "]");
+		}
+	}
+	else {
+		//如果当前bean工厂没有配置消息源，使用代理消息源，代理父类消息源，并注册到工厂中
+		// Use empty MessageSource to be able to accept getMessage calls.
+		DelegatingMessageSource dms = new DelegatingMessageSource();
+		dms.setParentMessageSource(getInternalParentMessageSource());
+		this.messageSource = dms;
+		beanFactory.registerSingleton(MESSAGE_SOURCE_BEAN_NAME, this.messageSource);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Unable to locate MessageSource with name '" + MESSAGE_SOURCE_BEAN_NAME +
+					"': using default [" + this.messageSource + "]");
+		}
+	}
+}
+```
+从上面可以看出，如果bean工厂包含消息源，则配置为上下文消息源，如果当前上下文父上下文不为空且消息源为层级消息源HierarchicalMessageSource，
+配置当前消息源的父消息源为当前上下文内部父消息源。否则创建上下文内部的父消息源的代理DelegatingMessageSource，并注册消息源到bean工厂。
+
 
 8. 始化上下文的事件多播器
 ```java
@@ -726,6 +802,35 @@ initMessageSource();
 //初始化上下文的事件多播器
 initApplicationEventMulticaster();
 ```
+```java
+/**
+ * Initialize the ApplicationEventMulticaster.
+ * Uses SimpleApplicationEventMulticaster if none defined in the context.
+ * 初始化应用事件多播器，如果上下文中没有定义，则使用SimpleApplicationEventMulticaster
+ * @see org.springframework.context.event.SimpleApplicationEventMulticaster
+ */
+protected void initApplicationEventMulticaster() {
+	ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+	if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
+		this.applicationEventMulticaster =
+				beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Using ApplicationEventMulticaster [" + this.applicationEventMulticaster + "]");
+		}
+	}
+	else {
+		this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
+		beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Unable to locate ApplicationEventMulticaster with name '" +
+					APPLICATION_EVENT_MULTICASTER_BEAN_NAME +
+					"': using default [" + this.applicationEventMulticaster + "]");
+		}
+	}
+}
+```
+从上面可看出，初始化上下文的事件多播器过程为，如果bean工厂包含应用事件多播器，则配置应用上下文的应用事件多播器为bean工厂内的应用事件多播器；
+否则使用SimpleApplicationEventMulticaster，并注册到bean工厂。
 
 9. 初始化上下文子类中的其他特殊的bean
 ```java
@@ -734,12 +839,67 @@ initApplicationEventMulticaster();
 onRefresh();
 ```
 
+```java
+/**
+ * Template method which can be overridden to add context-specific refresh work.
+ * Called on initialization of special beans, before instantiation of singletons.
+ * <p>This implementation is empty.
+ * 此模板方法可以被重写用于添加上下文的特殊刷新工作。在初始化单例bean前调用，初始化一些特殊的bean。
+ * @throws BeansException in case of errors
+ * @see #refresh()
+ */
+protected void onRefresh() throws BeansException {
+	// For subclasses: do nothing by default.
+}
+```
+初始化上下文子类中的其他特殊的bean方法onRefresh，待子类扩展使用。
+
 10. 检查监听器bean，并注册
 ```java
 // Check for listener beans and register them.
 //检查监听器bean，并注册
 registerListeners();
 ```
+
+```java
+/**
+ * Add beans that implement ApplicationListener as listeners.
+ * Doesn't affect other listeners, which can be added without being beans.
+ * 添加应用事件监听器bean
+ */
+protected void registerListeners() {
+	// Register statically specified listeners first.
+	//注册静态的特殊监听器先
+	for (ApplicationListener<?> listener : getApplicationListeners()) {
+		getApplicationEventMulticaster().addApplicationListener(listener);
+	}
+
+	// Do not initialize FactoryBeans here: We need to leave all regular beans
+	// uninitialized to let post-processors apply to them!
+	//在这里不要初始化工厂bean，我们需要使用后处理器应用者写没有初始化的bean。
+	String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
+	for (String listenerBeanName : listenerBeanNames) {
+		getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
+	}
+
+	// Publish early application events now that we finally have a multicaster...
+	//现在bean工行已经有一事件多播器，可以发布预应用事件
+	Set<ApplicationEvent> earlyEventsToProcess = this.earlyApplicationEvents;
+	this.earlyApplicationEvents = null;
+	if (earlyEventsToProcess != null) {
+		for (ApplicationEvent earlyEvent : earlyEventsToProcess) {
+			getApplicationEventMulticaster().multicastEvent(earlyEvent);
+		}
+	}
+}
+@Override
+public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+	assertBeanFactoryActive();
+	return getBeanFactory().getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+}
+```
+从上面可看出，注册监听器过程，主要是注册应用上下文中的应用监听器到应用事件多播器，注册bean工厂内部的应用监听器
+到应用事件多播器，如果存在预发布应用事件，则多播应用事件。
 
 11. 初始化所有遗留的非懒加载单例bean
 ```java
@@ -748,12 +908,95 @@ registerListeners();
 finishBeanFactoryInitialization(beanFactory);
 ```
 
+```java
+/**
+ * Finish the initialization of this context's bean factory,
+ * initializing all remaining singleton beans.
+ * 完成上下文bean工厂的初始化，初始化所有遗留的单例bean。
+ */
+protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
+	// Initialize conversion service for this context.
+	//初始化上下文转换服务
+	if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
+			beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
+		beanFactory.setConversionService(
+				beanFactory.getBean(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class));
+	}
+
+	// Register a default embedded value resolver if no bean post-processor
+	// (such as a PropertyPlaceholderConfigurer bean) registered any before:
+	// at this point, primarily for resolution in annotation attribute values.
+	/*
+	 * 如果没有bean后处理器（PropertyPlaceholderConfigurer）注册，则注册一个默认的
+	 * 嵌入式值解决器：主要解决注解属性的值。
+	 */
+	if (!beanFactory.hasEmbeddedValueResolver()) {
+		beanFactory.addEmbeddedValueResolver(new StringValueResolver() {
+			@Override
+			public String resolveStringValue(String strVal) {
+				return getEnvironment().resolvePlaceholders(strVal);
+			}
+		});
+	}
+
+	// Initialize LoadTimeWeaverAware beans early to allow for registering their transformers early.
+	//初始化先前加载时间织入器Aware bean，允许注册他们的变换器。
+	String[] weaverAwareNames = beanFactory.getBeanNamesForType(LoadTimeWeaverAware.class, false, false);
+	for (String weaverAwareName : weaverAwareNames) {
+		getBean(weaverAwareName);
+	}
+
+	// Stop using the temporary ClassLoader for type matching.
+	//停止使用临时类加载器用于类型匹配
+	beanFactory.setTempClassLoader(null);
+
+	// Allow for caching all bean definition metadata, not expecting further changes.
+	//允许缓存所有的bean定义元数据，不期望进一步的改变。
+	beanFactory.freezeConfiguration();
+
+	// Instantiate all remaining (non-lazy-init) singletons.
+	//初始化所有剩余的单例bean
+	beanFactory.preInstantiateSingletons();
+}
+@Override
+public Object getBean(String name) throws BeansException {
+	assertBeanFactoryActive();
+	return getBeanFactory().getBean(name);
+}
+```
+从上面可以看出：完成上下文bean工厂的初始化，初始化所有遗留的单例bean，如果bean工厂内存在转换服务ConversionService，则配置bean工厂的转换服务；
+如果没有bean后处理器（PropertyPlaceholderConfigurer）注册，则注册一个默认的嵌入式值解决器StringValueResolver，主要解决注解属性的值；
+初始化先前加载时间织入器Aware bean，允许注册他们的变换器；停止使用临时类加载器用于类型匹配；冻结bean工厂配置；最后初始化所有剩余的单例bean。
 
 12. 发布相关事件
 ```java
 // Last step: publish corresponding event.
 //发布相关事件
 finishRefresh();
+```
+
+```java
+/**
+ * Finish the refresh of this context, invoking the LifecycleProcessor's
+ * onRefresh() method and publishing the
+ * {@link org.springframework.context.event.ContextRefreshedEvent}.
+ * 完成上下文刷新操作，调用生命周期处理器的onRefresh方法，并发布ContextRefreshedEvent事件
+ */
+protected void finishRefresh() {
+	// Initialize lifecycle processor for this context.
+	//初始化上下文生命周期处理器
+	initLifecycleProcessor();
+
+	// Propagate refresh to lifecycle processor first.
+
+	getLifecycleProcessor().onRefresh();
+
+	// Publish the final event.发布上下文刷新事件
+	publishEvent(new ContextRefreshedEvent(this));
+
+	// Participate in LiveBeansView MBean, if active.
+	LiveBeansView.registerApplicationContext(this);
+}
 ```
 
 13. 销毁已经创建的单例bean，避免资源空占
@@ -800,12 +1043,37 @@ ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，
 允许在确定的应用上下文实现中注册特殊的bean后处理器。方法postProcessBeanFactory待子类扩展。
 
 5. 调用注册到上下文中的工厂后处理器；
+这一步所有的做的事情为调用bean工厂后处理器，处理bean工厂，具体过程为：如果为bean工厂为bean定义注册器实例，
+则调用上下文中的bean定义注册器后处理器,处理工厂，然后调用实现了PriorityOrdered，Ordered接口和剩余的bean定义注册器后处理器，处理bean工厂；
+如果bean工厂不是bean定义注册器实例，则使用上下文中的bean工厂后处理器，处理bean工厂。从bean工厂内获取所有bean工厂处理器实例，
+按实现了PriorityOrdered，Ordered接口和剩余的bean工厂后处理器顺序，处理bean工厂；最后清空bean工厂的元数据缓存。
+如果bean工厂的临时加载器为空，且包含加载时间织入器，则设置bean工厂的加载时间织入器后处理器，设置bean工厂的临时类加载器为[ContextTypeMatchClassLoader][]。
+
 6. 注册拦截bean创建的bean后处理器；
+注册bean工厂的bean后处理操作，主要委托给[PostProcessorRegistrationDelegate][],注册过程为：
+注册实现PriorityOrdered，Ordered和剩余的bean后处理器到bean工厂，然后注册内部bean后处理器[MergedBeanDefinitionPostProcessor][];
+最后添加应用监听器探测器[ApplicationListenerDetector][]。
+
 7. 初始化上下文的消息源；
+如果bean工厂包含消息源，则配置为上下文消息源，如果当前上下文父上下文不为空且消息源为层级消息源HierarchicalMessageSource，
+配置当前消息源的父消息源为当前上下文内部父消息源。否则创建上下文内部的父消息源的代理DelegatingMessageSource，并注册消息源到bean工厂。
+
 8. 始化上下文的事件多播器；
+初始化上下文的事件多播器过程为，如果bean工厂包含应用事件多播器，则配置应用上下文的应用事件多播器为bean工厂内的应用事件多播器；
+否则使用SimpleApplicationEventMulticaster，并注册到bean工厂。
+
 9. 初始化上下文子类中的其他特殊的bean；
+初始化上下文子类中的其他特殊的bean方法onRefresh，待子类扩展使用。
+
 10. 检查监听器bean，并注册；
+注册监听器过程，主要是注册应用上下文中的应用监听器到应用事件多播器，注册bean工厂内部的应用监听器
+到应用事件多播器，如果存在预发布应用事件，则多播应用事件。
+
 11. 初始化所有遗留的非懒加载单例bean；
+完成上下文bean工厂的初始化，初始化所有遗留的单例bean，如果bean工厂内存在转换服务ConversionService，则配置bean工厂的转换服务；
+如果没有bean后处理器（PropertyPlaceholderConfigurer）注册，则注册一个默认的嵌入式值解决器StringValueResolver，主要解决注解属性的值；
+初始化先前加载时间织入器Aware bean，允许注册他们的变换器；停止使用临时类加载器用于类型匹配；冻结bean工厂配置；最后初始化所有剩余的单例bean。
+
 12. 发布相关事件；
 如果刷新过程出现异常则执行13,14步，
 13. 销毁已经创建的单例bean，避免资源空占；
