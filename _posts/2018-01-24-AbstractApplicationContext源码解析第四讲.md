@@ -40,8 +40,7 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 
 # 目录
 * [AbstractApplicationContext定义](abstractapplicationcontext定义)
-    * [](#)
-    * [](#)
+    * [加载应用上下文配置](#加载应用上下文配置)
 * [总结](#总结)
 
 ## AbstractApplicationContext定义
@@ -261,7 +260,7 @@ public void addApplicationListener(ApplicationListener<?> listener) {
 }
 ```
 从上面来看，添加bean工厂后处理器，实际为将bean工厂后处理器添加到上下文的bean工厂后处理器集中beanFactoryPostProcessors（ArrayList<BeanFactoryPostProcessor>）。添加应用监听器，实际上，是将监听器添加到上下文的监听器集合applicationListeners（LinkedHashSet<ApplicationListener<?>>）中。
-
+## 加载应用上下文配置
 下面我们讲到上下文的关键部分刷新应用上下文：
 ```java
 /**
@@ -316,7 +315,7 @@ public void refresh() throws BeansException, IllegalStateException {
 			finishBeanFactoryInitialization(beanFactory);
 
 			// Last step: publish corresponding event.
-			//发布相关事件
+			//完成上下文刷新
 			finishRefresh();
 		}
 
@@ -425,7 +424,7 @@ finishBeanFactoryInitialization(beanFactory);
 ```
 
 
-12. 发布相关事件
+12. 完成上下文刷新
 ```java
 // Last step: publish corresponding event.
 //发布相关事件
@@ -466,10 +465,10 @@ resetCommonCaches();
 9. 初始化上下文子类中的其他特殊的bean；
 10. 检查监听器bean，并注册；
 11. 初始化所有遗留的非懒加载单例bean；
-12. 发布相关事件；
-如果刷新过程出现异常则执行13,14步，
+12. 完成上下文刷新；
+如果以上过程出现异常则执行13,14步，
 13. 销毁已经创建的单例bean，避免资源空占；
-14. 置上下文激活状态标志；
+14. 重置上下文激活状态标志；
 最后执行15步，
 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
 
@@ -1262,14 +1261,14 @@ ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，
 完成上下文刷新主要所有的工作为，初始化上下文的生命周期处理器，默认为 [DefaultLifecycleProcessor][],生命周期处理器主要管理
 bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期bean。然后发布上下文刷新事件给应用监听器，最后注册上下文到[LiveBeansView][] MBean，
 以便监控上下文中bean工厂内部的bean的定义及依赖。
+如果以上过程出现异常则执行13,14步，
 
-如果刷新过程出现异常则执行13,14步，
 13. 销毁已经创建的单例bean，避免资源空占；
 销毁bean操作，主要委托给应用上文的内部bean工厂，bean工厂完成销毁所有的单例bean。
 
 14. 重置上下文激活状态标志；
-
 最后执行15步，
+
 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
 主要清除，类的方法与属性缓存，可解决类型缓存，及类缓存。
 
@@ -1350,13 +1349,13 @@ ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，
 完成上下文刷新主要所有的工作为，初始化上下文的生命周期处理器，默认为 [DefaultLifecycleProcessor][],生命周期处理器主要管理
 bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期bean。然后发布上下文刷新事件给应用监听器，最后注册上下文到[LiveBeansView][] MBean，
 以便监控上下文中bean工厂内部的bean的定义及依赖。
+如果以上过程出现异常则执行13,14步：
 
-如果刷新过程出现异常则执行13,14步，
 13. 销毁已经创建的单例bean，避免资源空占；
 销毁bean操作，主要委托给应用上文的内部bean工厂，bean工厂完成销毁所有的单例bean。
 
 14. 重置上下文激活状态标志；
-
 最后执行15步，
+
 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
 主要清除，类的方法与属性缓存，可解决类型缓存，及类缓存。
