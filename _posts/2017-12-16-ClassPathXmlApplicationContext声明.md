@@ -225,6 +225,10 @@ eclipse UML 插件:[AmaterasUML][] , [download][AmaterasUML download],在安装A
 5. 如果想要拷贝一个文件的Diagrams到另外一个文件，可以使用 *Modle Explorer* 中的模型，只要将model中个某个类或接口复制，粘贴到另一个文件的model，再讲类拖到画图板中，即可，如果拷贝的模型在当前画图板中拥有继承和实现关系，相应的也会自动加上。
 6. 在view菜单中，我们可以显示或隐藏，侧边栏，工具箱，工具栏，导航栏，编辑器及状态栏；在工具栏中可以查看类图的小地图，在地图上任意点击，即进入地图上的相应区域。
 7. 添加静态内部类，首先在 *Modle Explorer* 对应外部类上右击，选择 *add class* ，然后在外部类的内部出现一个class类型，然后将class拉倒画图中即可，再添加关系，重命名。
+8. note组件文章内容换行，有两种方法开启分词支持：
+在编辑文本的时候，右击note文本，在Format菜单中选择“Word Wrap”，在这个组件的属性中找到Format，找到“Word Wrap”选项，点击使之激活。
+注：
+StarUML的分词是基于分隔符的，对于英文等自带分隔符(空格)的语言，直接改变组件大小就可以了；对于中文日文等不带分隔符的语言，就要人为地在需要换行的地方手动添加空格。添加之后就和英文的处理方式一致，直接改变组件大小就可以了。   
 
 [enterprise architect]:http://www.sparxsystems.cn/
 [staruml]:http://staruml.io/download
