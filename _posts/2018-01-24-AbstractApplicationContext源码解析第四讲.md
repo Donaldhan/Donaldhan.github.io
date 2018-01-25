@@ -481,43 +481,43 @@ prepareRefresh();
 ```
 ```java
 /**
-	 * Prepare this context for refreshing, setting its startup date and
-	 * active flag as well as performing any initialization of property sources.
-	 */
-	protected void prepareRefresh() {
-		//初始化上下文启动时间，更新上下文关闭与激活状态
-		this.startupDate = System.currentTimeMillis();
-		this.closed.set(false);
-		this.active.set(true);
+ * Prepare this context for refreshing, setting its startup date and
+ * active flag as well as performing any initialization of property sources.
+ */
+protected void prepareRefresh() {
+	//初始化上下文启动时间，更新上下文关闭与激活状态
+	this.startupDate = System.currentTimeMillis();
+	this.closed.set(false);
+	this.active.set(true);
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Refreshing " + this);
-		}
-
-		// Initialize any placeholder property sources in the context environment
-		//初始化应用上下文环境中的占位符属性源
-		initPropertySources();
-
-		// Validate that all properties marked as required are resolvable
-		//验证所有需要可解决的标注属性
-		// see ConfigurablePropertyResolver#setRequiredProperties
-		getEnvironment().validateRequiredProperties();
-
-		// Allow for the collection of early ApplicationEvents,
-		// to be published once the multicaster is available...
-		//创建预发布应用事件集，一旦多播器可用，则发布事件
-		this.earlyApplicationEvents = new LinkedHashSet<ApplicationEvent>();
+	if (logger.isInfoEnabled()) {
+		logger.info("Refreshing " + this);
 	}
 
-	/**
-	 * <p>Replace any stub property sources with actual instances.
-	 * 使用实际的属性源实例替换所有存根属性源
-	 * @see org.springframework.core.env.PropertySource.StubPropertySource
-	 * @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
-	 */
-	protected void initPropertySources() {
-		// For subclasses: do nothing by default.
-	}
+	// Initialize any placeholder property sources in the context environment
+	//初始化应用上下文环境中的占位符属性源
+	initPropertySources();
+
+	// Validate that all properties marked as required are resolvable
+	//验证所有需要可解决的标注属性
+	// see ConfigurablePropertyResolver#setRequiredProperties
+	getEnvironment().validateRequiredProperties();
+
+	// Allow for the collection of early ApplicationEvents,
+	// to be published once the multicaster is available...
+	//创建预发布应用事件集，一旦多播器可用，则发布事件
+	this.earlyApplicationEvents = new LinkedHashSet<ApplicationEvent>();
+}
+
+/**
+ * <p>Replace any stub property sources with actual instances.
+ * 使用实际的属性源实例替换所有存根属性源
+ * @see org.springframework.core.env.PropertySource.StubPropertySource
+ * @see org.springframework.web.context.support.WebApplicationContextUtils#initServletPropertySources
+ */
+protected void initPropertySources() {
+	// For subclasses: do nothing by default.
+}
 ```
 从上面可以看，准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。初始化属性源方法 *#initPropertySources* 待子类实现。
 
