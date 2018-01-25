@@ -41,7 +41,7 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 # 目录
 * [AbstractApplicationContext定义](abstractapplicationcontext定义)
     * [配置环境](#配置环境)
-    * [加发布事件](#发布事件)
+    * [发布事件](#发布事件)
     * [加载应用上下文配置](#加载应用上下文配置)
 * [总结](#总结)
 
