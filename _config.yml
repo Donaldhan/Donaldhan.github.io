@@ -25,7 +25,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-lunr-js-search
 
-paginate: 5
+paginate: 8
 paginate_path: "page:num"
 
 # tipue_search fulltext search base liquid
