@@ -97,13 +97,11 @@ bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期be
 
 ![AbstractApplicationContext](/image/spring-context/AbstractApplicationContext.png)
 
-这是我们上一篇文章所讲的内容，主要的是应用上下文的刷新操作，今天我们来看抽象应用上下文的剩余操作，主要是关闭上下文，bean工厂，消息源，及资源相关的操作。
+这是我们上一篇文章[AbstractApplicationContext源码解析第四讲][]所讲的内容，主要的是应用上下文的刷新操作，今天我们来看抽象应用上下文的剩余操作，主要是关闭上下文，bean工厂，消息源，及资源相关的操作。
+
+[AbstractApplicationContext源码解析第四讲]:https://donaldhan.github.io/spring-framework/2018/01/24/AbstractApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%AC%AC%E5%9B%9B%E8%AE%B2.html "AbstractApplicationContext源码解析第四讲"
 
 
-
-[AbstractApplicationContext源码解析第四讲]: "AbstractApplicationContext源码解析第四讲"
-
-上一篇文章我们看了，BeanDefinition接口的定义，截止到上一篇文章我们将应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
 
 
 # 目录
