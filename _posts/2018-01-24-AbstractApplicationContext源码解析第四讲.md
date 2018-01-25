@@ -349,7 +349,6 @@ public void refresh() throws BeansException, IllegalStateException {
 刷新应用上下文方法，我们有一下几点需要关注
 
 1. 准备上下文刷新操作
-
 ```java
 // Prepare this context for refreshing.
 //准备上下文刷新操作
@@ -422,7 +421,6 @@ registerListeners();
 //初始化所有遗留的非懒加载单例bean
 finishBeanFactoryInitialization(beanFactory);
 ```
-
 
 12. 完成上下文刷新
 ```java
@@ -508,7 +506,6 @@ protected void prepareRefresh() {
 	//创建预发布应用事件集，一旦多播器可用，则发布事件
 	this.earlyApplicationEvents = new LinkedHashSet<ApplicationEvent>();
 }
-
 /**
  * <p>Replace any stub property sources with actual instances.
  * 使用实际的属性源实例替换所有存根属性源
