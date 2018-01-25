@@ -40,6 +40,8 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 
 # 目录
 * [AbstractApplicationContext定义](abstractapplicationcontext定义)
+    * [配置环境](#配置环境)
+    * [加发布事件](#发布事件)
     * [加载应用上下文配置](#加载应用上下文配置)
 * [总结](#总结)
 
@@ -48,6 +50,7 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 
 [AbstractApplicationContext]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/AbstractApplicationContext.java "AbstractApplicationContext"
 
+### 配置环境
 ```java
 /**
  * 设置应用上下文的环境。
@@ -104,6 +107,7 @@ public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalS
 ```
 从上面可以看，获取自动装配bean工厂AutowireCapableBeanFactory，实际委托给获取bean工厂方法getBeanFactory，getBeanFactory方法待子类扩展。
 
+### 发布事件
 再来看发布应用事件：
 ```java
 /**
