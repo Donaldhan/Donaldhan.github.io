@@ -50,35 +50,34 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 
 ```java
 /**
-	 * 设置应用上下文的环境。
-	 * 默认为{@link #createEnvironment()}返回的环境实例。使用此方法可以替换默认的环境配置，
-	 * 可以通过{@link#getEnvironment()}获取环境配置。修改环境应该在{@link #refresh()}操作之前
-	 * @see org.springframework.context.support.AbstractApplicationContext#createEnvironment
-	 */
-	@Override
-	public void setEnvironment(ConfigurableEnvironment environment) {
-		this.environment = environment;
-	}
+ * 设置应用上下文的环境。
+ * 默认为{@link #createEnvironment()}返回的环境实例。使用此方法可以替换默认的环境配置，
+ * 可以通过{@link#getEnvironment()}获取环境配置。修改环境应该在{@link #refresh()}操作之前
+ * @see org.springframework.context.support.AbstractApplicationContext#createEnvironment
+ */
+@Override
+public void setEnvironment(ConfigurableEnvironment environment) {
+	this.environment = environment;
+}
 
-	/**
-	 * 返回应用上下文的可配置环境，允许进一步定制，如果没有，则通过createEnvironment方法，创建一个
-	 * 标准的环境。
-	 */
-	@Override
-	public ConfigurableEnvironment getEnvironment() {
-		if (this.environment == null) {
-			this.environment = createEnvironment();
-		}
-		return this.environment;
+/**
+ * 返回应用上下文的可配置环境，允许进一步定制，如果没有，则通过createEnvironment方法，创建一个
+ * 标准的环境。
+ */
+@Override
+public ConfigurableEnvironment getEnvironment() {
+	if (this.environment == null) {
+		this.environment = createEnvironment();
 	}
-	/**
-	 * 创建，并返回一个标准的环境StandardEnvironment，为了使用定制ConfigurableEnvironment，
-	 * 的子类可以重写这个方法
-	 */
-	protected ConfigurableEnvironment createEnvironment() {
-		return new StandardEnvironment();
-	}
-
+	return this.environment;
+}
+/**
+ * 创建，并返回一个标准的环境StandardEnvironment，为了使用定制ConfigurableEnvironment，
+ * 的子类可以重写这个方法
+ */
+protected ConfigurableEnvironment createEnvironment() {
+	return new StandardEnvironment();
+}
 ```
 从上面可以，我们可以通过setEnvironment配置上下文环境，通过getEnvironment获取上下文位置，如果没有则上下文的环境默认为StandardEnvironment。
 需要注意的是在修改应用上下文环境操作，应该在刷新上下文refresh操作之前。
@@ -86,22 +85,22 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 再来看获取bean工厂
 ```java
 /**
-	 * 如果可利用，则返回上下文内部的bean工厂AutowireCapableBeanFactory
-	 * @see #getBeanFactory()
-	 */
-	@Override
-	public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
-		return getBeanFactory();
-	}
-    /**
-	 * 子类必须他们内部的bean工厂。同时应该实现有效的查找，以便重复调用时，不会影响性能。
-	 * 注意：在返回内部bean工厂之前，子类应该检查上下文是否处于激活状态。一旦上下文关闭，内部bean工厂将不可用。
-	 * 如果上下文还没有只有内部bean工厂（通常情况下#refresh方法，还没有调用），或者上下文还没有关闭。
-	 * @see #refreshBeanFactory()
-	 * @see #closeBeanFactory()
-	 */
-	@Override
-	public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
+ * 如果可利用，则返回上下文内部的bean工厂AutowireCapableBeanFactory
+ * @see #getBeanFactory()
+ */
+@Override
+public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
+	return getBeanFactory();
+}
+/**
+ * 子类必须他们内部的bean工厂。同时应该实现有效的查找，以便重复调用时，不会影响性能。
+ * 注意：在返回内部bean工厂之前，子类应该检查上下文是否处于激活状态。一旦上下文关闭，内部bean工厂将不可用。
+ * 如果上下文还没有只有内部bean工厂（通常情况下#refresh方法，还没有调用），或者上下文还没有关闭。
+ * @see #refreshBeanFactory()
+ * @see #closeBeanFactory()
+ */
+@Override
+public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
 ```
 从上面可以看，获取自动装配bean工厂AutowireCapableBeanFactory，实际委托给获取bean工厂方法getBeanFactory，getBeanFactory方法待子类扩展。
 
