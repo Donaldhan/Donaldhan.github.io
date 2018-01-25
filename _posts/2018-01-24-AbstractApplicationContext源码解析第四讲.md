@@ -474,14 +474,11 @@ resetCommonCaches();
 
 下面我们分别来看以上几点：
 1. 准备上下文刷新操作
-
 ```java
 // Prepare this context for refreshing.
 //准备上下文刷新操作
 prepareRefresh();
 ```
-
-
 ```java
 /**
 	 * Prepare this context for refreshing, setting its startup date and
@@ -523,13 +520,13 @@ prepareRefresh();
 	}
 ```
 从上面可以看，准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。初始化属性源方法 *#initPropertySources* 待子类实现。
+
 2. 告诉子类刷新内部bean工厂
 ```java
 // Tell the subclass to refresh the internal bean factory.
 //告诉子类刷新内部bean工厂
 ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 ```
-
 ```java
 /**
  * Tell the subclass to refresh the internal bean factory.
@@ -582,6 +579,7 @@ public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalS
 ```
 从上面可以看出，通知子类刷新内部bean工厂实际操作在 *#refreshBeanFactory* 中，刷新bean工厂操作待子类扩展，在刷新完bean工厂之后，返回当前上下文的bean工厂，
 返回当前上下文的bean工厂 *#getBeanFactory* 待子类实现。
+
 3. 准备上下文使用的bean工厂
 ```java
 //准备上下文使用的bean工厂
@@ -652,7 +650,6 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 ApplicationEventPublisherAware，MessageSourceAware，ApplicationContextAware*，并忽略掉这些依赖。同时注册 *BeanFactory，ResourceLoader，ApplicationEventPublisher，
 ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，探测应用监听器bean定义，并添加到应用上下文中。如果bean工厂中包含加载时间织入器，则设置加载时间织入器后处理器
 *LoadTimeWeaverAwareProcessor* ， 并配置类型匹配的临时类加载器。最后如果需要，注册环境，系统属性，系统变量单例bean到bean工厂。
-
 再来看第四点。
 
 4. 在上下文子类中，允许后处理bean工厂
@@ -661,7 +658,6 @@ ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，
 //在上下文子类中，允许后处理bean工厂。
 postProcessBeanFactory(beanFactory);
 ```
-
 ```java
 /**
  * Modify the application context's internal bean factory after its standard
@@ -676,8 +672,7 @@ postProcessBeanFactory(beanFactory);
 protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 }
 ```
-方法postProcessBeanFactory在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean已完成初始化。
-允许在确定的应用上下文实现中注册特殊的bean后处理器。postProcessBeanFactory待子类扩展。
+方法postProcessBeanFactory在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean已完成初始化。允许在确定的应用上下文实现中注册特殊的bean后处理器。postProcessBeanFactory待子类扩展。
 
 5. 调用注册到上下文中的工厂后处理器
 ```java
@@ -705,19 +700,9 @@ protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory b
 	}
 }
 ```
-[PostProcessorRegistrationDelegate][]用于代理抽象上下文的后处理器处理操作。
-这一步所有的做的事情为调用bean工厂后处理器，处理bean工厂，具体过程为：如果为bean工厂为bean定义注册器实例，
-则调用上下文中的bean定义注册器后处理器,处理工厂，然后调用实现了PriorityOrdered，Ordered接口和剩余的bean定义注册器后处理器，处理bean工厂；
-如果bean工厂不是bean定义注册器实例，则使用上下文中的bean工厂后处理器，处理bean工厂。从bean工厂内获取所有bean工厂处理器实例，
+[PostProcessorRegistrationDelegate][]用于代理抽象上下文的后处理器处理操作。这一步所有的做的事情为调用bean工厂后处理器，处理bean工厂，具体过程为：如果为bean工厂为bean定义注册器实例，则调用上下文中的bean定义注册器后处理器,处理工厂，然后调用实现了PriorityOrdered，Ordered接口和剩余的bean定义注册器后处理器，处理bean工厂；如果bean工厂不是bean定义注册器实例，则使用上下文中的bean工厂后处理器，处理bean工厂。从bean工厂内获取所有bean工厂处理器实例，
 按实现了PriorityOrdered，Ordered接口和剩余的bean工厂后处理器顺序，处理bean工厂；最后清空bean工厂的元数据缓存。
 如果bean工厂的临时加载器为空，且包含加载时间织入器，则设置bean工厂的加载时间织入器后处理器，设置bean工厂的临时类加载器为[ContextTypeMatchClassLoader][]。
-
-
-[PostProcessorRegistrationDelegate]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/PostProcessorRegistrationDelegate.java "PostProcessorRegistrationDelegate"
-
-[ContextTypeMatchClassLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ContextTypeMatchClassLoader.java "ContextTypeMatchClassLoader"
-
-
 
 6. 注册拦截bean创建的bean后处理器
 ```java
@@ -740,11 +725,6 @@ protected void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFa
 注册bean工厂的bean后处理操作，主要委托给[PostProcessorRegistrationDelegate][],注册过程为：
 注册实现PriorityOrdered，Ordered和剩余的bean后处理器到bean工厂，然后注册内部bean后处理器[MergedBeanDefinitionPostProcessor][];
 最后添加应用监听器探测器[ApplicationListenerDetector][]。
-
-
-[MergedBeanDefinitionPostProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/support/MergedBeanDefinitionPostProcessor.java "MergedBeanDefinitionPostProcessor"   
-
-[ApplicationListenerDetector]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ApplicationListenerDetector.java "ApplicationListenerDetector"
 
 7. 初始化上下文的消息源
 ```java
@@ -794,7 +774,6 @@ protected void initMessageSource() {
 从上面可以看出，如果bean工厂包含消息源，则配置为上下文消息源，如果当前上下文父上下文不为空且消息源为层级消息源HierarchicalMessageSource，
 配置当前消息源的父消息源为当前上下文内部父消息源。否则创建上下文内部的父消息源的代理DelegatingMessageSource，并注册消息源到bean工厂。
 
-
 8. 始化上下文的事件多播器
 ```java
 // Initialize event multicaster for this context.
@@ -837,7 +816,6 @@ protected void initApplicationEventMulticaster() {
 //初始化上下文子类中的其他特殊的bean
 onRefresh();
 ```
-
 ```java
 /**
  * Template method which can be overridden to add context-specific refresh work.
@@ -859,7 +837,6 @@ protected void onRefresh() throws BeansException {
 //检查监听器bean，并注册
 registerListeners();
 ```
-
 ```java
 /**
  * Add beans that implement ApplicationListener as listeners.
@@ -906,7 +883,6 @@ public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons,
 //初始化所有遗留的非懒加载单例bean
 finishBeanFactoryInitialization(beanFactory);
 ```
-
 ```java
 /**
  * Finish the initialization of this context's bean factory,
@@ -973,7 +949,6 @@ public Object getBean(String name) throws BeansException {
 //完成上下文刷新
 finishRefresh();
 ```
-
 ```java
 /**
  * Finish the refresh of this context, invoking the LifecycleProcessor's
@@ -985,25 +960,16 @@ protected void finishRefresh() {
 	// Initialize lifecycle processor for this context.
 	//初始化上下文生命周期处理器
 	initLifecycleProcessor();
-
 	// Propagate refresh to lifecycle processor first.
 	getLifecycleProcessor().onRefresh();
-
 	// Publish the final event.发布上下文刷新事件
 	publishEvent(new ContextRefreshedEvent(this));
-
 	// Participate in LiveBeansView MBean, if active.
     //注册上下文到MBean
 	LiveBeansView.registerApplicationContext(this);
 }
 ```
-从上面可以看出，完成上下文刷新主要所有的工作为，初始化上下文的生命周期处理器，默认为 [DefaultLifecycleProcessor][],生命周期处理器主要管理
-bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期bean。然后发布上下文刷新事件给应用监听器，最后注册上下文到[LiveBeansView][] MBean，
-以便监控上下文中bean工厂内部的bean的定义及依赖。
-
-
-[DefaultLifecycleProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/DefaultLifecycleProcessor.java "DefaultLifecycleProcessor"  
-[LiveBeansView]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/LiveBeansView.java "LiveBeansView"   
+从上面可以看出，完成上下文刷新主要所有的工作为，初始化上下文的生命周期处理器，默认为 [DefaultLifecycleProcessor][],生命周期处理器主要管理bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期bean。然后发布上下文刷新事件给应用监听器，最后注册上下文到[LiveBeansView][] MBean，以便监控上下文中bean工厂内部的bean的定义及依赖。
 
 我们分别来看以上两个关键点：
 ```java
@@ -1011,7 +977,6 @@ bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期be
 //初始化上下文生命周期处理器
 initLifecycleProcessor();
 ```
-
 ```java
 /**
  * Initialize the LifecycleProcessor.
@@ -1046,7 +1011,6 @@ protected void initLifecycleProcessor() {
 // Publish the final event.发布上下文刷新事件
 publishEvent(new ContextRefreshedEvent(this));
 ```
-
 ```java
 /* Publish the given event to all listeners.
 * <p>Note: Listeners get initialized after the MessageSource, to be able
@@ -1062,7 +1026,6 @@ publishEvent(new ContextRefreshedEvent(this));
 public void publishEvent(ApplicationEvent event) {
    publishEvent(event, null);
 }
-
 /**
 * Publish the given event to all listeners.
 * <p>Note: Listeners get initialized after the MessageSource, to be able
@@ -1078,7 +1041,6 @@ public void publishEvent(ApplicationEvent event) {
 public void publishEvent(Object event) {
    publishEvent(event, null);
 }
-
 /**
 * Publish the given event to all listeners.
 * 发布给定的事件到监听器
@@ -1093,7 +1055,6 @@ protected void publishEvent(Object event, ResolvableType eventType) {
    if (logger.isTraceEnabled()) {
        logger.trace("Publishing event in " + getDisplayName() + ": " + event);
    }
-
    // Decorate event as an ApplicationEvent if necessary
    ApplicationEvent applicationEvent;
    if (event instanceof ApplicationEvent) {
@@ -1106,7 +1067,6 @@ protected void publishEvent(Object event, ResolvableType eventType) {
            eventType = ((PayloadApplicationEvent) applicationEvent).getResolvableType();
        }
    }
-
    // Multicast right now if possible - or lazily once the multicaster is initialized
    //如果预发布事件集不为空，则添加到应用事件到多播集
    if (this.earlyApplicationEvents != null) {
@@ -1116,7 +1076,6 @@ protected void publishEvent(Object event, ResolvableType eventType) {
        //应用事件多播器，多播事件
        getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
    }
-
    // Publish event via parent context as well...
    //发布事件到父上下文
    if (this.parent != null) {
@@ -1359,3 +1318,17 @@ bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期be
 
 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
 主要清除，类的方法与属性缓存，可解决类型缓存，及类缓存。
+
+
+[PostProcessorRegistrationDelegate]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/PostProcessorRegistrationDelegate.java "PostProcessorRegistrationDelegate"  
+[ContextTypeMatchClassLoader]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ContextTypeMatchClassLoader.java "ContextTypeMatchClassLoader"
+
+
+[MergedBeanDefinitionPostProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-beans/src/main/java/org/springframework/beans/factory/support/MergedBeanDefinitionPostProcessor.java "MergedBeanDefinitionPostProcessor"   
+
+[ApplicationListenerDetector]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/ApplicationListenerDetector.java "ApplicationListenerDetector"
+
+
+[DefaultLifecycleProcessor]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/DefaultLifecycleProcessor.java "DefaultLifecycleProcessor"   
+
+[LiveBeansView]:https://github.com/Donaldhan/spring-framework/blob/4.3.x/spring-context/src/main/java/org/springframework/context/support/LiveBeansView.java "LiveBeansView"  
