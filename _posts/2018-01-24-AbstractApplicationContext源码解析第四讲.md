@@ -263,7 +263,7 @@ public void addApplicationListener(ApplicationListener<?> listener) {
 }
 ```
 从上面来看，添加bean工厂后处理器，实际为将bean工厂后处理器添加到上下文的bean工厂后处理器集中beanFactoryPostProcessors（ArrayList<BeanFactoryPostProcessor>）。添加应用监听器，实际上，是将监听器添加到上下文的监听器集合applicationListeners（LinkedHashSet<ApplicationListener<?>>）中。
-## 加载应用上下文配置
+### 加载应用上下文配置
 下面我们讲到上下文的关键部分刷新应用上下文：
 ```java
 /**
