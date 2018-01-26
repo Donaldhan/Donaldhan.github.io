@@ -1117,7 +1117,9 @@ protected void destroyBeans() {
 }
 ```
 从上面可以看出，销毁bean操作，主要委托给应用上文的内部bean工厂，bean工厂完成销毁所有的单例bean。
+
     14. 重置上下文激活状态标志
+
 ```java
 // Reset 'active' flag.
 //重置上下文激活状态标志
@@ -1136,6 +1138,7 @@ protected void cancelRefresh(BeansException ex) {
 ```
 
     15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存
+
 ```java
 // Reset common introspection caches in Spring's core, since we
 // might not ever need metadata for singleton beans anymore...
