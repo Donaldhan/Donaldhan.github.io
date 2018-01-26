@@ -474,7 +474,7 @@ resetCommonCaches();
 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存。
 
 下面我们分别来看以上几点：
-1. 准备上下文刷新操作
+#### 1. 准备上下文刷新操作
 ```java
 // Prepare this context for refreshing.
 //准备上下文刷新操作
@@ -521,7 +521,7 @@ protected void initPropertySources() {
 ```
 从上面可以看，准备上下文刷新操作主要初始化应用上下文环境中的占位符属性源，验证所有需要可解决的标注属性，创建预发布应用事件集earlyApplicationEvents（LinkedHashSet<ApplicationEvent>）。初始化属性源方法 *#initPropertySources* 待子类实现。
 
-2. 告诉子类刷新内部bean工厂
+#### 2. 告诉子类刷新内部bean工厂
 ```java
 // Tell the subclass to refresh the internal bean factory.
 //告诉子类刷新内部bean工厂
@@ -580,7 +580,7 @@ public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalS
 从上面可以看出，通知子类刷新内部bean工厂实际操作在 *#refreshBeanFactory* 中，刷新bean工厂操作待子类扩展，在刷新完bean工厂之后，返回当前上下文的bean工厂，
 返回当前上下文的bean工厂 *#getBeanFactory* 待子类实现。
 
-3. 准备上下文使用的bean工厂
+#### 3. 准备上下文使用的bean工厂
 ```java
 //准备上下文使用的bean工厂
 prepareBeanFactory(beanFactory);
@@ -652,7 +652,7 @@ ApplicationContext* 类到工厂可解决类。添加应用监听器探测器，
 *LoadTimeWeaverAwareProcessor* ， 并配置类型匹配的临时类加载器。最后如果需要，注册环境，系统属性，系统变量单例bean到bean工厂。
 再来看第四点。
 
-4. 在上下文子类中，允许后处理bean工厂
+#### 4. 在上下文子类中，允许后处理bean工厂
 ```java
 // Allows post-processing of the bean factory in context subclasses.
 //在上下文子类中，允许后处理bean工厂。
@@ -674,7 +674,7 @@ protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactor
 ```
 方法postProcessBeanFactory在标准初始化完成后，修改应用上下文内部的bean工厂。所有的bean定义已经加载，但是还没bean已完成初始化。允许在确定的应用上下文实现中注册特殊的bean后处理器。postProcessBeanFactory待子类扩展。
 
-5. 调用注册到上下文中的工厂后处理器
+#### 5. 调用注册到上下文中的工厂后处理器
 ```java
 // Invoke factory processors registered as beans in the context.
 //调用注册到上下文中的工厂后处理器
@@ -704,7 +704,7 @@ protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory b
 按实现了PriorityOrdered，Ordered接口和剩余的bean工厂后处理器顺序，处理bean工厂；最后清空bean工厂的元数据缓存。
 如果bean工厂的临时加载器为空，且包含加载时间织入器，则设置bean工厂的加载时间织入器后处理器，设置bean工厂的临时类加载器为[ContextTypeMatchClassLoader][]。
 
-6. 注册拦截bean创建的bean后处理器
+#### 6. 注册拦截bean创建的bean后处理器
 ```java
 // Register bean processors that intercept bean creation.
 //注册拦截bean创建的bean后处理器
@@ -726,7 +726,7 @@ protected void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFa
 注册实现PriorityOrdered，Ordered和剩余的bean后处理器到bean工厂，然后注册内部bean后处理器[MergedBeanDefinitionPostProcessor][];
 最后添加应用监听器探测器[ApplicationListenerDetector][]。
 
-7. 初始化上下文的消息源
+#### 7. 初始化上下文的消息源
 ```java
 // Initialize message source for this context.
 //初始化上下文的消息源
@@ -774,7 +774,7 @@ protected void initMessageSource() {
 从上面可以看出，如果bean工厂包含消息源，则配置为上下文消息源，如果当前上下文父上下文不为空且消息源为层级消息源HierarchicalMessageSource，
 配置当前消息源的父消息源为当前上下文内部父消息源。否则创建上下文内部的父消息源的代理DelegatingMessageSource，并注册消息源到bean工厂。
 
-8. 始化上下文的事件多播器
+#### 8. 始化上下文的事件多播器
 ```java
 // Initialize event multicaster for this context.
 //初始化上下文的事件多播器
@@ -810,7 +810,7 @@ protected void initApplicationEventMulticaster() {
 从上面可看出，初始化上下文的事件多播器过程为，如果bean工厂包含应用事件多播器，则配置应用上下文的应用事件多播器为bean工厂内的应用事件多播器；
 否则使用SimpleApplicationEventMulticaster，并注册到bean工厂。
 
-9. 初始化上下文子类中的其他特殊的bean
+#### 9. 初始化上下文子类中的其他特殊的bean
 ```java
 // Initialize other special beans in specific context subclasses.
 //初始化上下文子类中的其他特殊的bean
@@ -831,7 +831,7 @@ protected void onRefresh() throws BeansException {
 ```
 初始化上下文子类中的其他特殊的bean方法onRefresh，待子类扩展使用。
 
-10. 检查监听器bean，并注册
+#### 10. 检查监听器bean，并注册
 ```java
 // Check for listener beans and register them.
 //检查监听器bean，并注册
@@ -877,7 +877,7 @@ public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons,
 从上面可看出，注册监听器过程，主要是注册应用上下文中的应用监听器到应用事件多播器，注册bean工厂内部的应用监听器
 到应用事件多播器，如果存在预发布应用事件，则多播应用事件。
 
-11. 初始化所有遗留的非懒加载单例bean
+#### 11. 初始化所有遗留的非懒加载单例bean
 ```java
 // Instantiate all remaining (non-lazy-init) singletons.
 //初始化所有遗留的非懒加载单例bean
@@ -942,8 +942,7 @@ public Object getBean(String name) throws BeansException {
 从上面可以看出：完成上下文bean工厂的初始化，初始化所有遗留的单例bean，如果bean工厂内存在转换服务ConversionService，则配置bean工厂的转换服务；
 如果没有bean后处理器（PropertyPlaceholderConfigurer）注册，则注册一个默认的嵌入式值解决器StringValueResolver，主要解决注解属性的值；
 初始化先前加载时间织入器Aware bean，允许注册他们的变换器；停止使用临时类加载器用于类型匹配；冻结bean工厂配置；最后初始化所有剩余的单例bean。
-
-12. 完成上下文刷新
+#### 12. 完成上下文刷新
 ```java
 // Last step: publish corresponding event.
 //完成上下文刷新
@@ -970,13 +969,13 @@ protected void finishRefresh() {
 }
 ```
 从上面可以看出，完成上下文刷新主要所有的工作为，初始化上下文的生命周期处理器，默认为 [DefaultLifecycleProcessor][],生命周期处理器主要管理bean工厂内部的生命周期bean。然后启动bean工厂内的生命周期bean。然后发布上下文刷新事件给应用监听器，最后注册上下文到[LiveBeansView][] MBean，以便监控上下文中bean工厂内部的bean的定义及依赖。
-
 我们分别来看以上两个关键点：
 ```java
 // Initialize lifecycle processor for this context.
 //初始化上下文生命周期处理器
 initLifecycleProcessor();
-```
+```  
+
 ```java
 /**
  * Initialize the LifecycleProcessor.
@@ -1089,14 +1088,15 @@ protected void publishEvent(Object event, ResolvableType eventType) {
        }
    }
 }
-```
-    13. 销毁已经创建的单例bean，避免资源空占
+```  
+
+#### 13. 销毁已经创建的单例bean，避免资源空占
+
 ```java
 // Destroy already created singletons to avoid dangling resources.
 //销毁已经创建的单例bean，避免资源空占。
 destroyBeans();
 ```
-
 ```java
 /**
  * Template method for destroying all beans that this context manages.
@@ -1117,8 +1117,7 @@ protected void destroyBeans() {
 }
 ```
 从上面可以看出，销毁bean操作，主要委托给应用上文的内部bean工厂，bean工厂完成销毁所有的单例bean。  
-    14. 重置上下文激活状态标志
-
+#### 14. 重置上下文激活状态标志
 ```java
 // Reset 'active' flag.
 //重置上下文激活状态标志
@@ -1135,8 +1134,7 @@ protected void cancelRefresh(BeansException ex) {
 	this.active.set(false);
 }
 ```
-    15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存   
-
+#### 15. 由于我们不在需要单例bean的元数据，重置Spring核心的一般内省缓存   
 ```java
 // Reset common introspection caches in Spring's core, since we
 // might not ever need metadata for singleton beans anymore...
