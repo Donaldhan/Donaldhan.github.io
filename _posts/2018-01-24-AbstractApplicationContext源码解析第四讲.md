@@ -30,7 +30,7 @@ DelegatingMessageSource内部有一父消息源，获取编码消息操作直接
 
 现在我们来继续看应用上下文的其他方法。
 
-[DelegatingMessageSource解析]: "DelegatingMessageSource解析"  
+[DelegatingMessageSource解析]:https://donaldhan.github.io/spring-framework/2018/01/11/DelegatingMessageSource%E8%A7%A3%E6%9E%90.html "DelegatingMessageSource解析"  
 
 [抽象应用上下文第三讲]:https://donaldhan.github.io/spring-framework/2018/01/04/AbstractApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E7%AC%AC%E4%B8%89%E8%AE%B2.html "抽象应用上下文第三讲"
 
