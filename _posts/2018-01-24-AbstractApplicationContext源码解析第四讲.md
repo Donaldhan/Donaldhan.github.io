@@ -1117,7 +1117,6 @@ protected void destroyBeans() {
 }
 ```
 从上面可以看出，销毁bean操作，主要委托给应用上文的内部bean工厂，bean工厂完成销毁所有的单例bean。
-
     14. 重置上下文激活状态标志
 ```java
 // Reset 'active' flag.
