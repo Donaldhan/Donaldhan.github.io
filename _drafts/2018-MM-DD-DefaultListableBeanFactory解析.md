@@ -122,6 +122,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
     ...
 }
 ```
+其他的方法，我们就不说了，都是对Map的操作。
 从上面可以看出，别名注册器的简单实现SimpleAliasRegistry，主要通过ConcurrentHashMap<String, String>来管理bean的别名，
 key为bean的别名alias，value值为bean的name。
 
