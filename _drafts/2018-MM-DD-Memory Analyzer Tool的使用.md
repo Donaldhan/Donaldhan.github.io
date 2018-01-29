@@ -12,3 +12,5 @@ tags:
     - JVM
 ---
 当前应用程序
+
+[Memory Analyzer Tool]:http://wiki.eclipse.org/MemoryAnalyzer#HPROF_dumps_from_Sun_Virtual_Machines "Memory Analyzer Tool"
