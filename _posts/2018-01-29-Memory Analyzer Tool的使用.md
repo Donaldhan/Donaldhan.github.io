@@ -23,7 +23,8 @@ tags:
     * [Histogram](#histogram)
     * [Dominator_tree](#dominator_tree)
     * [Top-consumer](#top-consumer)
-    * [Oql](#oql)
+    * [Oql](#oql)  
+
 ## 分析堆内存泄漏问题
 分析堆内存，首先要将虚拟机内存导出到文件，然后使用Memory Analyzer Tool去分析堆内存文件，一般我们使用Memory Analyzer Tool的提供的Overview，Leak_Suspects，Histogram，Dominator_tree，Top-consumer,Oql
 
@@ -82,7 +83,7 @@ org.apache.catalina.loader.WebappClassLoader @ 0x86a3fe0*
 默认热力柱状图是按class分类计算的，我们可以使用包来分类计算，具体如下：
 ![](/image/memory-analyzer/Histogram-group-package.png)
 
-点击org包，展示如下：
+点击org包，展示如下：  
 ![](/image/memory-analyzer/Histogram-group-package1.png)
 
 可以看出，org.apache.axis2和org.apache.axiom两个包实例数较多，可能存在内存泄漏，这个热力柱状图的结果的内存泄漏报告结果吻合。
