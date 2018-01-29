@@ -145,7 +145,13 @@ SelectorProvider就是为了创建DatagramChannel，Pipe，Selector，ServerSock
 AbstractSelectableChannel有一个SelectorProvider类型的变量provider，主要是为创建通道而服务。一个选择key数组keys，保存与通道相关的选择key，一个key计数器keyCount，记录当前通道注册到选择器，生成的选择key。一个布尔blocking记录当前通道的阻塞模式。一个keyLock拥有控制选择key数据的线程安全访问。同时还有一个regLock控制通道注册选择器和配置通道阻塞模式的线程安全访问。提供了选择key集合keys的添加和移除，判断通道是否注册到选择器，及获取注册到选择器的选择key。注册通道到选择器过程为：首先验证通道是否打开，关注的操作事件是否有效，如果通道打开且事件有效，判断通道是注册到选择器，如果通道已经注册到选择器，则更新兴趣操作事件集，和附件对象，否则调用选择器的注册方法，并将返回的选择key添加到通道选择key集合。关闭通道所做的工作主要是，遍历通道的选择key数组，取消选择key。
 
 ## NetworkChannel接口定义
+
+网络通道NetworkChannel，主要作用是绑定socket的local地址，获取绑定的地址，
+以及设置或获取socket选项。
+
 ## ServerSocketChannel定义
+ServerSocketChannel主要是绑定socket地址，监听Socket连接。 
+
 ## ServerSocketChannelImpl解析
 ## AbstractSelector定义
 ## SelectorImpl分析]     
