@@ -198,23 +198,30 @@ SocketChannelImpl写ByteBuffer数组方法，首先同步写锁，确保通道�
 实际关闭通道，同步状态锁，置输入流和输出流打开状态为false，如果通道没有关闭，则通过SocketDispatcher预先关闭fd，通知读线程，关闭输入流，通知写线程，输出流关闭，如果当前没有注册到任何选择器，则调用kill完成实际关闭工作，即SocketDispatcher关闭fd。
 
 ## MembershipKey定义
-
-## MulticastChanne接口定义
+多播关系key接口主要提供了判断key是否有效，阻塞和解阻塞socket地址等操作。
 
 ## MembershipKeyImpl简介
+MembershipKeyImpl内部有一个多播关系key关联的多播通道和多播分组地址，及多播报文源地址，及一个地址阻塞集。MembershipKeyImpl主要操作为drop关系key，直接委托个多播通道drop方法；block地址，首先判断多播关系key中的阻塞Set中是否包含对应的地址，有，则直接返回，否则委托给DatagramChannelImpl的block方法，完成实际的阻塞工作，然后添加地址的多播关系key阻塞set；unblock，首先判断多播关系key中的阻塞Set中是否包含对应的地址，无，则直接返回，有则委托给DatagramChannelImpl的unblock方法，完成实际的的解除阻塞工作，并从多播关系key中的阻塞Set移除对应的地址。
+
+## MulticastChanne接口定义
+多播通道提供了关闭多播通道和加入多播组操作。
 
 ## DatagramChannel定义
+报文通道接口，主要定义了绑定，连接socket地址，断开连接，读写字节Buffer，接受和发送字节buf操作。
 
 ## [DatagramChannelImpl解析一(初始化)
+DatagramChannelImpl主要成员有报文socket分发器，这个与SocketChannleImpl中的socket分发器原理基本相同，报文socket分发器可以理解为报文通道的静态代理；网络协议family表示当前报文通道的网络协议family；多播关系注册器MembershipRegistry，主要是通过一个Map-HashMap<InetAddress,LinkedList<MembershipKeyImpl>>来管理多播组和多播组成员关系key的映射（关系）；通道本地读写线程记录器，及读写锁控制通道读写，一个状态锁，当通道状态改变时，需要获取状态锁。DatagramChannelImpl构造方法，主要是初始化读写线程，及读写锁和状态锁，初始化网络协议family，及报文通道描述符和文件描述id。DatagramChannelImpl(SelectorProvider selectorprovider)与其他两个不同的是构造时更新当前报文socket的数量。
 
 ## DatagramChannelImpl解析二(报文发送与接收)
+send（发送报文）方法，首先同步写锁，确保通道打开，然后检查地址，如果系统安全管理器不为null，则更具地址类型检查相应的权限，如果地址为多播地址，则检查多播权限，否则检查连接到socketaddress的权限；如果发送的buffer为direct类型，则直接发送，否则从当前线程缓冲区获取一个临时DirectByteBuffer，并将buffer中的数据写到临时DirectByteBuffer中，然后发送，发送后，释放临时DirectByteBuffer，即添加到当前线程缓存区以便重用。receive（接收报文）方法，首先同步读锁，确保通道打开，如果本地地址为null，则绑定local地址，并初始化报文通道的localAddress；获取buffer当前可用空间remaining，如果buffer为direct类型，则直接接收报文，否则，从当前线程缓冲区获取临时DirectByteBuffer，接收报文，写到临时缓冲区临时DirectByteBuffer，读取临时DirectByteBuffer，写到buffer中，时DirectByteBuffer，即添加DirectByteBuffer到当前线程缓存区，以便重用。
+send（发送报文）和receive（接收报文）方法不需要通道已经处于连接状态，而read和write需要通道建立连接状态，这种方式与SocketChannel的读写操作相同，这样与SocketChannel无异，如果要不如使用SocketChannel。如果使用DatagramChannel,建议使用send和recieve方法进行报文的发送和接收。
 
 ## DatagramChannelImpl解析三(多播)
+join(报文通道加入多播组)方法，首先检查加入的多播组地址是否正确，然后校验源地址，检查多播成员关系注册器中是否存在多播地址为inetaddress，网络接口为networkinterface，源地址为inetaddress1的多播成员关系key，有则直接返回，否则根据网络协议族family，网络接口，源地址构造多播成员关系MembershipKeyImpl，添加到注册器MembershipRegistry。
+阻塞源地址报文与解除源地址报文阻塞，首先检查源地址，再将实际的阻塞与解除阻塞工作委托给Net完成。drop方法，首先判断多播成员关系key是否有效，如果有效，判断多播组为ip4还是ip6，然后委托给Net完成实际的drop工作。
 
 ## DatagramChannelImpl解析四(地址绑定，关闭通道等)
-
-
-
+关闭通道实际完成的工作为更新系统报文socket计数器，即自减1；注册器不为null，则使注册器中的所有多播组无效；通知本地读写线程，通道已关闭；委托报文分发器DatagramDispatcher关闭文件描述。
 
 
 ## 总结
