@@ -30,7 +30,8 @@ java NIO相关的文章列表如下:
 * [AbstractSelectableChannel定义][]  
 * [NetworkChannel接口定义][]  
 * [ServerSocketChannel定义][]  
-* [ServerSocketChannelImpl解析][]  
+* [ServerSocketChannelImpl解析][]
+* [Selector定义][]  
 * [AbstractSelector定义][]  
 * [SelectorImpl分析][]       
 * [WindowsSelectorImpl解析一(FdMap，PollArrayWrapper)][]      
@@ -77,6 +78,7 @@ java NIO相关的文章列表如下:
 * [NetworkChannel接口定义](#NetworkChannel接口定义)
 * [ServerSocketChannel定义](#ServerSocketChannel定义)
 * [ServerSocketChannelImpl解析](#ServerSocketChannelImpl解析)  
+* [Selector定义](#Selector定义)
 * [AbstractSelector定义](#AbstractSelector定义)
 * [SelectorImpl分析](#SelectorImpl分析)      
 * [WindowsSelectorImpl解析一(FdMap，PollArrayWrapper)](#WindowsSelectorImpl解析一(FdMap，PollArrayWrapper))      
@@ -150,26 +152,67 @@ AbstractSelectableChannel有一个SelectorProvider类型的变量provider，主�
 以及设置或获取socket选项。
 
 ## ServerSocketChannel定义
-ServerSocketChannel主要是绑定socket地址，监听Socket连接。 
+ServerSocketChannel主要是绑定socket地址，监听Socket连接。
 
 ## ServerSocketChannelImpl解析
+ServerSocketChannelImpl的初始化主要是初始化ServerSocket通道线程thread，地址绑定，接受连接同步锁，默认创建ServerSocketChannelImpl的状态为未初始化，文件描述和文件描述id，如果使用本地地址，则获取本地地址。bind首先检查ServerSocket是否关闭，是否绑定地址，如果既没有绑定也没关闭，则检查绑定的socketaddress是否正确或合法；然后通过Net工具类的bind（native）和listen（native），完成实际的ServerSocket地址绑定和开启监听，如果绑定是开启的参数小于1，则默认接受50个连接。accept方法主要是调用accept0（native）方法接受连接，并根据接受来接
+文件描述的地址构造SocketChannelImpl，并返回。
+
+## Selector定义
+选择器接口主要提供了，打开选择器，选择、唤醒操作，获取注册到选择器的key和已经选择的选择key集合。
+
 ## AbstractSelector定义
-## SelectorImpl分析]     
+AbstractSelector取消的key放在一个set集合中，对集合进行添加操作时，必须同步取消key set集合。反注册选择key完成的实际工作是，将key，从key对应的通道的选择key数组中移除。
+
+## SelectorImpl分析]    
+SelectorImpl有4个集合分别为就绪key集合，key集合，key集合的代理publicKeys及就绪key集合的代理publicSelectedKeys；实际是两个集合就绪key集合和key集合，publicSelectedKeys和publicKeys是其他线程访问上述两个集合的代理。SelectorImpl构造的时候，初始化选择器提供者SelectorProvider，创建就绪key集合和key集合，然后初始化就绪key和key集合的代理，初始化过程为，如果nio包的JDK版本存在bug问题，则就绪ke和key集合的代理集合直接引用就绪key和key集合。否则将当前key集合包装成不可修改的代理集合publicKes，将就绪key集合包装成容量固定的集合publicSelectedKeys。其他线程获取选择器的就绪key和key集合，实际上返回的是key集合的代理publicKeys和就绪key集合的代理publicSelectedKeys。
+select方法的3中操作形式，实际上委托给为lockAndDoSelect方法，方法实际上是同步的，可安全访问，获取key集合代理publicKeys和就绪key代理集合publicSelectedKeys，然后交给doSelect(long l)方法，这个方法为抽象方法，待子类扩展。实际的关闭选择器操作implCloseSelector方法，首先唤醒等待选择操作的线程，唤醒方法wakeup待实现，同步选择器，就绪key和key集合的代理publicKeys，publicSelectedKeys，调用implClose完成实际的关闭通道工作，待子类实现。可选通道注册方法，首先注册的通道必须是AbstractSelectableChannel类型，并且是SelChImpl实例。更具可选择通道和选择器构造选择key，设置选择key的附加物，同步key集合代理，调用implRegister方法完成实际的注册工作，implRegister方法待子类实现。
+processDeregisterQueue方法，主要是遍历取消key集合，反注册取消key，实际的反注册工作由implDereg方法，implDereg方法待子类扩展。成功，则从集合中移除。
+
 ## WindowsSelectorImpl解析一(FdMap，PollArrayWrapper)     
-## SocketChannel接口定义
+WindowsSelectorImpl默认加载net和nio资源库；WindowsSelectorImpl内锁4个，分别为关闭锁closeLock，中断锁interruptLock，startLock，finishLock后面两个的作用，目前还不清楚，后面再说；一个唤醒管道，作用尚不明确；一个注册到选择器的通道计数器totalChannels；updateCount计数器作用，尚不明确；通道集合channelArray，存放的元素实际为通道关联的选择key；pollWrapper用于存储选择key和相应的兴趣事件，及唤醒管道的源通道，唤醒管道的源通道存放在pollWrapper的索引0位置上。FdMap主要是存储选择key的，FdMap实际上是一个HashMap，key为选择key的文件描述id，value为MapEntry，MapEntry为选择key的包装Entry，里面含有更新计数器updateCount和清除计数器clearedCount。PollArrayWrapper存放选择key和通道及其相关的操作事件。PollArrayWrapper通过AllocatedNativeObject来存储先关的文件描述及其兴趣事件，AllocatedNativeObject为已分配的底层内存空间，AllocatedNativeObject的内存主要NativeObject来分配，NativeObject实际是通过Unsafe来分配内存。PollArrayWrapper作用即存放选择key和选择key关注的事件，用选择key的文件描述id，表示选择key，文件描述id为int，所以占4个字节，选择key的兴趣操作事件也为int，即4个字节，所以SIZE_POLLFD为8，文件描述id开始位置FD_OFFSET为0，兴趣事件开始位置EVENT_OFFSET为4；FD_OFFSET和EVENT_OFFSET都是相对于SIZE_POLLFD的。PollArrayWrapper同时存储唤醒等待选择操作的选择器的通道和唤醒通道关注事件即通道注册选择器事件，即添加选择key事件。当有通道注册到选择器，则唤醒通道，唤醒等待选择操作的选择器。
+
 ## WindowsSelectorImpl解析二(选择操作，通道注册，通道反注册，选择器关闭等)
+implRegister方法，首先同步关闭锁，以防在注册的过程中，选择器被关闭；检查选择器是否关闭，没有关闭，则检查是否扩容，需要则扩容为pollWrapper为原来的两倍；检查过后，添加选择key到选择器通道集合，设置key在选择器通道集合的索引，添加选择key到文件描述fdMap，添加key到key集合，将选择key添加到文件描述信息及关注操作事件包装集合pollWrapper，通道计数器自增。
+implDereg方法首选判断反注册的key是不是在通道key尾部，不在交换，并将交换信息更新到pollWrapper，从fdMap，keys，selectedKeys集合移除选择key，并将key从通道中移除。
+SubSelector主要有两个方法以poll从pollWrapper拉取关注读写事件的选择key；processSelectedKeys方法主要是更新关注读写事件的选择key的相关通道的已经就绪的操作事件集。
+StartLock主要控制选择线程，startThreads方法为唤醒所有等待选择操作的线程，运行计数器runsCounter自增，waitForStart方法为，判断选择线程是否需要等待开始锁。
+FinishLock用于控制线程集合中的选择线程，完成锁只有在所有线程集合中的执行完，才释放，waitForHelperThreads方法为等待完成锁，threadFinished方法为当前选择线程
+已结束，更新完成的选择线程计数器threadsToFinish（减一），reset方法重置threadsToFinish为线程集合大小。SelectThread线程启动时等待startLock，从pollWrapper拉取索引index对应的关注读写事件的选择key如果运行异常，则设置finishLock的finishLock，运行结束则更新完成选择操作线程计数器（自减）。doSelect方法将选择操作分成多个选择线程SelectThread放在选择线程放在threads集合中，每个SelectThread使用SubSelector从当前注册到选择器的通道中选取SubSelector索引所对应的批次的通道已经就绪的通道并更新操作事件。整个选择过程有startLock和finishLock来控制。再有在一个选择操作的所有子选择线程执行完，才释放finishLock。下一个选择操作才能开始，即startLock可用。wakeup主要是通过sink通道发送信息给source通道（native实现），通知子选择线程可以进行选择操作。子选择线程选择主要处理相应批次的1024个通道就绪事件（每批次通道关联到source通道）。implClose方法主要关闭唤醒管道的sink和source通道，反注册选择器的所有通道，释放所有通道空间，结束所有选择线程集合中的线程
+
+## SocketChannel接口定义
+socket通道继承的接口 ByteChannel， ByteChannel主要是继承了可读（ReadableByteChannel）可写（WritableByteChannel）通道接口和分散（ScatteringByteChannel）聚集（ScatteringByteChannel）通道接口；可读通道接口，可以从通道读取字节序列写到缓存区；可写通道接口，可以从缓存区读取字节序列写到通道；分散通道可以从通道读取字节序列，写到一组缓存区中，聚集通道可以从一组缓存区读取字节序列，写到通道。
+socket通道接口主要提供了的连接，完成连接，是否正在建立连接，读缓冲区写到通道，聚集写，读通道写缓冲区等操作。
+
 ## SocketChannelImpl解析一(通道连接，发送数据)
+SocketChannelImpl构造主要是初始化读写及状态锁和通道socket文件描述。connect连接方法首先同步读锁和写锁，确保socket通道打开，并没有连接；然后检查socket地址的正确性与合法性，然后检查当前线程是否有Connect方法的访问控制权限，最后尝试连接socket地址。从缓冲区读取字节序列写到通道write（ByteBuffer），首先确保通道打开，且输出流没有关闭，然后委托给IOUtil写字节序列；IOUtil写字节流过程为首先通过Util从当前线程的缓冲区获取可以容下字节序列的临时缓冲区（DirectByteBuffer），如果没有则创建一个DirectByteBuffer，将字节序列写到临时的DirectByteBuffer中，然后将写操作委托给nativedispatcher（SocketDispatcher），将DirectByteBuffer添加到当前线程的缓冲区，以便重用，因为DirectByteBuffer实际上是存在物理内存中，频繁的分配将会消耗更多的资源。
+
 ## SocketChannelImpl解析二(发送数据后续)
+SocketChannelImpl写ByteBuffer数组方法，首先同步写锁，确保通道，输出流打开，连接建立委托给IOUtil，将ByteBuffer数组写到输出流中，这一过程为获取存放i个字节缓冲区的IOVecWrapper，遍历ByteBuffer数组m，将字节缓冲区添加到iovecwrapper的字节缓冲区数组中，如果ByteBuffer非Direct类型，委托Util从当前线程的缓冲区获取容量为j2临时DirectByteBuffer，并将ByteBuffer写到DirectByteBuffer，并将DirectByteBuffer添加到iovecwrapper的字节缓冲区（Shadow-Direct）数组中，将字节缓冲区的起始地址写到iovecwrapper，字节缓冲区的实际容量写到iovecwrapper；遍历iovecwrapper的字节缓冲区（Shadow-Direct）数组，将Shadow数组中的DirectByteBuffer通过Util添加到本地线程的缓存区中，并清除DirectByteBuffer在iovecwrapper的相应数组中的信息；最后通过SocketDispatcher，将iovecwrapper的缓冲区数据，写到filedescriptor对应的输出流中。
+
 ## SocketChannelImpl解析三(接收数据)  
+读输入流到buffer，首先同步读写，确保通道，输入流打开，通道连接建立，清除原始读线程，获取新的本地读线程，委托IOUtil读输入流到buffer；IOUtil读输入流到buffer，首先确保buffer是可写的，否则抛出IllegalArgumentException，然后判断buffer是否为Direct类型，是则委托给readIntoNativeBuffer，否则通过Util从当前线程缓冲区获取一个临时的DirectByteBuffer，然后通过readIntoNativeBuffer读输入流数据到临时的DirectByteBuffer，这一个过程是通过SocketDispatcher的read方法实现，读写数据到DirectByteBuffer中后，将DirectByteBuffer中数据，写到原始buffer中，并将DirectByteBuffer添加到添加临时DirectByteBuffer到当前线程的缓冲区，以便重用，因为重新DirectByteBuffer为直接操作物理内存，频繁分配物理内存，将耗费过多的资源。
+从输入流读取数据，写到ByteBuffer数组的read方法，首先同步写锁，确保通道，连接建立，输入流打开，委托给IOUtil，从输入流读取数据写到ByteBuffer数组中；IOUtil首先获取存放i个字节缓冲区的IOVecWrapper，遍历ByteBuffer数组m，将buffer添加到iovecwrapper的字节缓冲区数组中，如果ByteBuffer非Direct类型，委托Util从当前线程的缓冲区获取容量为j2临时DirectByteBuffer，并将ByteBuffer写到DirectByteBuffer，并将DirectByteBuffer添加到iovecwrapper的字节缓冲区（Shadow-Direct）数组中，将字节缓冲区的起始地址写到iovecwrapper，字节缓冲区的实际容量写到iovecwrapper；遍历iovecwrapper的字节缓冲区（Shadow-Direct）数组，将Shadow数组中的DirectByteBuffer通过Util添加到本地线程的缓存区中，并清除DirectByteBuffe在iovecwrapper的相应数组中的信息；最后通过SocketDispatcher，从filedescriptor对应的输入流读取数据，写到iovecwrapper的缓冲区中。
+
 ## SocketChannelImpl解析四(关闭通道等)   
+实际关闭通道，同步状态锁，置输入流和输出流打开状态为false，如果通道没有关闭，则通过SocketDispatcher预先关闭fd，通知读线程，关闭输入流，通知写线程，输出流关闭，如果当前没有注册到任何选择器，则调用kill完成实际关闭工作，即SocketDispatcher关闭fd。
+
 ## MembershipKey定义
+
 ## MulticastChanne接口定义
+
 ## MembershipKeyImpl简介
+
 ## DatagramChannel定义
+
 ## [DatagramChannelImpl解析一(初始化)
+
 ## DatagramChannelImpl解析二(报文发送与接收)
+
 ## DatagramChannelImpl解析三(多播)
+
 ## DatagramChannelImpl解析四(地址绑定，关闭通道等)
+
 
 
 
