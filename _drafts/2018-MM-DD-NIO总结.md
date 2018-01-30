@@ -49,11 +49,16 @@ java NIO相关的文章列表如下:
 * [DatagramChannelImpl解析二(报文发送与接收)][]  
 * [DatagramChannelImpl解析三(多播)][]    
 * [DatagramChannelImpl解析四(地址绑定，关闭通道等)][]    
-
-
-
-
-
+* [NIO-Pipe示例][]
+* [PipeImpl解析][]
+* [FileChannel示例][]
+* [SeekableByteChannel接口定义][]
+* [FileChanne定义][]
+* [文件读写方式简单综述][]
+* [文件读写方式简单综述后续（文件，流构造）][]
+* [文件通道创建方式综述][]
+* [文件通道解析一（读写操作，通道数据传输等）][]
+* [文件通道解析二（文件锁，关闭通道）][]
 
 
 ![nio](/image/NIO/nio.png)
@@ -61,41 +66,51 @@ java NIO相关的文章列表如下:
 
 
 # 目录
-* [Java Socket通信实例](#Java Socket通信实例)
-* [Java Socket读写缓存区Writer和Reader](#Java Socket读写缓存区Writer和Reader)
-* [Java NIO ByteBuffer详解](#Java NIO ByteBuffer详解)      
-* [Java序列化与反序列化实例分析](#Java序列化与反序列化实例分析)    
-* [Java序列化与反序列化详解](#Java序列化与反序列化详解)    
-* [Java序列化与反序列化详解后续](#Java序列化与反序列化详解后续)  
-* [NIO-TCP通信实例(单线程，多线程Server)](#NIO-TCP通信实例(单线程，多线程Server))    
-* [NIO-TCP简单实例](#NIO-TCP简单实例)  
-* [Channel接口定义](#Channel接口定义)
-* [AbstractInterruptibleChannel接口定义](#[AbstractInterruptibleChannel接口定义)  
-* [SelectableChannel接口定义](#SelectableChannel接口定义)  
-* [SelectionKey定义](#SelectionKey定义)
-* [SelectorProvider定义](#[SelectorProvider定义)  
-* [AbstractSelectableChannel定义](#AbstractSelectableChannel定义)  
-* [NetworkChannel接口定义](#NetworkChannel接口定义)
-* [ServerSocketChannel定义](#ServerSocketChannel定义)
-* [ServerSocketChannelImpl解析](#ServerSocketChannelImpl解析)  
-* [Selector定义](#Selector定义)
-* [AbstractSelector定义](#AbstractSelector定义)
-* [SelectorImpl分析](#SelectorImpl分析)      
-* [WindowsSelectorImpl解析一(FdMap，PollArrayWrapper)](#WindowsSelectorImpl解析一(FdMap，PollArrayWrapper))      
-* [SocketChannel接口定义](#SocketChannel接口定义)  
-* [WindowsSelectorImpl解析二(选择操作，通道注册，通道反注册，选择器关闭等)](#WindowsSelectorImpl解析二(选择操作，通道注册，通道反注册，选择器关闭等))  
-* [SocketChannelImpl解析一(通道连接，发送数据)](#SocketChannelImpl解析一(通道连接，发送数据))
-* [SocketChannelImpl解析二(发送数据后续)](#SocketChannelImpl解析二(发送数据后续))  
-* [SocketChannelImpl解析三(接收数据)](#SocketChannelImpl解析三(接收数据))    
-* [SocketChannelImpl解析四(关闭通道等)](#SocketChannelImpl解析四(关闭通道等))   
-* [MembershipKey定义](#MembershipKey定义)  
-* [MulticastChanne接口定义](#MulticastChanne接口定义)  
-* [MembershipKeyImpl简介](#MembershipKeyImpl简介)  
-* [DatagramChannel定义](#DatagramChannel定义)
-* [DatagramChannelImpl解析一(初始化)](#DatagramChannelImpl解析一(初始化))  
-* [DatagramChannelImpl解析二(报文发送与接收)](#DatagramChannelImpl解析二(报文发送与接收))  
-* [DatagramChannelImpl解析三(多播)](#DatagramChannelImpl 解析三(多播))    
-* [DatagramChannelImpl解析四(地址绑定，关闭通道等)](#DatagramChannelImpl 解析四(地址绑定，关闭通道等))    
+* [Java Socket通信实例](#java socket通信实例)
+* [Java Socket读写缓存区Writer和Reader](#java socket读写缓存区writer和reader)
+* [Java NIO ByteBuffer详解](#java nio bytebuffer详解)      
+* [Java序列化与反序列化实例分析](#java序列化与反序列化实例分析)    
+* [Java序列化与反序列化详解](#java序列化与反序列化详解)    
+* [Java序列化与反序列化详解后续](#java序列化与反序列化详解后续)
+* [NIO-TCP简单实例](#nio-tcp简单实例)  
+* [NIO-TCP通信实例(单线程，多线程Server)](#nio-tcp通信实例(单线程，多线程Server))    
+* [Channel接口定义](#channel接口定义)
+* [AbstractInterruptibleChannel接口定义](#[abstractinterruptiblechannel接口定义)  
+* [SelectableChannel接口定义](#selectablechannel接口定义)  
+* [SelectionKey定义](#selectionkey定义)
+* [SelectorProvider定义](#[selectorprovider定义)  
+* [AbstractSelectableChannel定义](#abstractselectablechannel定义)  
+* [NetworkChannel接口定义](#networkchannel接口定义)
+* [ServerSocketChannel定义](#serversocketchannel定义)
+* [ServerSocketChannelImpl解析](#serversocketchannelimpl解析)  
+* [Selector定义](#selector定义)
+* [AbstractSelector定义](#abstractselector定义)
+* [SelectorImpl分析](#selectorimpl分析)      
+* [WindowsSelectorImpl解析一(FdMap，PollArrayWrapper)](#windowsselectorimpl解析一(fdmap，pollarraywrapper))      
+* [SocketChannel接口定义](#socketchannel接口定义)  
+* [WindowsSelectorImpl解析二(选择操作，通道注册，通道反注册，选择器关闭等)](#windowsselectorimpl解析二(选择操作，通道注册，通道反注册，选择器关闭等))  
+* [SocketChannelImpl解析一(通道连接，发送数据)](#socketchannelimpl解析一(通道连接，发送数据))
+* [SocketChannelImpl解析二(发送数据后续)](#socketchannelimpl解析二(发送数据后续))  
+* [SocketChannelImpl解析三(接收数据)](#socketchannelimpl解析三(接收数据))    
+* [SocketChannelImpl解析四(关闭通道等)](#socketchannelimpl解析四(关闭通道等))   
+* [MembershipKey定义](#membershipkey定义)  
+* [MulticastChanne接口定义](#multicastchanne接口定义)  
+* [MembershipKeyImpl简介](#membershipkeyimpl简介)  
+* [DatagramChannel定义](#datagramchannel定义)
+* [DatagramChannelImpl解析一(初始化)](#datagramchannelimpl解析一(初始化))  
+* [DatagramChannelImpl解析二(报文发送与接收)](#datagramchannelimpl解析二(报文发送与接收))  
+* [DatagramChannelImpl解析三(多播)](#datagramchannelimpl解析三(多播))    
+* [DatagramChannelImpl解析四(地址绑定，关闭通道等)](#datagramchannelimpl解析四(地址绑定，关闭通道等))    
+* [NIO-Pipe示例](#nio-pipe示例)
+* [PipeImpl解析](#pipeimpl解析)
+* [FileChannel示例](#filechannel示例)
+* [SeekableByteChannel接口定义](#seekablebytechannel接口定义)
+* [FileChanne定义](#filechanne定义)
+* [文件读写方式简单综述](#文件读写方式简单综述)
+* [文件读写方式简单综述后续（文件，流构造）](#文件读写方式简单综述后续（文件，流构造）)
+* [[文件通道创建方式综述]](#[文件通道创建方式综述])
+* [文件通道解析一（读写操作，通道数据传输等）](#文件通道解析一（读写操作，通道数据传输等)
+* [文件通道解析二（文件锁，关闭通道）](#文件通道解析二（文件锁，关闭通道）)
 
 ## Java Socket通信实例
 java socket编程是阻塞模式的，即BIO，从socket获取InputStream，OutputStream，而InputStream，OutputStream要经过(BufferedInputStream,BufferedOutputStream),(DataInputStream，DataOutputStream)等的包装才可以写读socket的缓冲区；输入流skip函数，可以丢掉一些不必要的包，mark，reset函数可以标记读取位置，从标记位置从新读取；flush函数发送缓冲区里的所有数据，我们这里是强制清空缓冲区，实际不要这样做，以免影响数据传输效率。
@@ -181,7 +196,7 @@ FinishLock用于控制线程集合中的选择线程，完成锁只有在所有�
 已结束，更新完成的选择线程计数器threadsToFinish（减一），reset方法重置threadsToFinish为线程集合大小。SelectThread线程启动时等待startLock，从pollWrapper拉取索引index对应的关注读写事件的选择key如果运行异常，则设置finishLock的finishLock，运行结束则更新完成选择操作线程计数器（自减）。doSelect方法将选择操作分成多个选择线程SelectThread放在选择线程放在threads集合中，每个SelectThread使用SubSelector从当前注册到选择器的通道中选取SubSelector索引所对应的批次的通道已经就绪的通道并更新操作事件。整个选择过程有startLock和finishLock来控制。再有在一个选择操作的所有子选择线程执行完，才释放finishLock。下一个选择操作才能开始，即startLock可用。wakeup主要是通过sink通道发送信息给source通道（native实现），通知子选择线程可以进行选择操作。子选择线程选择主要处理相应批次的1024个通道就绪事件（每批次通道关联到source通道）。implClose方法主要关闭唤醒管道的sink和source通道，反注册选择器的所有通道，释放所有通道空间，结束所有选择线程集合中的线程
 
 ## SocketChannel接口定义
-socket通道继承的接口 ByteChannel， ByteChannel主要是继承了可读（ReadableByteChannel）可写（WritableByteChannel）通道接口和分散（ScatteringByteChannel）聚集（ScatteringByteChannel）通道接口；可读通道接口，可以从通道读取字节序列写到缓存区；可写通道接口，可以从缓存区读取字节序列写到通道；分散通道可以从通道读取字节序列，写到一组缓存区中，聚集通道可以从一组缓存区读取字节序列，写到通道。
+socket通道继承的接口 ByteChannel，和分散（ScatteringByteChannel）聚集、（ScatteringByteChannel）字节通道接口；ByteChannel主要是继承了可读（ReadableByteChannel）可写（WritableByteChannel）通道接口；可读通道接口，可以从通道读取字节序列写到缓存区；可写通道接口，可以从缓存区读取字节序列写到通道；分散通道可以从通道读取字节序列，写到一组缓存区中，聚集通道可以从一组缓存区读取字节序列，写到通道。
 socket通道接口主要提供了的连接，完成连接，是否正在建立连接，读缓冲区写到通道，聚集写，读通道写缓冲区等操作。
 
 ## SocketChannelImpl解析一(通道连接，发送数据)
@@ -223,8 +238,43 @@ join(报文通道加入多播组)方法，首先检查加入的多播组地址�
 ## DatagramChannelImpl解析四(地址绑定，关闭通道等)
 关闭通道实际完成的工作为更新系统报文socket计数器，即自减1；注册器不为null，则使注册器中的所有多播组无效；通知本地读写线程，通道已关闭；委托报文分发器DatagramDispatcher关闭文件描述。
 
+## Pipe定义
+Pipe中包含一个可写通道SinkChannel和一个可读通道SourceChannel。sink向管道写字节序序列，source从管道读取字节序列。
+
+## PipeImpl解析
+PipeImpl，内部有一个Source通道SourceChannel，Sink通道SinkChannel，一个随机数rnd（long），还有一个管道初始化Action，初始化时加载net和nio资源库，委托IOUtil产生8个字节，然后根据8个字节生成一个随机数rnd；在构造时，在与当前线程访问控制权限的情况下，执行Initializer，权限动作，执行Initializer的run方法，即通过ServerSocketChannle和SocketChannel建立一个通道连接；首先新建一个ServerSocketChannle和SocketChannel，分别绑定地址SocketChannel向ServerSocetChannel发送随机数rnd，ServerSocetChannel接受SocketChannel连接，产生一个SocketChannel1（server），SocketChannel1接受client（SocketChannel），检验与随机数rnd，相等则建立连接。然后根据SocketChannel1（server），构造Sink通道SinkChannelImpl，根据client（SocketChannel），构造Source通道SourceChannelImpl。
+SinkChannelImpl，内部关联一个socket通道，SinkChannelImpl关闭通道，配置通道阻塞模式，写字节序列到管道都是委托给内部的SocketChannle。
+SourceChannelImpl，内部关联一个socket通道，SourceChannelImpl关闭通道，配置通道阻塞模式，从管道读取字节序列都是委托给内部的SocketChannle。
+
+## SeekableByteChannel接口定义
+SeekableByteChannel接口主要提供了从通道读取数据到字节buf，写字节buf到通道，定位通道位置，压缩通道数据等操作。
+## FileChanne定义
+文件通道实现了SeekableByteChannel的接口的方法，但这些方法体为空，需要进一步实现。同时文件通道实现了分散（ScatteringByteChannel）聚集（ScatteringByteChannel）字节通道接口，但这些方法体为空，需要进一步实现。同时定义了从可读字节通道，读取数据写到文件通道和读取文件通道数据写到可写字节通道操作，以及映射文件数据到内存的操作。
+
+## 文件读写方式简单综述
+File表示的系统文件，可以是目录，可以是实际文件。创建文件时首先要确保实际文件的父目录要存在。通过文件获取的文件名，返回的是完整文件名，即文件名+后缀（文件类型）。
+FileOutput/InputStream,主要用于面向字节流读写文件方式；读文件文件我们还可以借助其他字节流比如：BufferedOutput/InputStream在写字节序列，先放入缓冲区中，调用flush方法，可以缓冲区字节序列更新到底层输出流；DataOutput/InputStream,除了处理字节序列之外，也可以处理原始类型Int，Char，
+Long，Double，Float,Boolean等；ObjectOutput/InputStream除了可以处理字节序列之外，也可以原始类型，主要用于对象的序列化和反序列化;
+上述三种字节流的构造中，都有一个构造参数，即Output/InputStream，可以为socket（BIO）输出流/输入流，或FileOutput/InputStream。
+FileWriter/Reader,为面向字符流的读写文件方式；也可以通过BufferedWriter/Reader,读写文件，可以将文件先包装成FileOutput/InputStream,再根据FileOutput/InputStream，构造OutputStreamWriter/InputStreamReader,最后OutputStreamWriter/InputStreamReader构造BufferedWriter/Reader,就可以通过BufferedWriter/Reader读写文件；而OutputStreamWriter/InputStreamReader的构造关键参数为Output/InputStream,
+我们可以从Socket（BIO），获取socket输入流和输出流，包装成OutputStreamWriter/InputStreamReader，那么我们就可以通过BufferedWriter/Reader读socket输入流和写socket输出流。OutputStreamWriter/InputStreamReader，是字节流与字符流的桥接，写操作，字符流使用Charset编码成字节流，以字节流的形式发送底层字节流。Charset编码可设置，如果没有设定，则用默认的编码，读操作类似。上述中的面向字节流和字符流中带Buffered*，是可以缓存字节序列和字符串，写操作过后，要调用flush，更缓存数据到底层的输出流。当然读写文件的方式也可以通过RandomAccessFile，和FileChannel。读取文件，建议用FileChannel方法，因为FileChannel直接将文件映射到物理内存中，读写更高效，如果对性能没有要求，可以用面向字节流（Output/InputStream）和字符流（Writer/Reader）的方式。无论面向字节的，还是面向字符的流，都是读写分离的，而RandomAccessFile,是可读可写的；可写字节序列，原始类型，可读字节序列，原始类型，按行读取。字节流，字符流，RandomAccessFile为java io（JDK1.0,1.1）包中的工具类，文件通道FileChannel为java nio（JDK1.4）包中的工具类。
+
+## 文件读写方式简单综述后续（文件，流构造）
+file内部关联一个文件系统FileSystem，用于操作底层的系统，file的文件分隔符和路径分隔符都是从FileSystem获取，windows（\\,;）和unix(\,:)有所不同，FileSystem根据底层操作获取不同文件系统实现，windows默认为Win32FileSystem。file的创建，删除，list当前目录文件等待操作，实际是委托给Win32FileSystem。获取文件Path，首先获取文件的默认文件系统提供者，默认WindowsFileSystemProvider，WindowsFileSystemProvider通过文件path（URI），创建文件Path（WindowsPath），这个主要用于创建文件通达需要。
+
+## 文件通道创建方式综述
+获取区文件的通道一共有四种，第一种从FileOutputStream获取写模式文件通道，第二种从FileInputStream获取读模式文件通道，第三种从RandomAccessFile获取读写模式文件通道，第四种调用FileChannelImpl#open方法，这个过程首先从参数文件Path（WindowsPath）获取文件系统的提供者，实际为WindowsFileSystemProvider，委托给WindowsFileSystemProvider创建文件通道，WindowsFileSystemProvider根据WindowsPath和，文件属性WindowsSecurityDescriptor（FileAttribute[]），和打开选项集，将实际创建通道任务交给WindowsChannelFactory，WindowsChannelFactory首先将打开选项装换为内部的通道配置标志Flags（读写模式（read，writer），同步方式（sync，dsync），append等），然后根据Flags,和Path信息等信息创建文件，创建文件实际由WindowsNativeDispatcher完成。WindowsNativeDispatcher首先从线程本地缓存获取NativeBuffer，将Path信息放在NativeBuffer中，然后创建文件，创建后，将NativeBuffer释放，即放入线程本地缓存，以便重用。具体选择哪种方式，根据需要选择。
+
+
+## 文件通道解析一（读写操作，通道数据传输等）
+
+
+## 文件通道解析二（文件锁，关闭通道）
 
 ## 总结
+
+
+
 
 
 
@@ -255,12 +305,26 @@ join(报文通道加入多播组)方法，首先检查加入的多播组地址�
 [SocketChannelImpl解析一(通道连接，发送数据)]:http://donald-draper.iteye.com/blog/2372364 "SocketChannelImpl解析一(通道连接，发送数据)"  
 [SocketChannelImpl解析二(发送数据后续)]:http://donald-draper.iteye.com/blog/2372548 "SocketChannelImpl解析二(发送数据后续)"  
 [SocketChannelImpl解析三(接收数据)]:http://donald-draper.iteye.com/blog/2372590 "SocketChannelImpl解析三(接收数据)"     
-[SocketChannelImpl解析四(关闭通道等)]:http://donald-draper.iteye.com/blog/2372717 "SocketChannelImpl解析四(关闭通道等)"      
+[SocketChannelImpl解析四(关闭通道等)]:http://donald-draper.iteye.com/blog/2372717 "SocketChannelImpl解析四(关闭通道等)"  
+
 [MembershipKey定义]:http://donald-draper.iteye.com/blog/2372947 "MembershipKey定义"  
 [MulticastChanne接口定义]:http://donald-draper.iteye.com/blog/2373009 "MulticastChanne接口定义"  
-[MembershipKeyImpl简介]:http://donald-draper.iteye.com/blog/2373066 "MembershipKeyImpl 简介"  
+[MembershipKeyImpl简介]:http://donald-draper.iteye.com/blog/2373066 "MembershipKeyImpl简介"  
 [DatagramChannel定义]:http://donald-draper.iteye.com/blog/2373046 "DatagramChannel定义"  
 [DatagramChannelImpl解析一(初始化)]:http://donald-draper.iteye.com/blog/2373245 "DatagramChannelImpl解析一(初始化)"  
 [DatagramChannelImpl解析二(报文发送与接收)]:http://donald-draper.iteye.com/blog/2373281 "DatagramChannelImpl解析二(报文发送与接收)"  
 [DatagramChannelImpl解析三(多播)]:http://donald-draper.iteye.com/blog/2373507 "DatagramChannelImpl解析三(多播)"    
 [DatagramChannelImpl解析四(地址绑定，关闭通道等)]:http://donald-draper.iteye.com/blog/2373519 "DatagramChannelImpl解析四(地址绑定，关闭通道等)"  
+
+[NIO-Pipe示例]:http://donald-draper.iteye.com/blog/2373535 "NIO-Pipe示例"  
+[Pipe定义]:http://donald-draper.iteye.com/blog/2373540 "Pipe定义"  
+[PipeImpl解析]:http://donald-draper.iteye.com/blog/2373628 "PipeImpl解析"    
+
+[FileChannel示例]:http://donald-draper.iteye.com/blog/2373661 "FileChannel示例"    
+[SeekableByteChannel接口定义]:http://donald-draper.iteye.com/blog/2373700 "SeekableByteChannel接口定义"  
+[FileChanne定义]:http://donald-draper.iteye.com/blog/2374149 "FileChanne定义"  
+[文件读写方式简单综述]:http://donald-draper.iteye.com/blog/2374237 "文件读写方式简单综述"   
+[文件读写方式简单综述后续（文件，流构造）]:http://donald-draper.iteye.com/blog/2374294 "文件读写方式简单综述后续（文件，流构造）"
+[文件通道创建方式综述]:http://donald-draper.iteye.com/blog/2374537 "文件通道创建方式综述"  
+[文件通道解析一（读写操作，通道数据传输等）]:http://donald-draper.iteye.com/blog/2374603 "文件通道解析一（读写操作，通道数据传输等）"   
+[文件通道解析二（文件锁，关闭通道）]:http://donald-draper.iteye.com/blog/2374736 "文件通道解析二（文件锁，关闭通道）"
