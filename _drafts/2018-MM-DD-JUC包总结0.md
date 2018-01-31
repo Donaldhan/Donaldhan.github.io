@@ -37,7 +37,7 @@ tags:
 * [ReadWriteLock实现ConcurrentMap][]
 * [ReentrantReadWriteLock详解一][]
 * [ReentrantReadWriteLock详解后续][]
-* [HashMap父类Map][]
+* [HashMap父接口Map][]
 * [Map的简单实现AbstractMap][]
 * [HashMap详解][]
 * [ConcurrentMap介绍][]
@@ -77,59 +77,59 @@ tags:
 
 # 目录
 
-* [Callable与Future,FutureTask](#Callable与Future,FutureTask)
-* [CountDownLatch使用场景](#CountDownLatch使用场景)
-* [AtomicInteger解析](#AtomicInteger解析)
-* [Lock和synchronized的性能的比较](#Lock和synchronized的性能的比较)
-* [Condition实现消费生产者模型](#Condition实现消费生产者模型)
-* [JAVA assert测试](#JAVA assert测试)
-* [锁持有者管理器AbstractOwnableSynchronizer](#锁持有者管理器AbstractOwnableSynchronizer)
-* [AQS线程挂起辅助类LockSupport](#AQS线程挂起辅助类LockSupport)
-* [AQS详解-CLH队列，线程等待状态](#AQS详解-CLH队列，线程等待状态)
-* [AQS-Condition详解](#AQS-Condition详解)
-* [可重入锁ReentrantLock详解](#可重入锁ReentrantLock详解)
-* [CountDownLatch详解](#CountDownLatch详解)
-* [CyclicBarrier使用实例](#CyclicBarrier使用实例)
-* [CyclicBarrier详解](#CyclicBarrier详解)
-* [用Semaphore实现对象池](#用Semaphore实现对象池)
-* [Semaphore详解](#Semaphore详解)
-* [ReadWriteLock实现ConcurrentMap](#ReadWriteLock实现ConcurrentMap)
-* [ReentrantReadWriteLock详解一](#ReentrantReadWriteLock详解一)
-* [ReentrantReadWriteLock详解后续](#ReentrantReadWriteLock详解后续)
-* [HashMap父类Map](#HashMap父类Map)
-* [Map的简单实现AbstractMap](#Map的简单实现AbstractMap)
-* [HashMap详解](#HashMap详解)
-* [ConcurrentMap介绍](#ConcurrentMap介绍)
-* [ConcurrentHashMap解析-Segment](#ConcurrentHashMap解析-Segment)
-* [ConcurrentHashMap解析后续](#ConcurrentHashMap解析后续)
-* [Queue接口定义](#Queue接口定义)
-* [AbstractQueue简介](#AbstractQueue简介)
-* [ConcurrentLinkedQueue解析](#ConcurrentLinkedQueue解析)
-* [BlockingQueue接口的定义](#BlockingQueue接口的定义)
-* [LinkedBlockingQueue解析](#)
-* [ArrayBlockingQueue解析](#ArrayBlockingQueue解析)
-* [PriorityBlockingQueue解析](#PriorityBlockingQueue解析)
-* [SynchronousQueue解析上-TransferStack](#SynchronousQueue解析上-TransferStack)
-* [SynchronousQueue解析下-TransferQueue](#SynchronousQueue解析下-TransferQueue)
-* [DelayQueue解析](#DelayQueue解析)
-* [JAVA集合类简单综述](#JAVA集合类简单综述)
+* [Callable与Future,FutureTask](#callable与future,futuretask)
+* [CountDownLatch使用场景](#countdownlatch使用场景)
+* [AtomicInteger解析](#atomicinteger解析)
+* [Lock和synchronized的性能的比较](#lock和synchronized的性能的比较)
+* [Condition实现消费生产者模型](#condition实现消费生产者模型)
+* [JAVA assert测试](#java assert测试)
+* [锁持有者管理器AbstractOwnableSynchronizer](#锁持有者管理器abstractownablesynchronizer)
+* [AQS线程挂起辅助类LockSupport](#aqs线程挂起辅助类locksupport)
+* [AQS详解-CLH队列，线程等待状态](#aqs详解-clh队列，线程等待状态)
+* [AQS-Condition详解](#aqs-condition详解)
+* [可重入锁ReentrantLock详解](#可重入锁reentrantlock详解)
+* [CountDownLatch详解](#countdownlatch详解)
+* [CyclicBarrier使用实例](#cyclicbarrier使用实例)
+* [CyclicBarrier详解](#cyclicbarrier详解)
+* [用Semaphore实现对象池](#用semaphore实现对象池)
+* [Semaphore详解](#semaphore详解)
+* [ReadWriteLock实现ConcurrentMap](#readwritelock实现concurrentmap)
+* [ReentrantReadWriteLock详解一](#reentrantreadwritelock详解一)
+* [ReentrantReadWriteLock详解后续](#reentrantreadwritelock详解后续)
+* [HashMap父接口Map](#hashmap父接口map)
+* [Map的简单实现AbstractMap](#map的简单实现abstractmap)
+* [HashMap详解](#hashmap详解)
+* [ConcurrentMap介绍](#concurrentmap介绍)
+* [ConcurrentHashMap解析-Segment](#concurrenthashmap解析-segment)
+* [ConcurrentHashMap解析后续](#concurrenthashmap解析后续)
+* [Queue接口定义](#queue接口定义)
+* [AbstractQueue简介](#abstractqueue简介)
+* [ConcurrentLinkedQueue解析](#concurrentlinkedqueue解析)
+* [BlockingQueue接口的定义](#blockingqueue接口的定义)
+* [LinkedBlockingQueue解析](#linkedblockingqueue解析)
+* [ArrayBlockingQueue解析](#arrayblockingqueue解析)
+* [PriorityBlockingQueue解析](#priorityblockingqueue解析)
+* [SynchronousQueue解析上-TransferStack](#synchronousqueue解析上-transferstack)
+* [SynchronousQueue解析下-TransferQueue](#synchronousqueue解析下-transferqueue)
+* [DelayQueue解析](#delayqueue解析)
+* [JAVA集合类简单综述](#java集合类简单综述)
 * [简单测试线程池拒绝执行任务策略](#简单测试线程池拒绝执行任务策略)
-* [Executor接口的定义](#Executor接口的定义)
-* [ExecutorService接口定义](#ExecutorService接口定义)
-* [Future接口定义](#Future接口定义)
-* [FutureTask解析](#FutureTask解析)
-* [CompletionService接口定义](#CompletionService接口定义)
-* [ExecutorCompletionService解析](#ExecutorCompletionService解析)
-* [AbstractExecutorService解析](#AbstractExecutorService解析)
-* [ScheduledExecutorService接口定义](#ScheduledExecutorService接口定义)
-* [ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）](#ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）)
-* [ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）](#ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）)
-* [ThreadPoolExecutor解析三（线程池执行提交任务）](#ThreadPoolExecutor解析三（线程池执行提交任务）)
-* [ThreadPoolExecutor解析四（线程池关闭）](#ThreadPoolExecutor解析四（线程池关闭）)
-* [ScheduledThreadPoolExecutor解析一（调度任务，任务队列）](#ScheduledThreadPoolExecutor解析一（调度任务，任务队列）)
-* [ScheduledThreadPoolExecutor解析二（任务调度）](#ScheduledThreadPoolExecutor解析二（任务调度）)
-* [ScheduledThreadPoolExecutor解析三（关闭线程池）](#ScheduledThreadPoolExecutor解析三（关闭线程池）)
-* [Executors解析](#Executors解析)
+* [Executor接口的定义](#executor接口的定义)
+* [ExecutorService接口定义](#executorservice接口定义)
+* [Future接口定义](#future接口定义)
+* [FutureTask解析](#futuretask解析)
+* [CompletionService接口定义](#completionservice接口定义)
+* [ExecutorCompletionService解析](#executorcompletionservice解析)
+* [AbstractExecutorService解析](#abstractexecutorservice解析)
+* [ScheduledExecutorService接口定义](#scheduledexecutorservice接口定义)
+* [ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）](#threadpoolexecutor解析一（核心线程池数量、线程池状态等）)
+* [ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）](#threadpoolexecutor解析二（线程工厂、工作线程，拒绝策略等）)
+* [ThreadPoolExecutor解析三（线程池执行提交任务）](#threadpoolexecutor解析三（线程池执行提交任务）)
+* [ThreadPoolExecutor解析四（线程池关闭）](#threadpoolexecutor解析四（线程池关闭）)
+* [ScheduledThreadPoolExecutor解析一（调度任务，任务队列）](#scheduledthreadpoolexecutor解析一（调度任务，任务队列）)
+* [ScheduledThreadPoolExecutor解析二（任务调度）](#scheduledthreadpoolexecutor解析二（任务调度）)
+* [ScheduledThreadPoolExecutor解析三（关闭线程池）](#scheduledthreadpoolexecutor解析三（关闭线程池）)
+* [Executors解析](#executors解析)
 
 
 ## CountDownLatch使用场景
@@ -200,8 +200,8 @@ Sync是ReentrantReadWriteLock实现读写锁的基础，Sync是基于AQS的实�
 ReentrantReadWriteLock的锁机制的实现通过内部SYNC，而SYNC是基于AQS的实现。SYNC有两种实现公平和非公平两个版本。公平锁时先判断队列中是否有线程在等待，有则阻塞获取读锁和写锁。而非公平锁，则直接获取写锁；获取读锁时，判断等待队列第一个节点线程是不是在等待独占模式线程，即如果等待队列的第一个节点线程，在等待写锁，则阻塞锁的获取，否则不阻塞。ReentrantReadWriteLock默认为非公平锁可以提高吞吐量，ReentrantReadWriteLock的构造带有一个公平性参数，用于控制内部锁机制是公平锁还是非公平锁。ReadLock和WriteLock都是通过SYNC来实现，在构造函数中通过ReentrantReadWriteLock，将锁sync交给ReadLock和WriteLock。ReadLock是共享模式锁和我们前面讲的CountDownLatch原理较像，WriteLock是独占锁与ReentrantLock的原理较像。
 ReadLock和WriteLock还可以创建Condition，用于控制共享锁和独占锁获取时的条件等待。
 
-## HashMap父类Map
 ## Map的简单实现AbstractMap
+
 ## HashMap详解
 ## ConcurrentMap介绍
 ## ConcurrentHashMap解析-Segment
@@ -272,7 +272,7 @@ ReadLock和WriteLock还可以创建Condition，用于控制共享锁和独占锁
 [ReadWriteLock实现ConcurrentMap]: "ReadWriteLock实现ConcurrentMap"  
 [ReentrantReadWriteLock详解一]:http://donald-draper.iteye.com/blog/2361521 "ReentrantReadWriteLock详解一"  
 [ReentrantReadWriteLock详解后续]:http://donald-draper.iteye.com/blog/2361528 "ReentrantReadWriteLock详解后续"  
-[HashMap父类Map]:http://donald-draper.iteye.com/blog/2361603 "HashMap父类Map"  
+[HashMap父接口Map]:http://donald-draper.iteye.com/blog/2361603 "HashMap父类Map"  
 [Map的简单实现AbstractMap]:http://donald-draper.iteye.com/blog/2361627 "Map的简单实现AbstractMap"  
 [HashMap详解]:http://donald-draper.iteye.com/blog/2361702 "HashMap详解"  
 [ConcurrentMap介绍]:http://donald-draper.iteye.com/blog/2361719 "ConcurrentMap介绍"  
