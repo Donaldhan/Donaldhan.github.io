@@ -5,9 +5,9 @@ subtitle: sub title
 date: 2018-01-29 22:14:29
 author: donaldhan
 catalog: true
-category: java
+category: Java
 categories:
-    - java
+    - Java
 tags:
     - JVM
 ---
