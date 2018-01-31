@@ -213,9 +213,12 @@ get操作：get操作首先判断key是否为null，如果为null，则获取tab
 
 遍历：Key视图和Value视图的实现是在Entry的基础上，所以我们遍历HashMap的时候最好用EntrySet。
 
-## ConcurrentMap介绍
 ## ConcurrentHashMap解析-Segment
+ConcurrentHashMap是线程安全的，可并发访问，不允许key或value的值为null，默认的容量为16，负载因子为0.75，并发访问量为16。ConcurrentHashMap中有一个Segment数组，默认数组大小为16，Segment中有一个HashEntry数组类似于HashMap中的table，Segment继承了可重入锁ReentrantLock，Segment的修改其hash table的操作都要使用lock。Segment的put操作，首先尝试获取锁，如果获取锁失败，则Key在片段hash table中的索引，遍历索引对应的Hash Entry链，如找不到key对应HashEntry,则创建一个HashEntry，这都是在尝试次数小于最大尝试次数MAX_SCAN_RETRIES情况下，MAX_SCAN_RETRIES默认为2。这样做的目的是为确保，进行put操作时，仍持有锁。然后定位key在片段table中的索引，并放在链头，如果实际size达到临界条件，则重新hash，创建2倍原始容量的hash table，重新建立hash table。Segment的remove操作，首先尝试获取锁失败，则继续尝试获取锁，在获取锁的过程中，定位key在片段table的HashEntry链表索引，遍历链表，如果找到对应HashEntry，则移除，如果尝试次数超过最大尝试次数，则lock，则遍历链表，找到对应的HashEntry，则移除。replace与remove的基本思路相同，唯一的区别是，当替换值时，修改计数要自增1。put，remove和replace操作是锁住片段table中，key对应的索引HashEntry链表，而Clear为锁住整个table。ConcurrentHashMap通过将所有HashEntry分散在不同的Segment，及锁机制实现了并发访问。
+
 ## ConcurrentHashMap解析后续
+put，remove，replace操作来看，基本思路相同，先定位定位Segment，再将操作委托给Segment相应的操作。get操作是先定位定位Segment，再遍历key对应的HashEntry链表，找到，则返回值。视图基本思路为定位片段，在定位片段的hash table的Hash Entry链，遍历完当前片段，再遍历下一个片段的Hash table。
+
 ## Queue接口定义
 ## AbstractQueue简介
 ## ConcurrentLinkedQueue解析
