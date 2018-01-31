@@ -16,9 +16,7 @@ tags:
 
 在 Java 5.0 提供了 java.util.concurrent(简称JUC)包,在此包中增加了在并发编程中很常用的工具类,
 用于定义类似于线程的自定义子系统,包括线程池,异步 IO 和轻量级任务框架;还提供了设计用于多线程上下文中
-的 Collection 实现等;
-
-
+的 Collection ,Queue实现等;相关文章列表如下：
 
 * [Callable与Future,FutureTask][]
 * [CountDownLatch使用场景][]
@@ -56,46 +54,29 @@ tags:
 * [SynchronousQueue解析下-TransferQueue][]
 * [DelayQueue解析][]
 * [JAVA集合类简单综述][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
-* [][]
+* [简单测试线程池拒绝执行任务策略][]
+* [Executor接口的定义][]
+* [ExecutorService接口定义][]
+* [Future接口定义][]
+* [FutureTask解析][]
+* [CompletionService接口定义][]
+* [ExecutorCompletionService解析][]
+* [AbstractExecutorService解析][]
+* [ScheduledExecutorService接口定义][]
+* [ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）][]
+* [ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）][]
+* [ThreadPoolExecutor解析三（线程池执行提交任务）][]
+* [ThreadPoolExecutor解析四（线程池关闭）][]
+* [ScheduledThreadPoolExecutor解析一（调度任务，任务队列）][]
+* [ScheduledThreadPoolExecutor解析二（任务调度）][]
+* [ScheduledThreadPoolExecutor解析三（关闭线程池）][]
+* [Executors解析][]
+
 
 ![JUC](/image/JUC/juc.png)
 
 # 目录
+
 * [Callable与Future,FutureTask](#Callable与Future,FutureTask)
 * [CountDownLatch使用场景](#CountDownLatch使用场景)
 * [AtomicInteger解析](#AtomicInteger解析)
@@ -132,30 +113,23 @@ tags:
 * [SynchronousQueue解析下-TransferQueue](#SynchronousQueue解析下-TransferQueue)
 * [DelayQueue解析](#DelayQueue解析)
 * [JAVA集合类简单综述](#JAVA集合类简单综述)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
-* [](#)
+* [简单测试线程池拒绝执行任务策略](#简单测试线程池拒绝执行任务策略)
+* [Executor接口的定义](#Executor接口的定义)
+* [ExecutorService接口定义](#ExecutorService接口定义)
+* [Future接口定义](#Future接口定义)
+* [FutureTask解析](#FutureTask解析)
+* [CompletionService接口定义](#CompletionService接口定义)
+* [ExecutorCompletionService解析](#ExecutorCompletionService解析)
+* [AbstractExecutorService解析](#AbstractExecutorService解析)
+* [ScheduledExecutorService接口定义](#ScheduledExecutorService接口定义)
+* [ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）](#ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）)
+* [ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）](#ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）)
+* [ThreadPoolExecutor解析三（线程池执行提交任务）](#ThreadPoolExecutor解析三（线程池执行提交任务）)
+* [ThreadPoolExecutor解析四（线程池关闭）](#ThreadPoolExecutor解析四（线程池关闭）)
+* [ScheduledThreadPoolExecutor解析一（调度任务，任务队列）](#ScheduledThreadPoolExecutor解析一（调度任务，任务队列）)
+* [ScheduledThreadPoolExecutor解析二（任务调度）](#ScheduledThreadPoolExecutor解析二（任务调度）)
+* [ScheduledThreadPoolExecutor解析三（关闭线程池）](#ScheduledThreadPoolExecutor解析三（关闭线程池）)
+* [Executors解析](#Executors解析)
 
 
 ## Callable与Future,FutureTask
@@ -194,23 +168,23 @@ tags:
 ## SynchronousQueue解析下-TransferQueue
 ## DelayQueue解析
 ## JAVA集合类简单综述
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
-##
+## 简单测试线程池拒绝执行任务策略
+## Executor接口的定义
+## ExecutorService接口定义
+## Future接口定义
+## FutureTask解析
+## CompletionService接口定义
+## ExecutorCompletionService解析
+## AbstractExecutorService解析
+## ScheduledExecutorService接口定义
+## ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）
+## ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）
+## ThreadPoolExecutor解析三（线程池执行提交任务）
+## ThreadPoolExecutor解析四（线程池关闭）
+## ScheduledThreadPoolExecutor解析一（调度任务，任务队列）
+## ScheduledThreadPoolExecutor解析二（任务调度）
+## ScheduledThreadPoolExecutor解析三（关闭线程池）
+## Executors解析
 ##
 ##
 ##
@@ -270,103 +244,20 @@ tags:
 [SynchronousQueue解析下-TransferQueue]:http://donald-draper.iteye.com/blog/2364842 "SynchronousQueue解析下-TransferQueue"  
 [DelayQueue解析]:http://donald-draper.iteye.com/blog/2364978 "DelayQueue解析"  
 [JAVA集合类简单综述]:http://donald-draper.iteye.com/blog/2365238 "JAVA集合类简单综述"  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
-[]: ""  
+[简单测试线程池拒绝执行任务策略]:http://donald-draper.iteye.com/blog/2365617 "简单测试线程池拒绝执行任务策略"  
+[Executor接口的定义]:http://donald-draper.iteye.com/blog/2365625 "Executor接口的定义"  
+[ExecutorService接口定义]:http://donald-draper.iteye.com/blog/2365738 "ExecutorService接口定义"  
+[Future接口定义]:http://donald-draper.iteye.com/blog/2365798 "Future接口定义"  
+[FutureTask解析]:http://donald-draper.iteye.com/blog/2365980 "FutureTask解析"  
+[CompletionService接口定义]:http://donald-draper.iteye.com/blog/2366239 "CompletionService接口定义"  
+[ExecutorCompletionService解析]:http://donald-draper.iteye.com/blog/2366254 "ExecutorCompletionService解析"  
+[AbstractExecutorService解析]:http://donald-draper.iteye.com/blog/2366348 "AbstractExecutorService解析"  
+[ScheduledExecutorService接口定义]:http://donald-draper.iteye.com/blog/2366436 "ScheduledExecutorService接口定义"  
+[ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）]:http://donald-draper.iteye.com/blog/2366934 "ThreadPoolExecutor解析一（核心线程池数量、线程池状态等）"  
+[ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）]:http://donald-draper.iteye.com/blog/2367064 "ThreadPoolExecutor解析二（线程工厂、工作线程，拒绝策略等）"  
+[ThreadPoolExecutor解析三（线程池执行提交任务）]:http://donald-draper.iteye.com/blog/2367199 "ThreadPoolExecutor解析三（线程池执行提交任务）"  
+[ThreadPoolExecutor解析四（线程池关闭）]:http://donald-draper.iteye.com/blog/2367246 "ThreadPoolExecutor解析四（线程池关闭）"  
+[ScheduledThreadPoolExecutor解析一（调度任务，任务队列）]:http://donald-draper.iteye.com/blog/2367332 "ScheduledThreadPoolExecutor解析一（调度任务，任务队列）"  
+[ScheduledThreadPoolExecutor解析二（任务调度）]:http://donald-draper.iteye.com/blog/2367593 "ScheduledThreadPoolExecutor解析二（任务调度）"  
+[ScheduledThreadPoolExecutor解析三（关闭线程池）]:http://donald-draper.iteye.com/blog/2367698 "ScheduledThreadPoolExecutor解析三（关闭线程池）"  
+[Executors解析]:http://donald-draper.iteye.com/blog/2367793 "Executors解析"  
