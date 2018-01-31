@@ -14,50 +14,359 @@ tags:
 
 # 引言
 
-[BeanDefinition接口][]用于描述一个bean实例的属性及构造参数等元数据；主要提供了父beanname，bean类型名，作用域，懒加载，
-bean依赖，自动注入候选bean，自动注入候选主要bean熟悉的设置与获取操作。同时提供了判断bean是否为单例、原型模式、抽象bean的操作，及获取bean的描述，资源描述，属性源，构造参数，原始bean定义等操作。
+在 Java 5.0 提供了 java.util.concurrent(简称JUC)包,在此包中增加了在并发编程中很常用的工具类,
+用于定义类似于线程的自定义子系统,包括线程池,异步 IO 和轻量级任务框架;还提供了设计用于多线程上下文中
+的 Collection 实现等;
 
-![BeanDefinition](/image/spring-context/BeanDefinition.png)
 
-[BeanDefinition接口]:https://donaldhan.github.io/spring-framework/2017/12/26/BeanDefinition%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89.html "BeanDefinition接口"
 
-上一篇文章我们看了，BeanDefinition接口的定义，截止到上一篇文章我们将应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
+* [Callable与Future,FutureTask][]
+* [CountDownLatch使用场景][]
+* [AtomicInteger解析][]
+* [Lock和synchronized的性能的比较][]
+* [Condition实现消费生产者模型][]
+* [JAVA assert测试][]
+* [锁持有者管理器AbstractOwnableSynchronizer][]
+* [AQS线程挂起辅助类LockSupport][]
+* [AQS详解-CLH队列，线程等待状态][]
+* [AQS-Condition详解][]
+* [可重入锁ReentrantLock详解][]
+* [CountDownLatch详解][]
+* [CyclicBarrier使用实例][]
+* [CyclicBarrier详解][]
+* [用Semaphore实现对象池][]
+* [Semaphore详解][]
+* [ReadWriteLock实现ConcurrentMap][]
+* [ReentrantReadWriteLock详解一][]
+* [ReentrantReadWriteLock详解后续][]
+* [HashMap父类Map][]
+* [Map的简单实现AbstractMap][]
+* [HashMap详解][]
+* [ConcurrentMap介绍][]
+* [ConcurrentHashMap解析-Segment][]
+* [ConcurrentHashMap解析后续][]
+* [Queue接口定义][]
+* [AbstractQueue简介][]
+* [ConcurrentLinkedQueue解析][]
+* [BlockingQueue接口的定义][]
+* [LinkedBlockingQueue解析][]
+* [ArrayBlockingQueue解析][]
+* [PriorityBlockingQueue解析][]
+* [SynchronousQueue解析上-TransferStack][]
+* [SynchronousQueue解析下-TransferQueue][]
+* [DelayQueue解析][]
+* [JAVA集合类简单综述][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
+* [][]
 
+![JUC](/image/JUC/juc.png)
 
 # 目录
-* [AbstractApplicationContext定义](abstractapplicationcontext定义)
-    * [](#)
-    * [](#)
-* [总结](#总结)
+* [Callable与Future,FutureTask](#Callable与Future,FutureTask)
+* [CountDownLatch使用场景](#CountDownLatch使用场景)
+* [AtomicInteger解析](#AtomicInteger解析)
+* [Lock和synchronized的性能的比较](#Lock和synchronized的性能的比较)
+* [Condition实现消费生产者模型](#Condition实现消费生产者模型)
+* [JAVA assert测试](#JAVA assert测试)
+* [锁持有者管理器AbstractOwnableSynchronizer](#锁持有者管理器AbstractOwnableSynchronizer)
+* [AQS线程挂起辅助类LockSupport](#AQS线程挂起辅助类LockSupport)
+* [AQS详解-CLH队列，线程等待状态](#AQS详解-CLH队列，线程等待状态)
+* [AQS-Condition详解](#AQS-Condition详解)
+* [可重入锁ReentrantLock详解](#可重入锁ReentrantLock详解)
+* [CountDownLatch详解](#CountDownLatch详解)
+* [CyclicBarrier使用实例](#CyclicBarrier使用实例)
+* [CyclicBarrier详解](#CyclicBarrier详解)
+* [用Semaphore实现对象池](#用Semaphore实现对象池)
+* [Semaphore详解](#Semaphore详解)
+* [ReadWriteLock实现ConcurrentMap](#ReadWriteLock实现ConcurrentMap)
+* [ReentrantReadWriteLock详解一](#ReentrantReadWriteLock详解一)
+* [ReentrantReadWriteLock详解后续](#ReentrantReadWriteLock详解后续)
+* [HashMap父类Map](#HashMap父类Map)
+* [Map的简单实现AbstractMap](#Map的简单实现AbstractMap)
+* [HashMap详解](#HashMap详解)
+* [ConcurrentMap介绍](#ConcurrentMap介绍)
+* [ConcurrentHashMap解析-Segment](#ConcurrentHashMap解析-Segment)
+* [ConcurrentHashMap解析后续](#ConcurrentHashMap解析后续)
+* [Queue接口定义](#Queue接口定义)
+* [AbstractQueue简介](#AbstractQueue简介)
+* [ConcurrentLinkedQueue解析](#ConcurrentLinkedQueue解析)
+* [BlockingQueue接口的定义](#BlockingQueue接口的定义)
+* [LinkedBlockingQueue解析](#)
+* [ArrayBlockingQueue解析](#ArrayBlockingQueue解析)
+* [PriorityBlockingQueue解析](#PriorityBlockingQueue解析)
+* [SynchronousQueue解析上-TransferStack](#SynchronousQueue解析上-TransferStack)
+* [SynchronousQueue解析下-TransferQueue](#SynchronousQueue解析下-TransferQueue)
+* [DelayQueue解析](#DelayQueue解析)
+* [JAVA集合类简单综述](#JAVA集合类简单综述)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
+* [](#)
 
-## AbstractApplicationContext定义
-源码参见：[AbstractApplicationContext][]
 
-[AbstractApplicationContext]: "AbstractApplicationContext"
+## Callable与Future,FutureTask
+## CountDownLatch使用场景
+## AtomicInteger解析
+## Lock和synchronized的性能的比较
+## Condition实现消费生产者模型
+## JAVA assert测试
+## 锁持有者管理器AbstractOwnableSynchronizer
+## AQS线程挂起辅助类LockSupport
+## AQS详解-CLH队列，线程等待状态
+## AQS-Condition详解
+## 可重入锁ReentrantLock详解
+## CountDownLatch详解
+## CyclicBarrier使用实例
+## CyclicBarrier详解
+## 用Semaphore实现对象池
+## Semaphore详解
+## ReadWriteLock实现ConcurrentMap
+## ReentrantReadWriteLock详解一
+## ReentrantReadWriteLock详解后续
+## HashMap父类Map
+## Map的简单实现AbstractMap
+## HashMap详解
+## ConcurrentMap介绍
+## ConcurrentHashMap解析-Segment
+## ConcurrentHashMap解析后续
+## Queue接口定义
+## AbstractQueue简介
+## ConcurrentLinkedQueue解析
+## BlockingQueue接口的定义
+## LinkedBlockingQueue解析
+## ArrayBlockingQueue解析
+## PriorityBlockingQueue解析
+## SynchronousQueue解析上-TransferStack
+## SynchronousQueue解析下-TransferQueue
+## DelayQueue解析
+## JAVA集合类简单综述
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
+##
 
-```java
-```
 
 
-###
-源码参见：[][]
-
-[]: ""
-
-```java
-```
 
 
-###
-源码参见：[][]
-
-[]: ""
-
-```java
-```
 
 
-最后我们以BeanDefinition的类图结束这篇文章。
-![BeanDefinition](/image/spring-context/BeanDefinition.png)
 
-## 总结
+
+
+
+
+
+
+
+
+
+
+
+[Callable与Future,FutureTask]:http://donald-draper.iteye.com/blog/2311738 "Callable与Future,FutureTask"  
+[CountDownLatch使用场景]:http://donald-draper.iteye.com/blog/2348106 "CountDownLatch使用场景"  
+[AtomicInteger解析]:http://donald-draper.iteye.com/blog/2359555 "AtomicInteger解析"  
+[Lock和synchronized的性能的比较]:http://donald-draper.iteye.com/blog/2359564 "Lock和synchronized的性能的比较"  
+[Condition实现消费生产者模型]: "Condition实现消费生产者模型"  
+[JAVA assert测试]:http://donald-draper.iteye.com/blog/2360001 "JAVA assert测试"  
+[锁持有者管理器AbstractOwnableSynchronizer]:http://donald-draper.iteye.com/blog/2360109 "锁持有者管理器AbstractOwnableSynchronizer"  
+[AQS线程挂起辅助类LockSupport]:http://donald-draper.iteye.com/blog/2360206 "AQS线程挂起辅助类LockSupport"  
+[AQS详解-CLH队列，线程等待状态]:http://donald-draper.iteye.com/blog/2360256 "AQS详解-CLH队列，线程等待状态"  
+[AQS-Condition详解]:http://donald-draper.iteye.com/blog/2360381 "AQS-Condition详解"  
+[可重入锁ReentrantLock详解]:http://donald-draper.iteye.com/blog/2360411 "可重入锁ReentrantLock详解"  
+[CountDownLatch详解]:http://donald-draper.iteye.com/blog/2360597 "CountDownLatch详解"  
+[CyclicBarrier使用实例]:http://donald-draper.iteye.com/blog/2360609 "CyclicBarrier使用实例"  
+[CyclicBarrier详解]:http://donald-draper.iteye.com/blog/2360812 "CyclicBarrier详解"  
+[用Semaphore实现对象池]:http://donald-draper.iteye.com/blog/2360817 "用Semaphore实现对象池"  
+[Semaphore详解]:http://donald-draper.iteye.com/blog/2361033 "Semaphore详解"  
+[ReadWriteLock实现ConcurrentMap]: "ReadWriteLock实现ConcurrentMap"  
+[ReentrantReadWriteLock详解一]:http://donald-draper.iteye.com/blog/2361521 "ReentrantReadWriteLock详解一"  
+[ReentrantReadWriteLock详解后续]:http://donald-draper.iteye.com/blog/2361528 "ReentrantReadWriteLock详解后续"  
+[HashMap父类Map]:http://donald-draper.iteye.com/blog/2361603 "HashMap父类Map"  
+[Map的简单实现AbstractMap]:http://donald-draper.iteye.com/blog/2361627 "Map的简单实现AbstractMap"  
+[HashMap详解]:http://donald-draper.iteye.com/blog/2361702 "HashMap详解"  
+[ConcurrentMap介绍]:http://donald-draper.iteye.com/blog/2361719 "ConcurrentMap介绍"  
+[ConcurrentHashMap解析-Segment]:http://donald-draper.iteye.com/blog/2363200 "ConcurrentHashMap解析-Segment"  
+[ConcurrentHashMap解析后续]:http://donald-draper.iteye.com/blog/2363201 "ConcurrentHashMap解析后续"  
+[Queue接口定义]:http://donald-draper.iteye.com/blog/2363491 "Queue接口定义"  
+[AbstractQueue简介]:http://donald-draper.iteye.com/blog/2363608 "AbstractQueue简介"  
+[ConcurrentLinkedQueue解析]:http://donald-draper.iteye.com/blog/2363874 "ConcurrentLinkedQueue解析"  
+[BlockingQueue接口的定义]:http://donald-draper.iteye.com/blog/2363942 "BlockingQueue接口的定义"  
+[LinkedBlockingQueue解析]:http://donald-draper.iteye.com/blog/2364007 "LinkedBlockingQueue解析"  
+[ArrayBlockingQueue解析]:http://donald-draper.iteye.com/blog/2364034 "ArrayBlockingQueue解析"  
+[PriorityBlockingQueue解析]:http://donald-draper.iteye.com/blog/2364100 "PriorityBlockingQueue解析"  
+[SynchronousQueue解析上-TransferStack]:http://donald-draper.iteye.com/blog/2364622 "SynchronousQueue解析上-TransferStack"  
+[SynchronousQueue解析下-TransferQueue]:http://donald-draper.iteye.com/blog/2364842 "SynchronousQueue解析下-TransferQueue"  
+[DelayQueue解析]:http://donald-draper.iteye.com/blog/2364978 "DelayQueue解析"  
+[JAVA集合类简单综述]:http://donald-draper.iteye.com/blog/2365238 "JAVA集合类简单综述"  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
+[]: ""  
