@@ -59,9 +59,6 @@ IoFilter,IoHanler,IoBuffer。
 
 # 目录
 
-* [MINA TCP简单通信实例](#MINA TCP简单通信实例)
-* [MINA 编解码器实例](#MINA 编解码器实例)
-* [MINA 多路分离解码器实例](#MINA 多路分离解码器实例)
 * [Mina Socket会话配置](#Mina Socket会话配置)
 * [Mina 过滤链默认构建器](#Mina 过滤链默认构建器)
 * [Mina 过滤器定义](#Mina 过滤器定义)
@@ -95,10 +92,12 @@ IoFilter,IoHanler,IoBuffer。
 
 
 
-## MINA TCP简单通信实例
-## MINA 编解码器实例
-## MINA 多路分离解码器实例
+
 ## Mina Socket会话配置
+NioSocketAcceptor构造是传输入的DefaultSocketSessionConfig参数实际上是初始化AbstractIoService的会话配置选项sessionConfig（IoSessionConfig）。会话配置IoSessionConfig主要是配置IoProcessor每次读操作分配的buffer的容量，一般情况下，不用手动设置这个属性，因为IoProcessor经常会自动调整；设置空闲状态IdleStatus（READER_IDLE,WRITER_IDLE 或 BOTH_IDLE）的空闲时间；UseReadOperation配置项用于优化客户端的读取操作，开启这个选项对服务器应用无效，并可能引起内存泄漏，因此默认为关闭状态。SocketSessionConfig主要是配置Socket，这些属性在java.net.Socket中都可以找到相似或类似的属性，比如发送缓冲区大小，是否保活，地址是否可重用等。从AbstractSocketSessionConfig来看SocketSessionConfig的发送、接收缓冲区大小，是否保活，地址是否可重用等配置默认为true。DefaultSocketSessionConfig构造时，发送和接受缓存区默认为-1，所以在创建NioSocketAcceptor要配置发送和接收缓存区大小；
+DefaultSocketSessionConfig关联一个parent父对象IoService，即配置的依附对象。#init方法初始化的parent父对象IoService，如果parent父对象为IoService（SocketAcceptor），
+则地址默认可重用，否则不可。
+
 ## Mina 过滤链默认构建器
 ## Mina 过滤器定义
 ## Mina 日志过滤器与引用计数过滤器
@@ -164,7 +163,7 @@ IoFilter,IoHanler,IoBuffer。
 [MINA 多路复用协议编解码器工厂二（多路复用协议解码器）]:http://donald-draper.iteye.com/blog/2377324  "MINA 多路复用协议编解码器工厂二（多路复用协议解码器）"
 [Mina IoHandler接口定义]:http://donald-draper.iteye.com/blog/2377419  "Mina IoHandler接口定义"
 
-[Mina Io处理器抽象实现]:http://donald-draper.iteye.com/blog/2377663  Mina Io处理器抽象实现"
+[Mina Io处理器抽象实现]:http://donald-draper.iteye.com/blog/2377663  "Mina Io处理器抽象实现"
 [Mina Nio处理器]:http://donald-draper.iteye.com/blog/2377725  "Mina Nio处理器"
 
 
