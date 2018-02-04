@@ -33,6 +33,10 @@ Netty 是一个易于使用网络通信的客户端/服务器框架,利用Java�
 * [Netty 管道线定义-ChannelPipeline][]
 * [Netty 默认Channel管道线初始化][]
 * [Netty 默认Channel管道线-添加通道处理器][]
+* [Netty 默认Channel管道线-通道处理器移除与替换][]
+* [Netty 默认Channel管道线-Inbound和Outbound事件处理][]
+* [Netty 通道处理器上下文定义][]
+* [Netty 通道处理器上下文][]
 * [Netty 通道初始化器ChannelInitializer][]
 * [Netty 事件执行器组和事件执行器定义及抽象实现][]
 * [Netty 多线程事件执行器组][]
@@ -86,6 +90,10 @@ Netty 是一个易于使用网络通信的客户端/服务器框架,利用Java�
 * [Netty 管道线定义-ChannelPipeline](#netty 管道线定义-channelpipeline)
 * [Netty 默认Channel管道线初始化](#netty 默认channel管道线初始化)
 * [Netty 默认Channel管道线-添加通道处理器](#netty 默认channel管道线-添加通道处理器)
+* [Netty 默认Channel管道线-通道处理器移除与替换](#netty 默认channel管道线-通道处理器移除与替换)
+* [Netty 默认Channel管道线-Inbound和Outbound事件处理](#netty 默认channel管道线-inbound和outbound事件处理)
+* [Netty 通道处理器上下文定义][#Netty 通道处理器上下文定义]
+* [Netty 通道处理器上下文](#netty 通道处理器上下文)
 * [Netty 通道初始化器ChannelInitializer](#netty 通道初始化器channelinitializer)
 * [Netty 事件执行器组和事件执行器定义及抽象实现](#netty 事件执行器组和事件执行器定义及抽象实现)
 * [Netty 多线程事件执行器组](#netty 多线程事件执行器组)
@@ -185,7 +193,34 @@ Channel的管道线的通道处理器上下文链的尾部TailContext是一个�
 netty通道处理器上下文可以说，是Mina中Hanlder和过滤器的集合，整合两者功能，管道线有点Mina过滤链的意味，HeadContext相当于Mina过滤链的头部过滤器，TailContext相当于Mina过滤链的尾部过滤器
 
 ## Netty 默认Channel管道线-添加通道处理器
+添加通道处理器到管道头部，首次检查通道处理器是否为共享模式，如果非共享，且已添加，则抛出异常；检查通道处理器名在管道内，是否存在对应通道处理器上下文，已存在抛出异常；根据事件执行器，处理器名，及处理器，构造处理器上下文；添加处理器上限文到管道上下文链头；如果通道没有注册到事件循环，上下文添加到管道时，创建添加通道处理器回调任务，并将任务添加管道的回调任务链中，当通道注册到事件循环时，触发通道处理器的handlerAdded事件，已注册则创建一个线程，用于调用通道处理器的handlerAdded事件方法，及更新上下文状态为已添加，并交由事件执行器执行;最好调用callHandlerAdded0方法，确保调用通道处理器的handlerAdded事件方法，更新上下文状态为已添加。其他last（添加到管道尾部），before（添加指定上下文的前面），after（添加指定上下文的后面）操作，基本上与addfirst思路基本相同，不同的是添加到管道上下文链的位置。
+
+## Netty 默认Channel管道线-通道处理器移除与替换
+无论是根据名称，处理器句柄，还是根据类型移除通道处理器，都是首先获取对应的处理器上下文，从管道中移除对应的上下文，如果通道已经从事件循环反注册，则添加移除回调任务到管道回调任务链，否则直接创建线程（触发上下文关联的处理器handlerRemoved事件，更新上下文状态为已移除），有上下文关联的事件执行器执行。
+
+无论是根据名称，处理器句柄，还是根据类型替换通道处理器，都是首先获取对应的处理器上下文，然后添加新上下文到管道中原始上下文的位置，并将原始上下文的前驱和后继同时指向新上下文，以便转发剩余的buf内容；可以简单理解为添加新上下文，移除原始上下文，注意必须先添加，后移除，因为移除操作会触发channelRead和flush事件，而这些事件处理必须在handlerAdded事件后。
+
+## Netty 默认Channel管道线-Inbound和Outbound事件处理
+管道处理通道注册方法fireChannelRegistered，首先从头部上下文开始，如果上下文已经添加到管道，则触发上下文关联的通道处理器的channelRegistered事件，否则转发事件给上下文所属管道的下一个上下文;其他触发Inbound事件的处理过程与fireChannelRegistered方法思路相同，只不过触发的通道处理器的相应事件。管道处理Inbound事件首先从头部上下文开始，直到尾部上下文，最后默认直接丢弃。
+
+管道处理通道处理器地址绑定bind事件，首先从管道上下文链的尾部开始，寻找Outbound上下文，获取上下文的事件执行器，如果事件执行器线程在当前事件循环中，则触发通道处理器地址绑定事件#invokeBind，否则创建一个线程，执行事件触发操作，并交由事件执行器执行；#invokeBind首先判断通道处理器是否已经添加到管道，如果以添加，则触发Outbound通道处理器的bind事件方法，否则，传递地址绑定事件给管道中的下一个Outbound上下文。管道处理Outbound相关事件，从尾部上下文到头部上下文，到达头部时，交由上下文所属管道关联的Channel的Unsafe处理。
+
+## netty 通道处理器上下文定义
+通道处理器上下文ChannelHandlerContext，使通道处理器可以与管道和管道中其他处理器进行交互。当IO事件发生时，处理可以将事件转发给所属管道的下一个通道处理器，同时可以动态修改处理器所属的管道。通过上下文可以获取关联通道，处理器，事件执行器，上下文名，所属管道等信息。同时可以通过AttributeKey存储上下文属性，用alloc方法获取通道上下文的字节buf分配器，用于分配buf。
+
+## Netty 通道处理器上下文
+抽象通道处理器上下文AbstractChannelHandlerContext，拥有一个前驱和后继上下文，用于在管道中传递IO事件；通道处理器总共有四个状态，分别为初始化，正在添加到管道，已添加管道和从管道移除状态；上下文同时关联一个管道；Inbound和Outbound两个用于判断上下文的类型，决定了上下文是处理器Inbound事件还是Outbound事件；一个事件执行器executor，当上下文执行器不在当前事务循环中时，用于执行IO事件操作；同时有一些延时任务,如上下文读任务，上下文刷新任务，读完成任务和通道可写状态改变任务。上下文构造，主要是初始化上下文name，所属管道，事件执行器，上下文类型。上下文关联的通道通道处理器在具体的实现中定义，比如通道处理器上下文默认实现为DefaultChannelHandlerContext，内部关联一个通道处理器。
+
+上下文处理通道fireChannelRegistered事件，如果上下文事件执行器在当前事务循环，则直接在当前线程，执行触发上下文关联通道处理器的channelRegistered事件任务，否则，创建一个线程执行事件任务，并由上下文事务执行器运行；触发上下文关联通道处理器的channelRegistered事件任务，首先判断上下文是否已经添加到管道，已添加，则触发
+上下文关联通道处理器的channelRegistered事件，否则转发事件给上下文所属管道的下一个Inbound上下文。其他Inbound事件的处理过程与fireChannelRegistered方法思路相同，只不过触发的是通道处理器的相应事件;如果Inbound事件处理过程中，异常发生，首先检查异常是不是通道处理器的exceptionCaught方法抛出，是，则直接log，否则触发上下文关联通道处理器的exceptionCaught事件。
+
+上下文处理关联通道处理器的地址绑定bind事件，首先从所属管道上下文链的尾部开始，寻找Outbound上下文，找到后，获取上下文的事件执行器，如果事件执行器线程在当前事件循环中，则触发上下文关联通道处理器地址绑定事件，否则创建一个线程，执行事件触发操作，并交由事件执行器执行；触发上下文关联通道处理器地址绑定事件，首先判断上下文关联通道处理器是否已经添加到管道，如果以添加，则触发Outbound通道处理器的bind事件方法，否则，传递地址绑定事件给管道中的下一个Outbound上下文。如果在Outbound事件处理器过程中，出现异常则直接委托给异步任务结果通知工具PromiseNotificationUtil，通知异步任务失败，并log异常日志。
+
+netty的通道处理器上下文和mina的会话有点像，都拥有描述通道Handler的Context；不同的时mina中的会话与通道直接关联，而netty上下文与通道间是通过Channel管道关联起来，mina中的过滤链是依附于会话，而netty上下文依附于Channel管道，mina中的IO事件执行器为IoProcessor，netty中的IO事件的处理委托给事件循环或上下文的子事件执行器。
+
 ## Netty 通道初始化器ChannelInitializer
+通道初始化器ChannelInitializer实际上为Inbound通道处理器，当通道注册到事件循环中后，添加通道初始化器到通道，触发handlerAdded事件，然后将初始化器的上下文放入通道初始化器的上下文Map中，如果放入成功且先前不存在，initChannel(C ch)，初始化通道，其中C为当前通道，我们可以获取C的管道，添加通道处理器到管道，这就是通道初始化器的作用。添加完后，从通道的管道中移除初始化器上下文，并从通道初始化器的上下文Map中移除通道初始化器上下文。
+
 ## Netty 事件执行器组和事件执行器定义及抽象实现  
 ## Netty 多线程事件执行器组
 ## Netty 多线程事件循环组
@@ -246,6 +281,11 @@ netty通道处理器上下文可以说，是Mina中Hanlder和过滤器的集合�
 [Netty 管道线定义-ChannelPipeline]:http://donald-draper.iteye.com/blog/2388453  "Netty 管道线定义-ChannelPipeline"  
 [Netty 默认Channel管道线初始化]:http://donald-draper.iteye.com/blog/2388613  "Netty 默认Channel管道线初始化"  
 [Netty 默认Channel管道线-添加通道处理器]:http://donald-draper.iteye.com/blog/2389299  "Netty 默认Channel管道线-添加通道处理器"  
+[Netty 默认Channel管道线-通道处理器移除与替换]:http://donald-draper.iteye.com/blog/2388793 "Netty 默认Channel管道线-通道处理器移除与替换"
+[Netty 默认Channel管道线-Inbound和Outbound事件处理]:http://donald-draper.iteye.com/blog/2389148 "Netty 默认Channel管道线-Inbound和Outbound事件处理"
+
+[Netty 通道处理器上下文定义]:http://donald-draper.iteye.com/blog/2389214 "Netty 通道处理器上下文定义"
+[Netty 通道处理器上下文]:http://donald-draper.iteye.com/blog/2389299 "Netty 通道处理器上下文"
 <!-- ChannelInitializer -->
 [Netty 通道初始化器ChannelInitializer]:http://donald-draper.iteye.com/blog/2389352  "Netty 通道初始化器ChannelInitializer"  
 <!-- EventLoopGroup -->
