@@ -284,16 +284,65 @@ Server引导配置绑定socket地址，首先初始化通道，对于Server引�
 通道Channel，关联一个事件循环，及通道注册的事件循环EventLoop，一个Channel管道ChannelPipeline，用于存放通道处理器；一个字节buf分配器ByteBufAllocator，用于分配字节buf，还有一些获取通道状态的方式，是否注册到事件循环，通道是否打开，是否可写；另外还要获取通道配置ChannelConfig，通道元数据ChannelMetadata的方法；最重要的是，关联一个Unsafe，用于通道的地址绑定，连接操作以及断开，通道的读写，注册到事件循环以及反注册。
 
 ## Netty 抽象通道初始化  
+抽象通道AbstractChannel内部关联一个硬件底层操作类Unsafe，一个事件循环，即通道注册的事件循环EventLoop，一个Channel管道ChannelPipeline，用于存放通道处理器，默认为DefaultChannelPipeline。通道构造主要是初始化通道所属父通道，通道id，底层操作类Unsafe，Channel管道线程，默认的Channel管道线为DefaultChannelPipeline，底层操作类Unsafe为AbstractUnsafe。
+
 ## Netty 抽象Unsafe定义
+抽象Unsafe内部关联一个通道Outbound buf（ChannelOutboundBuffer），一个接收字节buf分配器Hander（ RecvByteBufAllocator.Handle）。通道注册到事件循环，首先检查事件循环是否为空，通道是否已注册到事件循环，通道是否兼容事件循环，检查通过后，如果线程在当前事件循环，则委托给register0完成实际注册任务，否则创建一个任务线程，完成通道注册事件循环实际工作register0，并将任务线程交由事件循环执行。register0方法首先确保任务没取消，通道打开，调用doRegister完成注册，确保在实际通知注册任务完成前，调用handlerAdded事件，触发通道已注册事件fireChannelRegistered，如果通道激活且第一次注册，则触发通道已激活事件fireChannelActive，否则如果通道配置为自动读取，则读取数据beginRead，实际委托给doBeginRead方法，待子类实现。这个过程中触发的事件，则传递给通道内部的Channel管道。地址绑定方法委托给doBind，待子类实现。
+
+关闭通道方法，首先确保异步关闭任务没有取消，如果Outbound buf为空，则添加异步结果监听器；再次检查关闭任务有没有执行完，执行完则更新异步任务结果；获取关闭线程执行器，如果关闭执行器不为空，则创建关闭任务线程，并由关闭执行器执行，否则在当前事务循环中执行实际关闭任务。实际关闭任务过程为，调用doClose0完成通道关闭任务，待子类实现，然后设置刷新Outbound 写请求队列数据失败，关闭OutBound buf，如果通道正在刷新，则延迟触发ChannelInactive事件，并反注册，否则直接触发ChannelInactive事件并反注册。写消息，首先检查Outbound buf是否为null，为空，则通道关闭，设置任务失败，否则转换消息，估算消息大小，添加消息到OutBound Buf中。刷新操作，首先将Outbound buf中写请求，添加到刷新队列中，然后将实际刷新工作委托给doWrite，doWrite方法，待子类实现。
+
 ## Netty 通道Outbound缓冲区
+通道Outbound缓存区内部关联一个通道，同时有一个线程本地buf数组，一个未刷新的buf链表和一个刷新buf链表。通道写消息时，消息将会被包装成写请求Entry。
+
+添加消息到通道Outbound缓冲区，首先包装消息为写请求Entry，将写请求Entry添加到未刷新写请求链表上，并更新通道当前待发送的字节数据，如果通道待发送的字节数大于通道写bufsize，则更新通道写状态，并触发ChannelWritabilityChanged事件。触发事件实际操作委托给通道的Channel管道。
+
+添加刷新操作，即遍历未刷新写请求链表，将写请求添加到刷新链表中，如果写请求取消，则更新通道待发送字节数，如果待发送字节数消息，小于通道配置的写buf size，则更新通道可写状态。
+
+移除操作，主要是从刷新写请求链移除链头写请求，并则释放写请求消息，更新写请求任务结果，当前通道待发送字节数和可写状态，并触发相应的事件
+
+从刷新写请求链表，移除writtenBytes个字节数方法removeBytes，自旋，直至从刷新链中移除writtenBytes个字节数，如果链头消息的可读字节数小于writtenBytes，则移除写请求Entry，否则更新writtenBytes，继续从刷新链中的写请求消息中移除writtenBytes个字节数。
+
+将刷新链上的写请求消息，添加到nio buffer数组中方法nioBuffers，主要是将刷新链上的写请求消息包装成direct buf添加到通道Outbound缓存区的nio buf数组中，这个方法主要在NioSocketChannel#doWrite方法重用。方法调用后，#nioBufferCount和#nioBufferSize，将返回当前nio buf数组的长度和可读字节数。
+
 ## Netty 抽象通道后续
+通道的绑定操作、连接，写消息，读操作，刷新操作，反注册、断开连接，关闭通道等操作事件实际调用通道的Channel管道的相关方法，即触发通道相关事件，这些方法是重写了通道OutboundInvoker的相关方法。在抽象Unsafe那篇文章中，我们看到其内部也有绑定、注册，读操作，写操作和关闭操作，这些是通道的实际操作方法。
+
 ## Netty 抽象nio通道
+抽象nio通道AbstractNioChannel内部关联一个可选择通道（SelectableChannel）和一个选择key（selectionKey）。抽象Nio通道构造，主要是初始化通道并配置为非阻塞模式。
+
+注册doRegister工作主要是，注册可选择通道到通道所在事件循环的选择器中。反注册doDeregister，委托给事件循环，取消选择key，即从事件循环关联选择器的选择key集合中移除当前选择key。开始读操作doBeginRead，实际工作为将读操作事件，添加选择key的兴趣事件集
+
+抽象nioUnsafe为特殊的Unsafe，允许访问底层的选择通道。选择通道方法返回的实际为抽象nio通道内部的底层可选择通道。移除读兴趣事件removeReadOp，即从选择key兴趣事件集中，移除读操作事件。连接操作，将实际连接操作委托给doConnect，待子类实现，如果连接成功，则通知异步任务连接成功，如果是第一次连接，则触发通道的激活事件fireChannelActive。完成连接操作，实际工作委托给抽象Nio通道的doFinishConnect方法，待子类实现，完成后更新任务结果，触发通道的激活事件fireChannelActive，如果出现异常，则更新连接任务为异常失败。
+
+
 ## Netty 抽象nio字节通道
+写通道Outbound缓冲区，即遍历刷新链上的写请求，如果写请求消息为字节buf，则调用doWriteBytes完成实际数据发送操作，待子类扩展，如果写请求消息为文件Region，调用doWriteFileRegion完成实际数据发送操作，待子类扩展，数据发送，则更新通道的数据发送进度，并从刷新链上移除写请求；如果所有写请求发送完毕，则重新添加写操作事件到选择key兴趣事件集，否则继续刷新通道Outbound缓冲区中的写请求。
+
+nio字节Unsafe读操作，从通道接收缓冲区读取数据，通知通道处理读取数据,触发Channel管道线的fireChannelRead事件，待数据读取完毕，触发Channel管道线的fireChannelReadComplete事件，如果在读数据的过程中，通道关闭，则触发通道输入关闭事件（fireUserEventTriggered），如果在读数据的过程中，发生异常，则读取缓存区中没有读完的数据，并通道通道处理剩余数据。
+
 ## Netty 抽象nio消息通道  
+抽象Nio消息通道AbstractNioMessageChannel，写通道Outbound缓冲区消息，即遍历通道Outbound缓冲区刷新链，当写消息请求为空时，从选择key兴趣集中移除写操作事件，否则，委托doWriteMessage方法，将消息写到底层通道，doWriteMessage方法待子类扩展,写完，将写请求从刷新链上移除，否则，如果需要，添加写事件到选择key的兴趣事件集。
+
+nio消息Unsafe（NioMessageUnsafe）读操作，从通道接收缓冲区读取数据，通知通道处理读取数据,触发Channel管道线的fireChannelRead事件，待数据读取完毕，触发Channel管道线的fireChannelReadComplete事件，如果在读数据的过程中，通道关闭，则触发通道输入关闭事件（fireUserEventTriggered），如果在读数据的过程中，发生异常，则触发通道fireExceptionCaught事件，如果读任务完毕，且不需自动读，则从选择key兴趣事件集移除读操作事件
+
 ## Netty NioServerSocketChannel解析
+nio服务端socket通道NioServerSocketChannel内部有两个变量，一个为选择器提供者SelectorProvider，一个为通道配置ServerSocketChannelConfig。
+
+通道实际绑定socket地址，首先判断jdk版本信息，如果jdk版本大于1.7 则使用通道bind方法，绑定socket地址，否则为通道关联Socket的bind方法。
+
+doReadMessages方法，实际为当接受客户端的连接请求时，创建一个与客户端交互的socket通道，并添加到读操作结果集中，实际为socket通道集。并将socket通道集交给ServerBootStrap的引导配置监听器ServerBootstrapAcceptor处理，Server引导配置监听器实际为一个Inbound通道处理器，每当有客户端连接请求时，则创建一个与客户端交互的通道，将child通道选项及属性配置给通道，并将通道注册到childGroup事件循环组，然后将通道处理器添加到与客户端交互的通道内部的Channel管道中。 客户端连接服务端时，首先向服务端发送连接请求数据，服务端接受到连接请求时，创建一个与客户端交互的socket通道。
+
+由于服务端通道用于接受客户端的请求，所有不支持连接，写消息，消息过滤等等操作。
+
+## Netty 通道配置接口定义
+通道配置接口，主要配置通道的字节buf分配器，接受buf分配器，消息size估算器，和通道选项。通通配置有两类分别为Socket通道和ServerSocket通道配置，大部分配置与Socket和SeverSocket的基本相同 。
+
 ## Netty 默认通道配置初始化
+
 ## Netty 默认通道配置后续
+
 ## Netty NioSocketChannel解析
+
 ## Netty 字节buf定义
 ## Netty 资源泄漏探测器
 ## Netty 抽象字节buf解析
