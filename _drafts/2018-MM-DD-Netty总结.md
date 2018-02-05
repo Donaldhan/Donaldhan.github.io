@@ -338,17 +338,100 @@ doReadMessages方法，实际为当接受客户端的连接请求时，创建一
 通道配置接口，主要配置通道的字节buf分配器，接受buf分配器，消息size估算器，和通道选项。通通配置有两类分别为Socket通道和ServerSocket通道配置，大部分配置与Socket和SeverSocket的基本相同 。
 
 ## Netty 默认通道配置初始化
+默认通道配置内部关联一个通道，一个消息大小估算器，默认为DefaultMessageSizeEstimator，，尝试写自旋次数默认为6，写操作失败，默认自动关闭通道，连接超时默认为30000ms，同时拥有一个字节buf 分配器和一个接收字节buf 分配器。通道配置构造，主要是初始化配置关联通道和接收字节buf分配器。如果系统属性io.netty.allocator.type，配置为unpooled，则默认的字节buf分配器为UnpooledByteBufAllocator，否则为PooledByteBufAllocator，对于Android平台，默认为UnpooledByteBufAllocator。默认接收字节buf分配器为AdaptiveRecvByteBufAllocator。接收字节buf分配器，主要是控制下一次接收字节buf的容量，如果当前读取字节数大于消息上一次读取的字节buf容量，则减少下一次接收buf的容量，否则增加下一次接收buf的容量。
 
 ## Netty 默认通道配置后续
+默认通道配置内部主要是配置消息大小估算器，字节buf分配器，接收字节buf分配器等属性。默认ServerSocket通道配置，与ServerSocket相关的配置委托给ServerSocket的相关方法，其他委托给父类默认通道配置。默认Socket通道配置，与Socket相关的配置委托给Socket的相关方法，其他委托给父类默认通道配置
 
 ## Netty NioSocketChannel解析
+nio socket通道初始化，主要是创建socket通道，初始化socket通道配置NioSocketChannelConfig。地址绑定操作，如果jdk大于1.7 则socket通道直接绑定地址，否则委托通道内关联的socket。连接操作，直接委托给内部的socket通道连接操作。socket通道读取操作，实际委托给socket通道的read操作，从Socket通道读取数据，写到当前buf。写字节buf，实际委托给socket通道的写操作，从当前buf读取数据，写socket通道中。socket通道写文件region，委托给文件Region的转移数据操作transferTo，从文件Region读取数据，写到通道中。
+
+写通道Outbound缓存区，首先从Outbound缓存区获取刷新链上的写请求对应的字节buf，然后委托给socket通道的写操作，发送数据，发送成功后，从刷新链上移除已经发送的写请求。关闭数据流，就是从事件循环反注册，即事件循环取消选择key，然后如果jdk大于1.7 则委托socket通道关闭输入流，否则委托通道内关联的socket。关闭输出流与关闭输入流思路一致。关闭通道实际为关闭通道输入流和输出流。断开连接实际为close通道。
 
 ## Netty 字节buf定义
+对象引用计数器ReferenceCounted，主要记录对象的引用数量，当引用数量为0时，表示可以回收对象，在调试模式下，如果发现对象出现内存泄漏，可以用touch方法记录操作的相关信息，通过ResourceLeakDetector获取操作的相关信息，以便分析内存泄漏的原因。
+
+字节缓存ByteBuf继承了对象引用计数器ReferenceCounted，拥有一个最大容量限制，如果用户尝试用 #capacity(int)和 #ensureWritable(int)方法，增加buf容量超过最大容量，将会抛出非法参数异常；字节buf有两个索引，一个为读索引readerIndex，一个为写索引writerIndex，读索引不能大于写索引，写索引不能小于读索引，buf可读字节数为writerIndex - readerIndex，buf可写字节数为capacity - writerIndex，buf可写的最大字节数为maxCapacity - writerIndex；
+
+可以使用markReader/WriterIndex标记当前buf读写索引位置，resetReader/WriterIndex方法可以重回先前标记的索引位置；
+
+当内存空间负载过度时，我们可以使用discardReadBytes丢弃一些数据，以节省空间；
+
+我们可以使用ensureWritable检测当buf是否有足够的空间写数据；
+
+提供了getBytes方法，可以将buf中的数据转移到目的ByteBuf,Byte数组，Nio字节buf ByteBuffer，OutputStream，聚集字节通道
+GatheringByteChannel和文件通道FileChannel中，这些方法不会修改当前buf读写索引，具体是否修改目的对象索引或位置，见java doc 描述。
+
+提供了setBytes方法，可以将源ByteBuf,Byte数组，Nio字节buf ByteBuffer，InputputStream，分散字节通道ScatteringByteChannel和文件通道FileChannel中的数据转移到当前buf中，这些方法不会修改当前buf的读写索引，至于源对象索引或位置，见java doc 描述。
+
+提供了readBytes方法，可以将buf中的数据转移到目的ByteBuf,Byte数组，Nio字节buf ByteBuffer，OutputStream，聚集字节通道GatheringByteChannel和文件通道FileChannel中，这些方法具体会会修改当前buf读索引，至于会不会修改源对象索引或位置，见java doc 描述。
+
+提供了writeBytes方法，可以将源ByteBuf,Byte数组，Nio字节buf ByteBuffer，
+InputputStream，分散字节通道ScatteringByteChannel和文件通道FileChannel中的数据写到当前buf中，这些方法会修改当前buf的写索引，至于会不会修改源对象索引或位置，见java
+doc 描述。
+
+
+set*原始类型方法不会修改读写索引；
+get*原始类型方法不会修改读写索引；
+
+write*原始类型方法会修改写索引；
+read*原始类型方法，会修改读索引；
+
+字节buf中的set/get*方法不会修改当前buf的读写索引，而write*修改写索引，read*会修改读索引；
+
+提供了copy，slice和retainSlice，duplicate和retainedDuplicate方法，用于拷贝，切割，复制当前buf数据，retained*方法会增加buf的引用计数器；
+
+提供nioBuffer和nioBuffers方法，用于包装当前buf可读数据为java nio ByteBuffer和ByteBuffer数组。
+
 ## Netty 资源泄漏探测器
+默认的资源泄漏探测器工厂创建的资源泄漏探测器为ResourceLeakDetector。
+
+资源泄漏探测器，探测等级有四种，关闭DISABLED，SIMPLE简单，高级ADVANCED，终极PARANOID，SIMPLE开启简单的采样资源泄漏探测，仅仅已少量的负载为代价报告是否为泄漏对象；ADVANCED开启高级采样泄漏探测，将会以高负载为代价，报告最近泄漏对象访问的地方；PARANOID开启终极采样泄漏探测，将会以高级负载为代价，报告最近泄漏对象访问的地方（仅仅测试）；开启资源探测的情况下，默认等级为SIMPLE。资源探测器内部有一个探测等级和采样间隔，资源类型，泄漏报告Map（ ConcurrentMap<String, Boolean>），激活资源集合ConcurrentMap<DefaultResourceLeak, LeakEntry>。
+
+资源泄漏探测器构造，主要初始化资源类型名及探测间隔。
+
+资源泄漏追踪ResourceLeakTracker，主要定义了记录当前调用者栈追踪和额外的主观信息方法，以便资源泄漏探测器可以告诉，泄漏资源最近访问的地方；关闭泄漏资源方法，以便资源泄漏探测器不在警告泄漏资源。
+
+默认资源泄漏DefaultResourceLeak，构造过程为，首先将资源添加到引用队列，如果探测等级大于ADVANCED，则创建记录，然后添加资源泄漏对象到资源泄漏探测器的激活对象Map中。
+
+记录资源泄漏，首先根据资源泄漏线索，创建泄漏线索信息，如果泄漏线索信息集为空，或者与上次记录不同，则添加泄漏信息到泄漏记录集，如果记录超过最大记录数，则从对头移除记录信息。
+
+关闭资源探测对象，就是从资源泄漏探测器移除资源泄漏对象。
+
+报告资源泄漏信息，主要是报告由于泄漏记录数限制，丢弃的记录数，记录的资源泄漏信息，资源泄漏创建信息。
+
+资源泄漏探测器，追踪资源泄漏探测信息，在采样点到达时，首先从资源泄漏引用队列，获取资源泄漏对象对象，关闭资源泄漏对象，并将探测结果添加到探测器的资源泄漏信息Map中，然后报告资源泄漏探测信息，最后创建资源探测对象。
+
 ## Netty 抽象字节buf解析
+字节buf内部有两个索引，一个读索引，一个写索引，两个索引标记，即读写索引对应的标记，buf的最大容量为maxCapacity；buf的构造，主要是初始化最大容量。
+
+弃已读数据方法discardReadBytes，丢弃buf数据时，只修改读写索引和相应的标记，并不删除数据。
+
+get*原始类型方法不会修改当前buf读写索引，getBytes(...,ByteBuf,...)方法不会修改当前buf读写索引，会修改目的buf的写索引。getBytes(...,byte[],...)方法不会修改当前buf读写索引。
+
+set*原始类型方法不会修改当前buf读写索引，setBytes(...,ByteBuf,...)方法不会修改当前buf读写索引，会修改源buf的读索引。setBytes(...,byte[],...)方法不会修改当前buf读写索引。
+
+read*原始类型方法会修改当前buf读索引，readBytes(...,ByteBuf,...)方法会修改当前buf读索引，同时会修改目的buf的写索引，readBytes(...,byte[],...)方法会修改当前buf读索引。
+read*操作实际委托个get*的相关操作，同时更新buf读索引。
+
+跳过length长度的字节，只更新读索引，不删除实际buf数据。
+
+retainedSlice和slice方法返回则的字节buf，实际为字节buf底层unwrap buf，可以理解为字节buf的快照或引用，数据更改相互影响，retainedSlice方法会增加字节buf的引用计数器。
+
+write*原始类型方法会修改当前buf写索引，writeBytes(...,ByteBuf,...)方法会修改当前buf写索引，同时会修改目的buf的读索引，readBytes(...,byte[],...)方法会修改当前buf写索引。
+write*操作实际委托个set*的相关操作，同时更新buf写索引。
+
+retainedDuplicate和duplicate方法返回则的字节buf，实际为字节buf底层unwrap buf，可以理解为字节buf的快照或引用，数据更改相互影响，retainedDuplicate方法会增加字节buf的引用计数器。
+
 ## Netty 抽象字节buf引用计数器
+抽象字节引用计数器AbstractReferenceCountedByteBuf，内部有一个引用计数器，以及原子更新引用计数器的refCntUpdater（AbstractReferenceCountedByteBuf)，更新引用计数器，实际通过refCntUpdater CAS操作，释放对象引用的时候，如果引用计数器为0，则释放对象相关资源。
+
 ## Netty 复合buf概念   
+复合字节缓冲CompositeByteBuf，内部有一个字节buf数组，用于存放字节buf，每个字节buf添加到复合buf集时，将被包装成一个buf组件，如果添加buf是，复合buf集已满，则将buf集中的所有buf，整合到一个组件buf中，并将原始buf集清空，添加整合后的buf到buf集。复合buf的读写索引为字节buf集的起始索引和size；每个组件buf Component内部记录着字节buf在复合buf中的起始位置和结束位置，及buf可读数据长度。
+
 ## Netty 抽象字节buf分配器
+创建字节buf主要根据字节buf分配器的directByDefault属性，来决定分配buf是否为direct类型还是heap类型；创建direct和heap buf实际通过newDirectBuffer和newHeapBuffer方法，待子类扩展。看出ioBuffer方法创建的字节buf，优先为direct类型，当系统平台不支持Unsafe时，才为heap类型；创建复合buf主要根据字节buf分配器的directByDefault属性，来决定分配buf是否为direct类型还是heap类型；创建复合buf时，如果资源泄漏探测功能开启，则追踪复合buf内存泄漏情况。
+
 ## Netty Unpooled字节buf分配器
 ## Netty Pooled字节buf分配器  
 
