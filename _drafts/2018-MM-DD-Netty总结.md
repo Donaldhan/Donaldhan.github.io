@@ -433,6 +433,8 @@ retainedDuplicate和duplicate方法返回则的字节buf，实际为字节buf底
 创建字节buf主要根据字节buf分配器的directByDefault属性，来决定分配buf是否为direct类型还是heap类型；创建direct和heap buf实际通过newDirectBuffer和newHeapBuffer方法，待子类扩展。看出ioBuffer方法创建的字节buf，优先为direct类型，当系统平台不支持Unsafe时，才为heap类型；创建复合buf主要根据字节buf分配器的directByDefault属性，来决定分配buf是否为direct类型还是heap类型；创建复合buf时，如果资源泄漏探测功能开启，则追踪复合buf内存泄漏情况。
 
 ## Netty Unpooled字节buf分配器
+非池类堆字节buf，实际为一个字节数组，直接在Java虚拟机堆内存中，分配字节缓存；非池类Direct buf，实际为一个nio 字节buf，从操作系统实际物理内存中，分配字节缓存。Unpooled创建字节buf，实际委托给内部字节分配器UnpooledByteBufAllocator。
+
 ## Netty Pooled字节buf分配器  
 
 
