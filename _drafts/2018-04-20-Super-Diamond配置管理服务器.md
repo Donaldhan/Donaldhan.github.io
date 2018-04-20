@@ -39,11 +39,11 @@ diamond的分支，不过文档很少，这也是阿里开源产品通病。今�
 ![Super-Diamond架构设计](/image/super-diamond/framework.png)
 
 从上图中，我们可以看到Super-Diamond主要包括两部分，一个是配置中心服务端，一个配置中心客户端。在服务中心配置，有一个配置中心后台界面我们可以管理项目和项目配置项，同时有一个
-配置监听服务器。当项目配置改变时，配置监听服务器将配置更改信息以Json字符串的形式，推送到客户端。客户端启动时，开启一个定时任务以一定的间隔从服务端拉去配置信息。
+配置监听服务器。当项目配置改变时，配置监听服务器将配置更改信息以Json字符串的形式，推送到客户端。客户端启动时，开启一个定时任务以一定的间隔从服务端拉取配置信息。
 由于所有的配置信息，实际上是放在数据库中，下面我们来看Super-Diamond数据库设计。
 
 ## Super-Diamond数据库设计
-Super-Diamond其实是将配置信息放在数据库表中，客户端拉去时，服务端从数据库中，以Json字符串的形式，发送给客户端。主要表结构项目表，项目配置表，项目模块表，用户表。
+Super-Diamond其实是将配置信息放在数据库表中，客户端拉取时，服务端从数据库中，以Json字符串的形式，发送给客户端。主要表结构项目表，项目配置表，项目模块表，用户表。
 这里我们就不给出数据库表设计图了，只简单给不表创建语句。具体如下：
 
 ### 项目表
@@ -223,7 +223,7 @@ public class DiamondServerHandler extends SimpleChannelInboundHandler<String> {
    }
 ```
 
-当接收到客户端拉去配置请求时，将项目配置信息发送给客户端
+当接收到客户端拉取配置请求时，将项目配置信息发送给客户端
 
 ```java
 /**
@@ -317,7 +317,6 @@ Override
 @Controller
 public class ConfigController extends BaseController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
-
 	@Autowired
 	private ConfigService configService;
 	@Autowired
@@ -351,7 +350,6 @@ public class ConfigController extends BaseController {
 		} else {
 			configService.updateConfig(type, configId, configKey, configValue, configDesc, projectId, moduleId, user.getUserCode());
 		}
-
 		String projCode = (String)projectService.queryProject(projectId).get("PROJ_CODE");
 		String moduleName = moduleService.findName(moduleId);
 		//推送最新项目配置给所有客户端
@@ -361,7 +359,6 @@ public class ConfigController extends BaseController {
 		else
 			return "redirect:/profile/" + type + "/" + projectId + "?page=" + page + "&flag=" + flag;
 	}
-
 	/**
 	 * @param type
 	 * @param projectId
@@ -377,7 +374,9 @@ public class ConfigController extends BaseController {
 		diamondServerHandler.pushConfig(projCode, type, moduleName);
 		return "redirect:/profile/" + type + "/" + projectId;
 	}
+}
 ```
+
 我们再来看一下会话处理Handler
 
 ```java
@@ -404,10 +403,471 @@ public class SessionHolder {
 
 会话handler用ThreadLocal来管理所有会话，我很疑问，这个为什么用TheadLocal，而不是ConcurrentHashMap。
 
+在来看基于Jetty的部署方式。
 
-不规范地方   
+##### 基于Jetty的部署方式
 
-#### 日志
+```java
+public class JettyServer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JettyServer.class);
+	private static int maxThreads;
+	private static int minThreads;
+	private static int serverPort;
+	private static String serverHost;
+	static {
+		try {
+			org.apache.commons.configuration.Configuration config =
+					new PropertiesConfiguration("META-INF/res/jetty.properties");
+			LOGGER.info("加载jetty.properties");
+			maxThreads = config.getInt("thread.pool.max.size", 100);
+			minThreads = config.getInt("thread.pool.min.size", 10);
+			serverPort = config.getInt("server.port", 8080);
+			serverHost = config.getString("server.host");
+		} catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+	}
+  //...
+}
+```
+
+再来看Super-Diamond客户端
+
+## Super-Diamond客户端
+
+![Super-Diamond客户端](/image/super-diamond/client.png)
+
+从上面可以看出，属性配置工厂PropertiesConfigurationFactoryBean为一个工厂bean，用于创建属性配置bean PropertiesConfiguration,
+出行配置配置，在初始化的时候，创建Netty配置客户端，客户端从配置监听服务器主动拉取，或被动接受服务端的配置信息，及配置更信息。
+客户端从服务接受到配置信息时，保存配置信息到本地文件。如果客户端连不到服务器，则从本地文件读取，如果相关文件不存在，则抛出异常。
+客户端从服务接受配置信息时，如果配置消息事件类型为ADD或Update,通知注册到事件源的监听器。客户端与服务器的连接是长连接，启动时从服务器拉取配置信息，当服务器配置有变动时，推送信息给客户端。当连接失败时，调度连接服务器线程。在配置更新或新增的情况下，属性配置器创建一个配置更新触发线程通知注册到事件源的配置监听器，委托给内部的线程池取执行。
+
+下面我们从代码层，来看一下：
+我们从属性配置创建开始，
+
+```java
+public class PropertiesConfiguration extends EventSource {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesConfiguration.class);
+	private StrSubstitutor substitutor;
+	private Map<String, String> store = null;
+	private Netty4Client client;
+	private volatile boolean reloadable = true;
+	private static final ExecutorService reloadExecutorService = Executors.newSingleThreadExecutor(new NamedThreadFactory("ReloadConfigExecutorService", true));
+	private static String _host;
+	private static int _port = 0;
+	private static String _projCode;
+	private static String _profile;
+	private static String _modules;
+	private static final long FIRST_CONNECT_TIMEOUT = 2;
+}
+```
+PropertiesConfiguration实际上是一个事件源，当事件发生时，通知注册到属性配置器的配置监听器。内部的线程池拥有执行，配置的重新加载。
+
+再来连接服务器：
+
+```java
+/**
+	 * 连接服务器，如果连接成功，则接受从服务拉取的配置，保存到本地文件。
+	 * @param host
+	 * @param port
+	 * @param projCode
+	 * @param profile
+	 * @param modules
+	 */
+	protected void connectServer(String host, int port, final String projCode, final String profile, final String modules) {
+		Assert.notNull(projCode, "连接superdiamond， projCode不能为空");
+
+		final String clientMsg = "superdiamond={\"projCode\": \"" + projCode + "\", \"profile\": \"" + profile + "\", "
+				+ "\"modules\": \"" + modules + "\", \"version\": \"1.1.0\"}";
+		try {
+			client = new Netty4Client(host, port, new ClientChannelInitializer(clientMsg));
+
+			if(client.isConnected()) {
+				String message = client.receiveMessage(FIRST_CONNECT_TIMEOUT);
+
+				if(StringUtils.isNotBlank(message)) {
+					String versionStr = message.substring(0, message.indexOf("\r\n"));
+					LOGGER.info("加载配置信息，项目编码：{}，Profile：{}, Version：{}", projCode, profile, versionStr.split(" = ")[1]);
+					//保存文件
+					FileUtils.saveData(projCode, profile, message);
+					//加载配置
+					load(new StringReader(message), false);
+				} else {
+					throw new ConfigurationRuntimeException("从服务器端获取配置信息为空，Client 请求信息为：" + clientMsg);
+				}
+			} else {//没有连接成功，则从本地磁盘配置文件中读取配置
+				String message = FileUtils.readConfigFromLocal(projCode, profile);
+				if(message != null) {
+					String versionStr = message.substring(0, message.indexOf("\r\n"));
+					LOGGER.info("加载本地备份配置信息，项目编码：{}，Profile：{}, Version：{}", projCode, profile, versionStr.split(" = ")[1]);
+
+					load(new StringReader(message), false);
+				} else
+					throw new ConfigurationRuntimeException("本地没有备份配置数据，PropertiesConfiguration 初始化失败。");
+			}
+			//如果需要重新加载配置文件，则读取客户端从服务器拉取配置
+			reloadExecutorService.submit(new Runnable() {
+
+				@Override
+				public void run() {
+					while(reloadable) {
+						try {
+							if(client.isConnected()) {
+								String message = client.receiveMessage();
+
+								if(message != null) {
+									String versionStr = message.substring(0, message.indexOf("\r\n"));
+									LOGGER.info("重新加载配置信息，项目编码：{}，Profile：{}, Version：{}", projCode, profile, versionStr.split(" = ")[1]);
+									FileUtils.saveData(projCode, profile, message);
+									load(new StringReader(message), true);
+								}
+							} else {
+								TimeUnit.SECONDS.sleep(1);
+							}
+						} catch(Exception e) {
+
+						}
+					}
+				}
+			});
+		} catch (Exception e) {
+			if(client != null) {
+				client.close();
+			}
+			throw new ConfigurationRuntimeException(e.getMessage(), e);
+		}
+	}
+```
+再来看加载配置
+
+```java
+/**
+	 * 加载配置文件
+	 *
+	 * @param in
+	 * @param reload 初次初始化加载为false，服务端推送加载为true。
+	 * @throws Exception
+	 */
+	public void load(Reader in, boolean reload) throws ConfigurationRuntimeException {
+		Map<String, String> tmpStore = new LinkedHashMap<String, String>();
+
+		PropertiesReader reader = new PropertiesReader(in);
+		try {
+			while (reader.nextProperty()) {
+				String key = reader.getPropertyName();
+				String value = reader.getPropertyValue();
+				tmpStore.put(key, value);
+				//通知配置监听器
+				if(reload) {
+					String oldValue = store.remove(key);
+					if(oldValue == null)
+						fireEvent(EventType.ADD, key, value);
+					else if(!oldValue.equals(value))
+						fireEvent(EventType.UPDATE, key, value);
+				}
+			}
+
+			if(reload) {
+				for(String key : store.keySet()) {
+					fireEvent(EventType.CLEAR, key, store.get(key));
+				}
+			}
+		} catch (IOException ioex) {
+			throw new ConfigurationRuntimeException(ioex);
+		} finally {
+			try {
+				reader.close();
+			} catch (IOException e) {
+				;
+			}
+		}
+
+		if(store != null)
+			store.clear();
+
+		store = tmpStore;
+	}
+```
+从上面可以看出，事件一共有3中，ADD，UPDATE，CLEAR。
+
+事件类型：
+```java
+public enum EventType {
+	ADD, UPDATE, CLEAR;
+}
+```
+
+在来看通知配置监听器
+
+```java
+public class EventSource {
+	private Collection<ConfigurationListener> listeners;
+	private ExecutorService executorService =
+			Executors.newSingleThreadExecutor(new NamedThreadFactory("config-event"));
+	public EventSource() {
+		initListeners();
+	}
+  /**
+	 *
+	 */
+	private void initListeners() {
+		listeners = new CopyOnWriteArrayList<ConfigurationListener>();
+	}
+  /**
+	 * 异步执行ConfigurationListener。
+	 *
+	 * @param type
+	 * @param propName
+	 * @param propValue
+	 */
+	protected void fireEvent(EventType type, String propName, Object propValue) {
+		final Iterator<ConfigurationListener> it = listeners.iterator();
+		if (it.hasNext()) {
+			final ConfigurationEvent event = createEvent(type, propName, propValue);
+			while (it.hasNext()) {
+				final ConfigurationListener listener = it.next();
+				executorService.submit(new Runnable() {
+
+					@Override
+					public void run() {
+						listener.configurationChanged(event);
+					}
+				});
+			}
+		}
+	}
+}
+```
+ 从上面可以看出，在配置更新或新增的情况下，属性配置器创建一个配置更新触发线程通知注册到事件源的配置监听器，委托给内部的线程池取执行。
+
+
+我们回到连接服务器，启动配置轮询客户端拉取项目配置：
+
+```java
+public class Netty4Client {
+	private static final Logger logger = LoggerFactory.getLogger(Netty4Client.class);
+	private String host;
+	private int port;
+	private int timeout = 1000;
+    private int connectTimeout = 3000;
+    private final EventLoopGroup group = new NioEventLoopGroup();
+    private ClientChannelInitializer channelInitializer;
+    private Bootstrap bootstrap;
+    private volatile Channel channel;
+    private volatile ChannelFuture future;  
+    private volatile  ScheduledFuture<?> reconnectExecutorFuture = null;
+    private long lastConnectedTime = System.currentTimeMillis();
+    private final AtomicInteger reconnect_count = new AtomicInteger(0);
+    private final AtomicBoolean reconnect_error_log_flag = new AtomicBoolean(false) ;
+    //重连warning的间隔.(waring多少次之后，warning一次)
+    private final int reconnect_warning_period = 1800;
+    private final long shutdown_timeout = 1000 * 60 * 15;
+    private static final ScheduledThreadPoolExecutor reconnectExecutorService = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("ClientReconnectTimer", true));
+}
+```
+配置客户端,内部有一个调度线程池，当连接失败时，调度连接服务器线程。
+
+再来看连接配置服务器。
+
+```java
+public Netty4Client(String host, int port, ClientChannelInitializer channelInitializer) throws Exception {
+     this.host = host;
+   this.port = port;
+   this.channelInitializer = channelInitializer;
+
+   try {
+           doOpen();
+       } catch (Throwable t) {
+           close();
+           throw new Exception("Failed to start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress()
+                                       + " connect to the server " + host + ", cause: " + t.getMessage(), t);
+       }
+       try {
+       //连接服务器
+           connect();
+
+           logger.info("Start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress() + " connect to the server " + host);
+       } catch (Throwable t){
+           throw new Exception("Failed to start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress()
+                   + " connect to the server " + host + ", cause: " + t.getMessage(), t);
+       }
+   }
+```
+
+```java
+/**
+    * 连接服务器
+    * @throws Exception
+    */
+   private void connect() throws Exception {
+       try {
+           if (isConnected()) {
+               return;
+           }
+           initConnectStatusCheckCommand();
+           doConnect();//完成实际连接
+           if (! isConnected()) {
+               throw new Exception("Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                                           + NetUtils.getLocalHost() + ", cause: Connect wait timeout: " + getTimeout() + "ms.");
+           } else {
+             logger.info("Successed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                                           + NetUtils.getLocalHost() + ", channel is " + this.channel);
+           }
+
+           reconnect_count.set(0);
+           reconnect_error_log_flag.set(false);
+       } catch (Throwable e) {
+           logger.error("Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
+                                       + NetUtils.getLocalHost());
+       }
+   }
+```
+
+```java
+/**
+     *创建项目配置连接线程，当连接失败时调度项目连接服务器线程
+     */
+    private synchronized void initConnectStatusCheckCommand(){
+        if(reconnectExecutorFuture == null || reconnectExecutorFuture.isCancelled()){
+            //创建项目配置连接线程，
+            Runnable connectStatusCheckCommand =  new Runnable() {
+                public void run() {
+                    try {
+                        if (! isConnected()) {
+                            connect();
+                        } else {
+                            lastConnectedTime = System.currentTimeMillis();
+                        }
+                    } catch (Throwable t) {
+                        String errorMsg = "client reconnect to "+getRemoteAddress()+" find error . ";
+                        if (System.currentTimeMillis() - lastConnectedTime > shutdown_timeout){
+                            if (!reconnect_error_log_flag.get()){
+                                reconnect_error_log_flag.set(true);
+                                logger.error(errorMsg, t);
+                                return ;
+                            }
+                        }
+                        if ( reconnect_count.getAndIncrement() % reconnect_warning_period == 0){
+                            logger.warn(errorMsg, t);
+                        }
+                    }
+                }
+            };
+            //当连接失败时调度项目连接服务器线程
+            reconnectExecutorFuture = reconnectExecutorService.scheduleWithFixedDelay(connectStatusCheckCommand, 2 * 1000, 2 * 1000, TimeUnit.MILLISECONDS);
+        }
+    }
+```
+
+```java
+/**
+     * 完成实际连接
+     * @throws Throwable
+     */
+    private void doConnect() throws Throwable {
+        long start = System.currentTimeMillis();
+        future = bootstrap.connect(getConnectAddress());
+        try{
+            boolean ret = future.awaitUninterruptibly(getConnectTimeout(), TimeUnit.MILLISECONDS);
+
+            if (ret && future.isSuccess()) {
+                Channel newChannel = future.sync().channel();
+
+                try {
+                    // 关闭旧的连接
+                    Channel oldChannel = Netty4Client.this.channel;
+                    if (oldChannel != null) {
+                        logger.info("Close old netty channel " + oldChannel + " on create new netty channel " + newChannel);
+                        oldChannel.close();
+                    }
+                } finally {
+                	Netty4Client.this.channel = newChannel;
+                }
+            } else if (future.cause() != null) {
+                throw new Exception("client failed to connect to server "
+                        + getRemoteAddress() + ", error message is:" + future.cause().getMessage(), future.cause());
+            } else {
+                throw new Exception("client failed to connect to server "
+                        + getRemoteAddress() + " client-side timeout "
+                        + getConnectTimeout() + "ms (elapsed: " + (System.currentTimeMillis() - start) + "ms) from netty client "
+                        + NetUtils.getLocalHost());
+            }
+        }finally{
+            if (! isConnected()) {
+                future.cancel(true);
+            }
+        }
+    }
+```
+
+从上面可以看出，客户端与服务器的连接是长连接，启动时从服务器拉取配置信息，当服务器配置有变动时，推送信息给客户端。当连接失败时，调度连接服务器线程。注意调度的时候，使用的是scheduleWithFixedDelay方法，而不是AtscheduleFixedDelay。
+
+再来看接收项目配置消息：
+
+```java
+/**
+	 * 使用时，循环调用该方法获取服务端返回的信息。
+	 * receiveMessage是阻塞方法，如果没有消息会等待。
+	 **/
+	public String receiveMessage() {
+		return channelInitializer.getClientHandler().getMessage();
+	}
+
+	public String receiveMessage(long timeout) {
+		return channelInitializer.getClientHandler().getMessage(timeout);
+	}
+```
+
+接收消息，实际委托给通道处理器。
+
+```java
+@Sharable
+public class Netty4ClientHandler extends SimpleChannelInboundHandler<String> {
+    private final LinkedBlockingQueue<String> queue;
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, String message) throws Exception {
+    	queue.add(message);
+    }
+    public String getMessage() {
+		String message = null;
+		try {
+			message = queue.take();
+		} catch (InterruptedException e) {
+		}
+		return message;
+	}
+
+    /**
+     *
+     * @param timeout 超时时间，单位秒
+     * @return
+     */
+    public String getMessage(long timeout) {
+		String message = null;
+		try {
+			message = queue.poll(timeout, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+		}
+		return message;
+	}
+}
+```
+
+注意客户端，使用的也是共享模式通道处理器，保证配置的全局性。
+
+来小节一下：
+
+属性配置工厂PropertiesConfigurationFactoryBean为一个工厂bean，用于创建属性配置bean PropertiesConfiguration,
+出行配置配置，在初始化的时候，创建Netty配置客户端，客户端从配置监听服务器主动拉取，或被动接受服务端的配置信息，及配置更信息。
+客户端从服务接受到配置信息时，保存配置信息到本地文件。如果客户端连不到服务器，则从本地文件读取，如果相关文件不存在，则抛出异常。
+客户端从服务接受配置信息时，如果配置消息事件类型为ADD或Update,通知注册到事件源的监听器。客户端与服务器的连接是长连接，启动时从服务器拉取配置信息，当服务器配置有变动时，推送信息给客户端。当连接失败时，调度连接服务器线程。在配置更新或新增的情况下，属性配置器创建一个配置更新触发线程通知注册到事件源的配置监听器，委托给内部的线程池取执行。
+
+
+下面我们再来看项目存在的问题。
+
+### 存在的问题,不规范地方   
+
+1. 日志
 
 ```java
 public class ConfigController extends BaseController {
@@ -423,6 +883,8 @@ abstract public class BaseController {
 
 从上面可以看出，日志命名不统一。
 
+
+2. 摒弃System，StringBuilder -》 StringBuffer
 ```java
 /**
  * 打印工程版本信息
@@ -478,9 +940,8 @@ public class PrintProjectVersionServlet extends GenericServlet {
 }
 ```
 
-摒弃System，StringBuilder -》 StringBuffer
 
-
+3. 密码泄漏
 ```java
 @Controller
 public class SecurityController extends BaseController {
@@ -499,15 +960,13 @@ public class SecurityController extends BaseController {
         	request.getSession().setAttribute("message", result);
             return "redirect:/";
         }
+ }
 }
 ```
 
 ```java
 @Service
 public class UserService {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
-
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 	public Object login(String userCode, String password) {
@@ -531,39 +990,69 @@ public class UserService {
 	}
 }
 ```
-从上面可以看出，用户登录密码，转到后台是没有加密的密码，这样，容易导致密码泄漏。
+从上面可以看出，用户登录密码，转到后台是没有加密的密码，这样，容易导致密码泄漏。同时还有一个问题，很到消息字符串是硬编码，不便于修改。
 
-
-基于Jetty的部署方式：
+4. 异常信息没有输出
 ```java
-public class JettyServer {
-	private static final Logger LOGGER = LoggerFactory.getLogger(JettyServer.class);
-	private static int maxThreads;
-	private static int minThreads;
-	private static int serverPort;
-	private static String serverHost;
-	static {
+public void load(Reader in, boolean reload) throws ConfigurationRuntimeException {
+		Map<String, String> tmpStore = new LinkedHashMap<String, String>();
+
+		PropertiesReader reader = new PropertiesReader(in);
 		try {
-			org.apache.commons.configuration.Configuration config =
-					new PropertiesConfiguration("META-INF/res/jetty.properties");
+			while (reader.nextProperty()) {
+				String key = reader.getPropertyName();
+				String value = reader.getPropertyValue();
+				tmpStore.put(key, value);
+				if(reload) {
+					String oldValue = store.remove(key);
+					if(oldValue == null)
+						fireEvent(EventType.ADD, key, value);
+					else if(!oldValue.equals(value))
+						fireEvent(EventType.UPDATE, key, value);
+				}
+			}
 
-			LOGGER.info("加载jetty.properties");
-
-			maxThreads = config.getInt("thread.pool.max.size", 100);
-			minThreads = config.getInt("thread.pool.min.size", 10);
-			serverPort = config.getInt("server.port", 8080);
-			serverHost = config.getString("server.host");
-		} catch(Exception e) {
-			LOGGER.error(e.getMessage(), e);
+			if(reload) {
+				for(String key : store.keySet()) {
+					fireEvent(EventType.CLEAR, key, store.get(key));
+				}
+			}
+		} catch (IOException ioex) {
+			throw new ConfigurationRuntimeException(ioex);
+		} finally {
+			try {
+				reader.close();
+			} catch (IOException e) {
+				;
+			}
 		}
+
+		if(store != null)
+			store.clear();
+		store = tmpStore;
 	}
-  //...
-}
 ```
 
+从上面可以看出，异常信息没有输出。
 
-## Super-Diamond客户端
+综上，super-diamond虽然有他的易操作性，但代码规范上，以及安全性上面还是存在一定的问题，有待改进。
 
-![Super-Diamond客户端](/image/super-diamond/client.png)
+再来看一下super-diamond与spring-cloud-config版本控制数据。
+
+1. super-diamond
+105 commits
+1 branch
+0 releases
+5 contributors
+
+2. spring-cloud-config
+885 commits
+17 branches
+48 releases
+69 contributors
+Apache-2.0
+
+从上述数据可以看出，spring-cloud-config的分支管理更规范，活跃度更高。
 
 # 总结
+super-diamond使用数据库来存放项目配置信息，当配置有变动时，推送到所有客户端，当连接失败时，调度连接服务器线程。当然我们也可使用Zookeeper ,我们只需要监听相关的配置节点即可。另一种是使用spring-cloud-config（重量级），不过这个还没有研究过。
