@@ -169,7 +169,401 @@ CREATE TABLE `CONF_PROJECT_USER_ROLE` (
 从上面配置来看，主要配合中心服务端的Dao使用的是JdbcTemplate。
 
 
+下面我们根据服务端的几个关键类，来看一下服务端：
+![Super-Diamond服务端](/image/super-diamond/server.png)
+从上图中，我们可以看到两个关键的类，ConfigService, ConfigController和 ,DiamondServerHandler。
+
+先来看DiamondServerHandle：
+
+```java
+@Sharable
+public class DiamondServerHandler extends SimpleChannelInboundHandler<String> {
+	public static ConcurrentHashMap<ClientKey /*projcode+profile*/, List<ClientInfo> /*client address*/> clients =
+			new ConcurrentHashMap<ClientKey, List<ClientInfo>>();
+	private ConcurrentHashMap<String /*client address*/, ChannelHandlerContext> channels =
+			new ConcurrentHashMap<String, ChannelHandlerContext>();
+    private final Charset charset = Charset.forName("UTF-8");
+    @Autowired
+    private ConfigService configService;
+}
+```
+ 从上面可以看出，DiamondServerHandler保存着所有客户端的信息，并且是共享模式，以便项目配置有变动时，
+ 将配置信息推送给所有客户端。
+
+下面我们在来看，推送信息给客户端
+
+```java
+/**
+    * 向服务端推送配置数据。
+    *
+    * @param projCode
+    * @param profile
+    * @param config
+    */
+   public void pushConfig(String projCode, String profile, final String module) {
+     for(ClientKey key : clients.keySet()) {
+       if(key.getProjCode().equals(projCode) && key.getProfile().equals(profile)) {
+       List<ClientInfo> addrs = clients.get(key);
+         if(addrs != null) {
+           for(ClientInfo client : addrs) {
+             ChannelHandlerContext ctx = channels.get(client.getAddress());
+             if(ctx != null) {
+               if(key.moduleArr.length == 0) {
+                 String config = configService.queryConfigs(projCode, profile, "");
+                 sendMessage(ctx, config);
+               } else if(ArrayUtils.contains(key.getModuleArr(), module)) {
+                 String config = configService.queryConfigs(projCode, key.getModuleArr(), profile, "");
+                   sendMessage(ctx, config);
+               }
+             }
+           }
+         }
+       }
+     }
+   }
+```
+
+当接收到客户端拉去配置请求时，将项目配置信息发送给客户端
+
+```java
+/**
+* 处理客户端的请求
+* @param request
+* @throws Exception
+*/
+  @SuppressWarnings("unchecked")
+Override
+  public void channelRead0(ChannelHandlerContext ctx, String request) throws Exception {
+  	String config;
+      if (request != null && request.startsWith("superdiamond=")) {
+      	request = request.substring("superdiamond=".length());
+
+      	Map<String, String> params = (Map<String, String>) JSONUtils.parse(request);
+      	String projCode = params.get("projCode");
+      	String modules = params.get("modules");
+      	String[] moduleArr = StringUtils.split(modules, ",");
+      	String profile = params.get("profile");
+      	ClientKey key = new ClientKey();
+      	key.setProjCode(projCode);
+      	key.setProfile(profile);
+      	key.setModuleArr(moduleArr);
+      	//String version = params.get("version");
+
+      	List<ClientInfo> addrs = clients.get(key);
+      	if(addrs == null) {
+      		addrs = new ArrayList<ClientInfo>();
+      	}
+
+      	String clientAddr = ctx.channel().remoteAddress().toString();
+      	ClientInfo clientInfo = new ClientInfo(clientAddr, new Date());
+      	addrs.add(clientInfo);
+      	clients.put(key, addrs);
+      	channels.put(clientAddr, ctx);
+      	//查询配置
+      	if(StringUtils.isNotBlank(modules)) {
+              config = configService.queryConfigs(projCode, moduleArr, profile, "");
+      	} else {
+      		config = configService.queryConfigs(projCode, profile, "");
+      	}
+      } else {
+      	config = "";
+      }
+
+      sendMessage(ctx, config);
+  }
+  /**
+  	 * 发送项目配置信息给客户端
+  	 * @param ctx
+  	 * @param config
+  	 */
+      private void sendMessage(ChannelHandlerContext ctx, String config) {
+      	byte[] bytes = config.getBytes(charset);
+      	ByteBuf message = Unpooled.buffer(4 + bytes.length);
+          message.writeInt(bytes.length);
+          message.writeBytes(bytes);
+          ctx.writeAndFlush(message);
+}
+```
+
+当客户端断开来连接时，移除客户端信息
+
+```java
+/**
+ * 客户端断开来连接时，移除客户端信息
+ * @param ctx
+ * @throws Exception
+ */
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    super.channelInactive(ctx);
+    String address = ctx.channel().remoteAddress().toString();
+    channels.remove(address);
+    for(List<ClientInfo> infos : clients.values()) {
+      for(ClientInfo client : infos) {
+        if(address.equals(client.getAddress())) {
+          infos.remove(client);
+          break;
+        }
+      }
+    }
+
+    logger.info(ctx.channel().remoteAddress() + " 断开连接。");
+  }
+```
+
+在来看看一下，在服务器管理界面修改，触发的操作：
+
+```java
+@Controller
+public class ConfigController extends BaseController {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
+
+	@Autowired
+	private ConfigService configService;
+	@Autowired
+	private ProjectService projectService;
+	@Autowired
+	private ModuleService moduleService;
+	@Autowired
+	private DiamondServerHandler diamondServerHandler;
+
+	/**
+	 *
+	 * @param type profile的值
+	 * @param configId
+	 * @param configKey
+	 * @param configValue
+	 * @param configDesc
+	 * @param projectId
+	 * @param moduleId
+	 * @param selModuleId
+	 * @param page
+	 * @param flag
+	 * @return
+	 */
+	@RequestMapping("/config/save")
+	public String saveConfig(String type, Long configId, String configKey, String configValue,
+			String configDesc, Long projectId, Long moduleId, Long selModuleId, int page,
+			@RequestParam(defaultValue="")String flag) {
+		User user = (User) SessionHolder.getSession().getAttribute("sessionUser");
+		if(configId == null) {
+			configService.insertConfig(configKey, configValue, configDesc, projectId, moduleId, user.getUserCode());
+		} else {
+			configService.updateConfig(type, configId, configKey, configValue, configDesc, projectId, moduleId, user.getUserCode());
+		}
+
+		String projCode = (String)projectService.queryProject(projectId).get("PROJ_CODE");
+		String moduleName = moduleService.findName(moduleId);
+		//推送最新项目配置给所有客户端
+		diamondServerHandler.pushConfig(projCode, type, moduleName);
+		if(selModuleId != null)
+			return "redirect:/profile/" + type + "/" + projectId + "?moduleId=" + selModuleId + "&flag=" + flag;
+		else
+			return "redirect:/profile/" + type + "/" + projectId + "?page=" + page + "&flag=" + flag;
+	}
+
+	/**
+	 * @param type
+	 * @param projectId
+	 * @param moduleName
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/config/delete/{id}")
+	public String deleteConfig(String type, Long projectId, String moduleName, @PathVariable Long id) {
+		configService.deleteConfig(id, projectId);
+		String projCode = (String)projectService.queryProject(projectId).get("PROJ_CODE");
+		//推送最新项目配置给所有客户端
+		diamondServerHandler.pushConfig(projCode, type, moduleName);
+		return "redirect:/profile/" + type + "/" + projectId;
+	}
+```
+我们再来看一下会话处理Handler
+
+```java
+public class SessionHolder {
+    private static ThreadLocal<HttpSession> sessionThreadLocal = new ThreadLocal<HttpSession>() {
+
+        @Override
+        protected HttpSession initialValue() {
+            return null;
+        }
+
+    };
+    public static void remove() {
+        sessionThreadLocal.remove();
+    }
+    public static void setSession(HttpSession session) {
+        sessionThreadLocal.set(session);
+    }
+    public static HttpSession getSession() {
+        return sessionThreadLocal.get();
+    }
+}
+```
+
+会话handler用ThreadLocal来管理所有会话，我很疑问，这个为什么用TheadLocal，而不是ConcurrentHashMap。
+
+
+不规范地方   
+
+#### 日志
+
+```java
+public class ConfigController extends BaseController {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
+}
+```
+
+```java
+abstract public class BaseController {
+	protected static final Logger logger = LoggerFactory.getLogger(BaseController.class);
+}
+```
+
+从上面可以看出，日志命名不统一。
+
+```java
+/**
+ * 打印工程版本信息
+ *
+ * @author libinsong1204@gmail.com
+ * @date 2012-3-1 下午1:20:50
+ */
+@SuppressWarnings("serial")
+public class PrintProjectVersionServlet extends GenericServlet {
+	private static final Logger logger = LoggerFactory.getLogger(PrintProjectVersionServlet.class);
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+		StringBuilder sBuilder = new StringBuilder("\n");
+		try {
+            Enumeration<java.net.URL> urls;
+            ClassLoader classLoader = findClassLoader();
+            if (classLoader != null) {
+                urls = classLoader.getResources("META-INF/res/env.properties");
+            } else {
+                urls = ClassLoader.getSystemResources("META-INF/res/env.properties");
+            }
+            if (urls != null) {
+                while (urls.hasMoreElements()) {
+                    java.net.URL url = urls.nextElement();
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"));
+                        Properties properties = new Properties();
+                        properties.load(reader);
+
+                        sBuilder.append("项目名称：").append(properties.getProperty("project.name")).append(", ");
+                        sBuilder.append("项目版本：").append(properties.getProperty("build.version")).append(", ");
+                        sBuilder.append("构建时间：").append(properties.getProperty("build.time")).append(".\n");
+                    } catch (Throwable t) {
+                        logger.error(t.getMessage(), t);
+                    }
+                }
+            }
+		} catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+		String info = sBuilder.toString();
+		System.out.println("===================================");
+		System.out.println(info);
+		System.out.println("========================================");
+	}
+	@Override
+	public void service(ServletRequest req, ServletResponse res)
+			throws ServletException, IOException {
+	}
+	private static ClassLoader findClassLoader() {
+		return  PrintProjectVersionServlet.class.getClassLoader();
+    }
+}
+```
+
+摒弃System，StringBuilder -》 StringBuffer
+
+
+```java
+@Controller
+public class SecurityController extends BaseController {
+    @Autowired
+    private UserService userService;
+
+    @RequestMapping(value="/login",method = RequestMethod.POST)
+    public String login(HttpServletRequest request, String userCode, String password) {
+    	Object result = userService.login(userCode, password);
+        if (result instanceof User) {
+        	request.getSession().removeAttribute("message");
+            request.getSession().setAttribute("sessionUser", result);
+            return "redirect:/index";
+        } else {
+        	request.getSession().setAttribute("userCode", userCode);
+        	request.getSession().setAttribute("message", result);
+            return "redirect:/";
+        }
+}
+```
+
+```java
+@Service
+public class UserService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	public Object login(String userCode, String password) {
+		String md5Passwd = MD5.getInstance().getMD5String(password);
+
+		try {
+			String sql = "SELECT ID, USER_NAME, PASSWORD, DELETE_FLAG " +
+					"FROM CONF_USER WHERE USER_CODE = ?";
+			User user = jdbcTemplate.query(sql, new UserResultSetExtractor(), userCode);
+
+			if(md5Passwd.equals(user.getPassword())) {
+				user.setUserCode(userCode);
+				return user;
+			} else if(user.getDeleteFlag() == 1)
+				return "用户已经被注销";
+			else
+				return "登录失败，用户密码不正确";
+		} catch(TransientDataAccessResourceException e) {
+			return "登录失败，用户不存在";
+		}
+	}
+}
+```
+从上面可以看出，用户登录密码，转到后台是没有加密的密码，这样，容易导致密码泄漏。
+
+
+基于Jetty的部署方式：
+```java
+public class JettyServer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JettyServer.class);
+	private static int maxThreads;
+	private static int minThreads;
+	private static int serverPort;
+	private static String serverHost;
+	static {
+		try {
+			org.apache.commons.configuration.Configuration config =
+					new PropertiesConfiguration("META-INF/res/jetty.properties");
+
+			LOGGER.info("加载jetty.properties");
+
+			maxThreads = config.getInt("thread.pool.max.size", 100);
+			minThreads = config.getInt("thread.pool.min.size", 10);
+			serverPort = config.getInt("server.port", 8080);
+			serverHost = config.getString("server.host");
+		} catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+	}
+  //...
+}
+```
+
 
 ## Super-Diamond客户端
+
+![Super-Diamond客户端](/image/super-diamond/client.png)
 
 # 总结
