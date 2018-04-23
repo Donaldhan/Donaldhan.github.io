@@ -176,8 +176,8 @@ CREATE TABLE `CONF_PROJECT_USER_ROLE` (
 从上面配置来看，主要配合中心服务端的Dao使用的是JdbcTemplate。
 
 
-下面我们根据服务端的几个关键类，来看一下服务端：
-![Super-Diamond服务端](/image/super-diamond/server.png)
+下面我们根据服务端的几个关键类，来看一下服务端：   
+![Super-Diamond服务端](/image/super-diamond/server.png)  
 从上图中，我们可以看到两个关键的类，ConfigService, ConfigController和 ,DiamondServerHandler。
 
 先来看DiamondServerHandle：
