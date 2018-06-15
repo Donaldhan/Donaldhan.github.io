@@ -19,14 +19,17 @@ Zookeeper以文件目录的方式存储数据，使我们可以非常方便的�
 
 这篇文章，我们不打算深入的研究Zookeeper，我们关注的是Zookeeper原生API， ZkClient和Curator，3客户端的优缺点，以后有时间我们在来探究Zookeeper的源码。这篇文章所有使用的示例代码可以参考[zookeeper-demo][]。
 
-
+[zookeeper-demo]:https://github.com/Donaldhan/zookeeper-demo "zookeeper-demo"
 
 
 
 # 目录
-* [原生API](#原生API)
-* [ZkClient](#ZkClient)
-* [Curator](#Curator)
+* [原生API](#原生api)
+  * [CRWDA操作](#crwda操作)
+  * [ZKWatchManager](#zkwatchmanager)
+  * [ClientCnxn](#clientcnxn)
+* [ZkClient](#zkclient)
+* [Curator](#curator)
 * [总结](#总结)
 
 ## 原生API
@@ -138,6 +141,8 @@ private static class ZKWatchManager implements ClientWatchManager {
        private volatile Watcher defaultWatcher;
 }
 ```
+
+## ZKWatchManager
 为了便于理解ZKWatchManager，我们来看ZKWatchManager的
 ```java
 @Override
@@ -310,6 +315,7 @@ Watcher观察器，主要根据事件类型，注册节点观察器，默认为�
 
 我们再来看Zookeeper的另一个关键成员客户端ClientCnxn。
 
+## ClientCnxn
 ```java
 public class ClientCnxn {
     private static final Logger LOG = LoggerFactory.getLogger(ClientCnxn.class);
@@ -1303,25 +1309,194 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
 再来看客户端ClientCnxn中的事件线程EventThread：
 
 
+```java
+class EventThread extends Thread {
+      //待处理事件队列
+       private final LinkedBlockingQueue<Object> waitingEvents =
+           new LinkedBlockingQueue<Object>();
 
+       /** This is really the queued session state until the event
+        * thread actually processes the event and hands it to the watcher.
+        * But for all intents and purposes this is the state.
+        */
+       private volatile KeeperState sessionState = KeeperState.Disconnected;
 
+      private volatile boolean wasKilled = false;
+      private volatile boolean isRunning = false;
 
+       EventThread() {
+           super(makeThreadName("-EventThread"));
+           setUncaughtExceptionHandler(uncaughtExceptionHandler);
+           setDaemon(true);
+       }
+}
+```
+来看事件线程的主流程：
 
+```java
+@Override
+public void run() {
+   try {
+      isRunning = true;
+      while (true) {
+         //消费队列事件
+         Object event = waitingEvents.take();
+         if (event == eventOfDeath) {
+            wasKilled = true;
+         } else {
+           //处理事件
+            processEvent(event);
+         }
+         if (wasKilled)
+            synchronized (waitingEvents) {
+               if (waitingEvents.isEmpty()) {
+                  isRunning = false;
+                  break;
+               }
+            }
+      }
+   } catch (InterruptedException e) {
+      LOG.error("Event thread exiting due to interruption", e);
+   }
+    LOG.info("EventThread shut down");
+}
+```
 
+再来看处理事件：
 
+```java
+private void processEvent(Object event) {
+      try {
+          if (event instanceof WatcherSetEventPair) {
+              // each watcher will process the event
+              WatcherSetEventPair pair = (WatcherSetEventPair) event;
+              for (Watcher watcher : pair.watchers) {
+                  try {
+                    //如果是事件观察者对，则条用观察者处理事件
+                      watcher.process(pair.event);
+                  } catch (Throwable t) {
+                      LOG.error("Error while calling watcher ", t);
+                  }
+              }
+          } else {
+            //否则为数据包，转换事件
+              Packet p = (Packet) event;
+              int rc = 0;
+              //客户端路径
+              String clientPath = p.clientPath;
+              if (p.replyHeader.getErr() != 0) {
+                  rc = p.replyHeader.getErr();
+              }
+              if (p.cb == null) {//异步回调为空
+                  LOG.warn("Somehow a null cb got to EventThread!");
+              } else if (p.response instanceof ExistsResponse
+                      || p.response instanceof SetDataResponse
+                      || p.response instanceof SetACLResponse) {
+                  //状态回调
+                  StatCallback cb = (StatCallback) p.cb;
+                  if (rc == 0) {
+                      if (p.response instanceof ExistsResponse) {
+                        //节点存在检查响应
+                          cb.processResult(rc, clientPath, p.ctx,
+                                  ((ExistsResponse) p.response)
+                                          .getStat());
+                      } else if (p.response instanceof SetDataResponse) {
+                        //设置节点数据响应
+                          cb.processResult(rc, clientPath, p.ctx,
+                                  ((SetDataResponse) p.response)
+                                          .getStat());
+                      } else if (p.response instanceof SetACLResponse) {
+                        //安全控制响应
+                          cb.processResult(rc, clientPath, p.ctx,
+                                  ((SetACLResponse) p.response)
+                                          .getStat());
+                      }
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null);
+                  }
+              } else if (p.response instanceof GetDataResponse) {
+                //获取数据响应
+                  DataCallback cb = (DataCallback) p.cb;
+                  GetDataResponse rsp = (GetDataResponse) p.response;
+                  if (rc == 0) {
+                      cb.processResult(rc, clientPath, p.ctx, rsp
+                              .getData(), rsp.getStat());
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null,
+                              null);
+                  }
+              } else if (p.response instanceof GetACLResponse) {
+                //获取安全控制响应
+                  ACLCallback cb = (ACLCallback) p.cb;
+                  GetACLResponse rsp = (GetACLResponse) p.response;
+                  if (rc == 0) {
+                      cb.processResult(rc, clientPath, p.ctx, rsp
+                              .getAcl(), rsp.getStat());
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null,
+                              null);
+                  }
+              } else if (p.response instanceof GetChildrenResponse) {
+                //获取节点子节点响应
+                  ChildrenCallback cb = (ChildrenCallback) p.cb;
+                  GetChildrenResponse rsp = (GetChildrenResponse) p.response;
+                  if (rc == 0) {
+                      cb.processResult(rc, clientPath, p.ctx, rsp
+                              .getChildren());
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null);
+                  }
+              } else if (p.response instanceof GetChildren2Response) {
+                  Children2Callback cb = (Children2Callback) p.cb;
+                  GetChildren2Response rsp = (GetChildren2Response) p.response;
+                  if (rc == 0) {
+                      cb.processResult(rc, clientPath, p.ctx, rsp
+                              .getChildren(), rsp.getStat());
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null, null);
+                  }
+              } else if (p.response instanceof CreateResponse) {
+                //创建节点响应
+                  StringCallback cb = (StringCallback) p.cb;
+                  CreateResponse rsp = (CreateResponse) p.response;
+                  if (rc == 0) {
+                      cb.processResult(rc, clientPath, p.ctx,
+                              (chrootPath == null
+                                      ? rsp.getPath()
+                                      : rsp.getPath()
+                                .substring(chrootPath.length())));
+                  } else {
+                      cb.processResult(rc, clientPath, p.ctx, null);
+                  }
+              } else if (p.cb instanceof VoidCallback) {
+                  VoidCallback cb = (VoidCallback) p.cb;
+                  cb.processResult(rc, clientPath, p.ctx);
+              }
+          }
+      } catch (Throwable t) {
+          LOG.error("Caught unexpected throwable", t);
+      }
+   }
+}
+private static class WatcherSetEventPair {
+       private final Set<Watcher> watchers;//事件观察者
+       private final WatchedEvent event;//事件
 
+       public WatcherSetEventPair(Set<Watcher> watchers, WatchedEvent event) {
+           this.watchers = watchers;
+           this.event = event;
+       }
+}
+public class WatchedEvent {
+   final private KeeperState keeperState;
+   final private EventType eventType;
+   private String path;
+}
+```
 
+从上面可以看出事件线程主要处理创建、设值,获取节点数据和获取节点子节点数据，检查节点是否存在，删除节点等事件，并处理。
 
-
-
-
-
-
-
-
-
-
-
+再来看一下创建Zookeeper客户端：
 ```java
 public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher,
          long sessionId, byte[] sessionPasswd, boolean canBeReadOnly)
@@ -1332,31 +1507,183 @@ public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher,
              hostProvider, sessionTimeout, this, watchManager,
              getClientCnxnSocket(), sessionId, sessionPasswd, canBeReadOnly);
      cnxn.seenRwServerBefore = true; // since user has provided sessionId
-     cnxn.start();
+     cnxn.start();//启动客户端
+}
+```
+来看启动客户端Socket：
+
+```java
+public class ClientCnxn {
+  private Object eventOfDeath = new Object();
+  public void start() {
+        sendThread.start();
+        eventThread.start();
+  }
 }
 ```
 
+从上面可以看出，启动客户端Socket，实际上启动发送数据包线程（处理数据的请求和响应）和事件线程（处理crwda相关事件）。
+
+## CRWDA操作
+
+再来看一下，创建节点，设置，获取节点数据。
+
+1. 创建节点
+```java
+public String create(final String path, byte data[], List<ACL> acl,
+         CreateMode createMode)
+     throws KeeperException, InterruptedException
+{
+     final String clientPath = path;
+     PathUtils.validatePath(clientPath, createMode.isSequential());
+
+     final String serverPath = prependChroot(clientPath);
+     //创建请求和响应
+     RequestHeader h = new RequestHeader();
+     h.setType(ZooDefs.OpCode.create);
+     CreateRequest request = new CreateRequest();
+     CreateResponse response = new CreateResponse();
+     request.setData(data);
+     request.setFlags(createMode.toFlag());
+     request.setPath(serverPath);
+     if (acl != null && acl.size() == 0) {
+         throw new KeeperException.InvalidACLException();
+     }
+     request.setAcl(acl);
+     //委托给socket客户端，发送创建节点操作
+     ReplyHeader r = cnxn.submitRequest(h, request, response, null);
+     if (r.getErr() != 0) {
+         throw KeeperException.create(KeeperException.Code.get(r.getErr()),
+                 clientPath);
+     }
+     if (cnxn.chrootPath == null) {
+         return response.getPath();
+     } else {
+         return response.getPath().substring(cnxn.chrootPath.length());
+     }
+}
+```
+#### ClientCnxn
+```java
+public ReplyHeader submitRequest(RequestHeader h, Record request,
+            Record response, WatchRegistration watchRegistration)
+            throws InterruptedException {
+        ReplyHeader r = new ReplyHeader();
+        Packet packet = queuePacket(h, r, request, response, null, null, null,
+                    null, watchRegistration);
+        synchronized (packet) {
+            while (!packet.finished) {
+                packet.wait();
+            }
+        }
+        return r;
+    }
+```
+创建节点，创建创建请求和响应，委托给socket客户端，发送创建节点操作。
+再来看创建节点，异步回调处理结果：
+```java
+/**
+ * The asynchronous version of create.
+ *
+ * @see #create(String, byte[], List, CreateMode)
+ */
+
+public void create(final String path, byte data[], List<ACL> acl,
+        CreateMode createMode,  StringCallback cb, Object ctx)
+{
+    final String clientPath = path;
+    PathUtils.validatePath(clientPath, createMode.isSequential());
+
+    final String serverPath = prependChroot(clientPath);
+
+    RequestHeader h = new RequestHeader();
+    h.setType(ZooDefs.OpCode.create);
+    CreateRequest request = new CreateRequest();
+    CreateResponse response = new CreateResponse();
+    ReplyHeader r = new ReplyHeader();
+    request.setData(data);
+    request.setFlags(createMode.toFlag());
+    request.setPath(serverPath);
+    request.setAcl(acl);
+    //委托给socket客户端
+    cnxn.queuePacket(h, r, request, response, cb, clientPath,
+            serverPath, ctx, null);
+}
+```
+2. 设置
+```java
+public Stat setData(final String path, byte data[], int version)
+        throws KeeperException, InterruptedException
+    {
+        final String clientPath = path;
+        PathUtils.validatePath(clientPath);
+
+        final String serverPath = prependChroot(clientPath);
+
+        RequestHeader h = new RequestHeader();
+        h.setType(ZooDefs.OpCode.setData);
+        SetDataRequest request = new SetDataRequest();
+        request.setPath(serverPath);
+        request.setData(data);
+        request.setVersion(version);
+        SetDataResponse response = new SetDataResponse();
+        ReplyHeader r = cnxn.submitRequest(h, request, response, null);
+        if (r.getErr() != 0) {
+            throw KeeperException.create(KeeperException.Code.get(r.getErr()),
+                    clientPath);
+        }
+        return response.getStat();
+    }
+
+```
+
+3. 获取节点数据
+```java
+public byte[] getData(String path, boolean watch, Stat stat)
+           throws KeeperException, InterruptedException {
+       return getData(path, watch ? watchManager.defaultWatcher : null, stat);
+}
+/**
+     * The asynchronous version of getData.
+     *
+     * @see #getData(String, Watcher, Stat)
+     */
+    public void getData(final String path, Watcher watcher,
+            DataCallback cb, Object ctx)
+    {
+        final String clientPath = path;
+        PathUtils.validatePath(clientPath);
+
+        // the watch contains the un-chroot path
+        WatchRegistration wcb = null;
+        if (watcher != null) {
+            wcb = new DataWatchRegistration(watcher, clientPath);
+        }
+
+        final String serverPath = prependChroot(clientPath);
+
+        RequestHeader h = new RequestHeader();
+        h.setType(ZooDefs.OpCode.getData);
+        GetDataRequest request = new GetDataRequest();
+        request.setPath(serverPath);
+        request.setWatch(watcher != null);
+        GetDataResponse response = new GetDataResponse();
+        //委托给socket客户端
+        cnxn.queuePacket(h, new ReplyHeader(), request, response, cb,
+                clientPath, serverPath, ctx, wcb);
+    }
+```
+
+从上面可以看出，Zk的crwda的相关操作，首先创建相应类型的请求和响应，然后委托给socket客户端，处理响应的操作，并解析响应消息。
+
+其他操作，我们不在讲解，放在附中。
+
+由于篇幅问题，另外两种客户端ZkClient和Curator，我们放在后面的文章中再讲。
 
 ## ZkClient
 
-
-```java
-```
-
-
 ## Curator
 
-
-```java
-```
-
-[zookeeper-demo]:https://github.com/Donaldhan/zookeeper-demo "zookeeper-demo"
-
-[BeanDefinition接口][]
-
-![BeanDefinition](/image/spring-context/BeanDefinition.png)
-
-[BeanDefinition接口]:https://donaldhan.github.io/spring-framework/2017/12/26/BeanDefinition%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89.html "BeanDefinition接口"
 
 ## 总结
 Zookeeper主要有两个成员分别为客户端和watcher管理器。watcher观察器，主要关注点的事件类型有节点创建NodeCreated，节点删除NodeDeleted，节点数据改变NodeDataChanged，
@@ -1381,3 +1708,95 @@ Watcher观察者管理器ZKWatchManager，主要根据事件类型，注册节�
 
 
 调度数据包队列，实际委托给内Socket通道，如果是响应消息，则转化为响应Record，如果是发送数据包，则委托给内部的socket通道。
+
+事件线程主要处理创建、设值,获取节点数据和获取节点子节点数据，检查节点是否存在，删除节点等事件，并处理。
+
+启动客户端Socket，实际上启动发送数据包线程（处理数据的请求和响应）和事件线程（处理crwda相关事件）。
+
+创建节点，创建创建请求和响应，委托给socket客户端，发送创建节点操作。
+
+Zk的crwda的相关操作，首先创建相应类型的请求和响应，然后委托给socket客户端，处理响应的操作，并解析响应消息。
+
+## 附
+```java
+public void delete(final String path, int version)
+        throws InterruptedException, KeeperException
+    {
+        final String clientPath = path;
+        PathUtils.validatePath(clientPath);
+
+        final String serverPath;
+
+        // maintain semantics even in chroot case
+        // specifically - root cannot be deleted
+        // I think this makes sense even in chroot case.
+        if (clientPath.equals("/")) {
+            // a bit of a hack, but delete(/) will never succeed and ensures
+            // that the same semantics are maintained
+            serverPath = clientPath;
+        } else {
+            serverPath = prependChroot(clientPath);
+        }
+
+        RequestHeader h = new RequestHeader();
+        h.setType(ZooDefs.OpCode.delete);
+        DeleteRequest request = new DeleteRequest();
+        request.setPath(serverPath);
+        request.setVersion(version);
+        ReplyHeader r = cnxn.submitRequest(h, request, null, null);
+        if (r.getErr() != 0) {
+            throw KeeperException.create(KeeperException.Code.get(r.getErr()),
+                    clientPath);
+        }
+}
+public List<String> getChildren(final String path, Watcher watcher)
+        throws KeeperException, InterruptedException
+    {
+        final String clientPath = path;
+        PathUtils.validatePath(clientPath);
+
+        // the watch contains the un-chroot path
+        WatchRegistration wcb = null;
+        if (watcher != null) {
+            wcb = new ChildWatchRegistration(watcher, clientPath);
+        }
+
+        final String serverPath = prependChroot(clientPath);
+
+        RequestHeader h = new RequestHeader();
+        h.setType(ZooDefs.OpCode.getChildren);
+        GetChildrenRequest request = new GetChildrenRequest();
+        request.setPath(serverPath);
+        request.setWatch(watcher != null);
+        GetChildrenResponse response = new GetChildrenResponse();
+        ReplyHeader r = cnxn.submitRequest(h, request, response, wcb);
+        if (r.getErr() != 0) {
+            throw KeeperException.create(KeeperException.Code.get(r.getErr()),
+                    clientPath);
+        }
+        return response.getChildren();
+}
+public void exists(final String path, Watcher watcher,
+            StatCallback cb, Object ctx)
+    {
+        final String clientPath = path;
+        PathUtils.validatePath(clientPath);
+
+        // the watch contains the un-chroot path
+        WatchRegistration wcb = null;
+        if (watcher != null) {
+            wcb = new ExistsWatchRegistration(watcher, clientPath);
+        }
+
+        final String serverPath = prependChroot(clientPath);
+
+        RequestHeader h = new RequestHeader();
+        h.setType(ZooDefs.OpCode.exists);
+        ExistsRequest request = new ExistsRequest();
+        request.setPath(serverPath);
+        request.setWatch(watcher != null);
+        SetDataResponse response = new SetDataResponse();
+        cnxn.queuePacket(h, new ReplyHeader(), request, response, cb,
+                clientPath, serverPath, ctx, wcb);
+}
+```
