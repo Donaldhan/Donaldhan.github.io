@@ -69,11 +69,165 @@ Zookeeper以文件目录的方式存储数据，使我们可以非常方便的�
  注：这里的加密规则是SHA1加密，然后base64编码。
 
 建议使用第一种方式。
+在创建Zookeeper原生API客户端的时候，我们一般使用如下方式：
 
+```java
+public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher)
+       throws IOException
+{
+     this(connectString, sessionTimeout, watcher, false);
+}
+public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher,
+           boolean canBeReadOnly)
+       throws IOException
+   {
+      ...
+      //配置默认的watcher
 
+       watchManager.defaultWatcher = watcher;
+      //解析连接主机和端口
+       ConnectStringParser connectStringParser = new ConnectStringParser(
+               connectString);
+      //获取主机ip地址
+       HostProvider hostProvider = new StaticHostProvider(
+               connectStringParser.getServerAddresses());
+        //创建客户端
+       cnxn = new ClientCnxn(connectStringParser.getChrootPath(),
+               hostProvider, sessionTimeout, this, watchManager,
+               getClientCnxnSocket(), canBeReadOnly);
+        //启动客户端
+       cnxn.start();
+   }
+```
 
+针对Zookeeper，主要有两个参数
+```java
+public class ZooKeeper {
 
+    public static final String ZOOKEEPER_CLIENT_CNXN_SOCKET = "zookeeper.clientCnxnSocket";
+    //与服务端通信的客户端
+    protected final ClientCnxn cnxn;
+    static {
+        //Keep these two lines together to keep the initialization order explicit
+        LOG = LoggerFactory.getLogger(ZooKeeper.class);
+        Environment.logEnv("Client environment:", LOG);
+    }
+    public ZooKeeperSaslClient getSaslClient() {
+        return cnxn.zooKeeperSaslClient;
+    }
+    //观察者管理器
+    private final ZKWatchManager watchManager = new ZKWatchManager();
+}
+```
+从上面可以看出Zookeeper主要有两个成员分别为客户端和watcher管理器。
 
+先来看watcher管理ZKWatchManager
+
+```java
+private static class ZKWatchManager implements ClientWatchManager {
+      //节点数据观察器
+       private final Map<String, Set<Watcher>> dataWatches =
+           new HashMap<String, Set<Watcher>>();
+      //节点存在观察器
+       private final Map<String, Set<Watcher>> existWatches =
+           new HashMap<String, Set<Watcher>>();
+      //节点孩子节点观察器
+       private final Map<String, Set<Watcher>> childWatches =
+           new HashMap<String, Set<Watcher>>();
+       //默认观察期器
+       private volatile Watcher defaultWatcher;
+}
+```
+为了便于理解ZKWatchManager，我们来看ZKWatchManager的
+```java
+@Override
+       public Set<Watcher> materialize(Watcher.Event.KeeperState state,
+                                       Watcher.Event.EventType type,
+                                       String clientPath)
+       {
+           Set<Watcher> result = new HashSet<Watcher>();
+
+           switch (type) {
+           case None:
+               result.add(defaultWatcher);
+               boolean clear = ClientCnxn.getDisableAutoResetWatch() &&
+                       state != Watcher.Event.KeeperState.SyncConnected;
+
+               synchronized(dataWatches) {
+                   for(Set<Watcher> ws: dataWatches.values()) {
+                       result.addAll(ws);
+                   }
+                   if (clear) {
+                       dataWatches.clear();
+                   }
+               }
+
+               synchronized(existWatches) {
+                   for(Set<Watcher> ws: existWatches.values()) {
+                       result.addAll(ws);
+                   }
+                   if (clear) {
+                       existWatches.clear();
+                   }
+               }
+
+               synchronized(childWatches) {
+                   for(Set<Watcher> ws: childWatches.values()) {
+                       result.addAll(ws);
+                   }
+                   if (clear) {
+                       childWatches.clear();
+                   }
+               }
+
+               return result;
+           case NodeDataChanged:
+           case NodeCreated:
+               synchronized (dataWatches) {
+                   addTo(dataWatches.remove(clientPath), result);
+               }
+               synchronized (existWatches) {
+                   addTo(existWatches.remove(clientPath), result);
+               }
+               break;
+           case NodeChildrenChanged:
+               synchronized (childWatches) {
+                   addTo(childWatches.remove(clientPath), result);
+               }
+               break;
+           case NodeDeleted:
+               synchronized (dataWatches) {
+                   addTo(dataWatches.remove(clientPath), result);
+               }
+               // XXX This shouldn't be needed, but just in case
+               synchronized (existWatches) {
+                   Set<Watcher> list = existWatches.remove(clientPath);
+                   if (list != null) {
+                       addTo(existWatches.remove(clientPath), result);
+                       LOG.warn("We are triggering an exists watch for delete! Shouldn't happen!");
+                   }
+               }
+               synchronized (childWatches) {
+                   addTo(childWatches.remove(clientPath), result);
+               }
+               break;
+           default:
+               String msg = "Unhandled watch event type " + type
+                   + " with state " + state + " on path " + clientPath;
+               LOG.error(msg);
+               throw new RuntimeException(msg);
+           }
+
+           return result;
+       }
+   }
+   final private void addTo(Set<Watcher> from, Set<Watcher> to) {
+          if (from != null) {
+              to.addAll(from);
+          }
+      }
+```
+再来看
 
 
 ## ZkClient
