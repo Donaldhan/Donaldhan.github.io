@@ -17,6 +17,7 @@ tags:
 
 [zookeeper-demo]:https://github.com/Donaldhan/zookeeper-demo "zookeeper-demo"
 [Zookeeper原生API]:https://donaldhan.github.io/zookeeper/2018/06/14/Zookeeper%E5%8E%9F%E7%94%9FAPI.html "Zookeeper原生API"
+[ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
 
 
 
