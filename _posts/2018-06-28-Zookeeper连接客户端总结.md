@@ -2,23 +2,20 @@
 layout: page
 title: Zookeeper连接客户端总结
 subtitle: Zookeeper连接客户端总结
-date: 2018-11-04 15:17:19
+date: 2018-06-28 20:58:19
 author: donaldhan
 catalog: true
 category: Zookeeper
 categories:
     - Zookeeper
 tags:
-    - zkClient
+    - ZkClient
 ---
-
-# 引言
-
 
 [zookeeper-demo]:https://github.com/Donaldhan/zookeeper-demo "zookeeper-demo"
 [Zookeeper原生API]:https://donaldhan.github.io/zookeeper/2018/06/14/Zookeeper%E5%8E%9F%E7%94%9FAPI.html "Zookeeper原生API"
 [ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
-
+[Curator]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator"
 
 
 # 目录
@@ -28,7 +25,7 @@ tags:
 * [总结](#总结)
 
 ## Zookeeper原生API
-Apache Zookeeper原生API,的缺点：
+Apache [Zookeeper原生API][],的缺点：
 
 1. 由于设置和获取路径节点的数据都是字节序列，所以自己去处理序列化。
 2. 同时事件注册是一次性的，如果需要持续监听一个节点，必须在监听器捕捉一个事件后，重新注册。
@@ -96,7 +93,7 @@ Zk的crwda的相关操作，首先创建相应类型的请求和响应，然后�
 
 ## ZkClient
 
-ZkClient是由Datameer的工程师开发的开源客户端，对Zookeeper的原生API进行了包装。
+[ZkClient][]是由Datameer的工程师开发的开源客户端，对Zookeeper的原生API进行了包装。
 相对于原生api优势：
 1. 实现了超时重连、Watcher反复注册等功能。
 2. 添加序列化支持。
@@ -139,6 +136,28 @@ ZkClient实现Watcher的目的主要处理目录变更和会话状态变更相�
 
 
 ## Curator
+[Curator][]框架工厂CuratorFrameworkFactory内部，主要成员变量为默认的会话超时与连接超时时间，本地地址，字节压缩器GzipCompressionProvider，
+默认的Zookeeper工厂DefaultZookeeperFactory，默认ACL提供器DefaultACLProvider。GzipCompressionProvider用于压缩字节流。
+默认的Zookeeper工厂DefaultZookeeperFactory，用于创建原生Zookeeper客户端。DefaultACLProvider主要用户获取节点的ACL权限。
 
 
-## 总结
+CuratorFrameworkFactory内部构建器Builder，除了会话超时与连接超时时间，字节压缩器，原生API客户端工厂，
+ACL提供器之外，还有线程工程ThreadFactory，验证方式，及验证值，及重试策略RetryPolicy。
+ExponentialBackoffRetry主要用户控制会话超时重连的次数和下次尝试时间。
+内部构建器Builder，创建的实际为CuratorFrameworkImpl。
+
+CuratorFramework主要提供了启动关闭客户端操作，及CDRWA相关的构建器，如创建节点CreateBuilder，删除节点DeleteBuilder，获取节点数据GetDataBuilder，设置节点数据SetACLBuilder，
+，检查节点ExistsBuilder，同步数据构建器SyncBuilder， 事物构建器CuratorTransaction，ACL构建器GetACLBuilder、SetACLBuilder，提供了客户端连接状态监听器Listenable<ConnectionStateListener>，
+客户端监听器Listenable<CuratorListener> ，无处理错误监听器Listenable<UnhandledErrorListener>操作，同时提供了获取zk客户端和CuratorZookeeperClient和确保路径的操作EnsurePath。
+
+
+Curator zk客户端CuratorZookeeperClient主要用于获取原生API ZK客户端，以及用于重新创建失效会话，执行相应的CDRWA操作。
+创建构建器CreateBuilder，主要提供了创建持久化和临时节点的操作。
+
+Curator框架实现CuratorFrameworkImpl，创建目录实际上委托给Curator框架内部的原生API zk客户端，如果需要创建建父目录，并且父目录不存在，则创建父目录。
+如果会话失效，则重新建立会话，如果建立会话成功，则调用创建目录回调Callable。
+
+删除构建器DeleteBuilder，删除目录，实际操作在一个重试循环中，如果会话过期，则重新连接会话，并将实际删除操作委托给Curator框架内部的原生API zk客户端。
+
+Curator框架实现CuratorFrameworkImpl的获取目录数据操作，检查目录和设置目录数据的原理与创建、删除操作基本相同实际操作委托给Curator框架内部的原生API zk客户端，
+并保证会话有效。
