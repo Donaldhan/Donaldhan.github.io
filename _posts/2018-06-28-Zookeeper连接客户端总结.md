@@ -16,7 +16,7 @@ tags:
 [Zookeeper原生API]:https://donaldhan.github.io/zookeeper/2018/06/14/Zookeeper%E5%8E%9F%E7%94%9FAPI.html "Zookeeper原生API"
 [ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
 [Curator]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator"
-[Curator目录监听]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator目录监听"
+[Curator目录监听]:https://donaldhan.github.io/zookeeper/2018/06/29/curator%E7%9B%AE%E5%BD%95%E7%9B%91%E5%90%AC.html "Curator目录监听"
 
 # 目录
 * [Zookeeper原生API](#zookeeper原生api)
