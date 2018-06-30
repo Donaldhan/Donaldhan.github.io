@@ -16,7 +16,7 @@ tags:
 [Zookeeper原生API]:https://donaldhan.github.io/zookeeper/2018/06/14/Zookeeper%E5%8E%9F%E7%94%9FAPI.html "Zookeeper原生API"
 [ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
 [Curator]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator"
-
+[Curator目录监听]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator目录监听"
 
 # 目录
 * [Zookeeper原生API](#zookeeper原生api)
@@ -161,3 +161,36 @@ Curator框架实现CuratorFrameworkImpl，创建目录实际上委托给Curator�
 
 Curator框架实现CuratorFrameworkImpl的获取目录数据操作，检查目录和设置目录数据的原理与创建、删除操作基本相同实际操作委托给Curator框架内部的原生API zk客户端，
 并保证会话有效。
+
+### Curator节点监听
+
+curator官方推荐的API是对zookeeper原生的JAVA API进行了封装，将重复注册，事件信息等很好的处理了。而且监听事件返回了详细的信息，包括变动的节点路径，节点值等等，这是原生API所没有的。这个对事件的监听类似于一个本地缓存视图和远程Zookeeper视图的对比过程。curator的方法调用采用的是流式API，此种风格的优点及使用注意事项可自行查阅资料了解。对于目录的监听，curator提供了三个接口，分别如下：
+1. NodeCache：对一个节点进行监听，监听事件包括指定路径的增删改操作；
+2. PathChildrenCache：对指定路径节点的一级子目录监听，不对该节点的操作监听，对其子目录的增删改操作监听
+3. TreeCache，综合NodeCache和PathChildrenCahce的特性，是对整个目录进行监听，可以设置监听深度。
+
+具体解读可以参见[Curator目录监听][]
+
+节点监听缓存NodeCache，内部关联一下Curator框架客户端CuratorFramework，节点监听器容器 listeners（ListenerContainer<NodeCacheListener>），用于
+存放节点监听器。
+
+添加节点监听器，实际上是注册到节点缓存的节点监听器容器ListenerContainer<NodeCacheListener>（CuratorFrameworkImpl内部的成员添加节点监听器，实际上是注册到节点缓存的节点监听器容器ListenerContainer）中。
+启动节点监听器，实际上是注册节点监听器到CuratorFramework实现的连接状态管理器中ConnectionStateManager，如果需要，则重新构建节点数据，同时重新注册节点监听器CuratorWatcher，如果连接状态有变更，
+重新注册节点监听器CuratorWatcher。
+
+Curator框架实现CuratorFrameworkImpl启动时，首先启动连接状态管理器ConnectionStateManager，
+然后再启动客户端CuratorZookeeperClient(在构造Curator框架实现CuratorFrameworkImpl初始化动客户端CuratorZookeeperClient，传入一个Watcher，用于处理CuratorEvent。)。
+启动客户端CuratorZookeeperClient过程，关键点是在启动连接状态ConnectionState（在构造CuratorZookeeperClient，初始化连接状态，并将内部Watcher传给连接状态）。
+连接状态实现了观察者Watcher，在连接状态建立时，调用客户端CuratorZookeeperClient传入的Watcher，处理相关事件。而这个Watcher是在现CuratorFrameworkImpl初始化动客户端CuratorZookeeperClient时，
+传入的。客户端观察者的实际处理业务逻辑在CuratorFrameworkImpl实现，及processEvent方法，processEvent主要处理逻辑为，遍历Curator框架实现CuratorFrameworkImpl内部的监听器容器内的监听器处理相关CuratorEvent
+事件。这个CuratorEvent事件，是由原生WatchedEvent事件包装而来。
+
+启动连接连接状态管理器，主要是使用连接状态监听器容器ListenerContainer<ConnectionStateListener>中的监听器，消费连接状态事件队列BlockingQueue<ConnectionState>中事件。
+
+子目录监听器PathChildrenCache，主要成员变量为客户端框架实现CuratorFramework，子路径监听器容器ListenerContainer<PathChildrenCacheListener>，及事件执行器CloseableExecutorService，事件操作集Set<Operation>。
+
+一级目录监听器PathChildrenCache，启动主要是注册连接状态监听器ConnectionStateListener，连接状态监听器根据连接状态来添加事件EventOperation和刷新RefreshOperation操作到操作集。
+事件操作EventOperation，主要是触发监听器的子目录事件操作；刷新操作RefreshOperation主要是完成子目录的添加和刷新事件，并从新注册子目录监听器。
+然后根据启动模式来决定是重添加事件操作，刷新、事件操作，或者重新构建，即刷新缓存路径数据，并注册刷新操作。
+
+关闭客户端框架，主要是清除监听器，连接状态管理器，关闭zk客户端。
