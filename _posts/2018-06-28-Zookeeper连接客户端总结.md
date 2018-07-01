@@ -17,7 +17,7 @@ tags:
 [ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
 [Curator]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator"
 [Curator目录监听]:https://donaldhan.github.io/zookeeper/2018/06/29/curator%E7%9B%AE%E5%BD%95%E7%9B%91%E5%90%AC.html "Curator目录监听"
-[Curator分布式锁]: "Curator分布式锁"
+[Curator分布式锁]:https://donaldhan.github.io/zookeeper/2018/06/30/Curator%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81.html "Curator分布式锁"
 
 
 # 目录
@@ -202,7 +202,7 @@ Curator框架实现CuratorFrameworkImpl启动时，首先启动连接状态管�
 
 ### Curator分布式锁
 
-Curator另一个高级实现是，分布式锁，Curator的锁方案有一下几种
+Curator另一个高级实现是，[Curator分布式锁]方案有以下几种
 * InterProcessMutex：分布式可重入排它锁
 * InterProcessSemaphoreMutex：分布式排它锁
 * InterProcessReadWriteLock：分布式读写锁
