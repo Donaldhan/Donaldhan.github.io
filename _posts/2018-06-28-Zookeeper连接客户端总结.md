@@ -17,11 +17,16 @@ tags:
 [ZkClient]:https://donaldhan.github.io/zookeeper/2018/11/04/ZkClient.html "ZkClient"
 [Curator]:https://donaldhan.github.io/zookeeper/2018/06/18/Curator.html "Curator"
 [Curator目录监听]:https://donaldhan.github.io/zookeeper/2018/06/29/curator%E7%9B%AE%E5%BD%95%E7%9B%91%E5%90%AC.html "Curator目录监听"
+[Curator分布式锁]: "Curator分布式锁"
+
 
 # 目录
 * [Zookeeper原生API](#zookeeper原生api)
 * [ZkClient](#zkclient)
 * [Curator](#curator)
+  * [Curator节点监听](#curator节点监听)
+  * [Curator分布式锁](#curator分布式锁)
+
 * [总结](#总结)
 
 ## Zookeeper原生API
@@ -194,3 +199,31 @@ Curator框架实现CuratorFrameworkImpl启动时，首先启动连接状态管�
 然后根据启动模式来决定是重添加事件操作，刷新、事件操作，或者重新构建，即刷新缓存路径数据，并注册刷新操作。
 
 关闭客户端框架，主要是清除监听器，连接状态管理器，关闭zk客户端。
+
+### Curator分布式锁
+
+Curator另一个高级实现是，分布式锁，Curator的锁方案有一下几种
+* InterProcessMutex：分布式可重入排它锁
+* InterProcessSemaphoreMutex：分布式排它锁
+* InterProcessReadWriteLock：分布式读写锁
+* InterProcessMultiLock：将多个锁作为单个实体管理的容器
+* DistributedBarrier：使用Curator实现分布式Barrier，实际在分布式环境中使用，待所有应用到达屏障时，移除屏障
+* DistributedDoubleBarrier：分布式锁， 控制同时进入，同时退出
+
+分布式可重入锁InterProcessMutex主要的成员变量为锁路径basePath，持有分布式映射信息映射threadData（ConcurrentMap<Thread, LockData>），同时一个关键的锁实现LockInternals。
+
+分布式可重入锁，主要提供的获取释放锁，和检查当前线程是否持有锁操作。
+
+Revocable的作用，主要是在锁释放的时候，触发释放锁监听器RevocationListener，同时我们可以使用自己的执行器，触发相关监听器操作。
+
+LockInternals主要的成员变量为客户端框架CuratorFramework，锁内部驱动LockInternalsDriver，检查锁路径是否可用观察器CuratorWatcher，唤醒所有等待锁线程观察器Watcher。
+
+分布式事务锁的InterProcessMutex获取锁操作，首先检查当前线程是否持有锁，如果只有则则重入计数器自增，否则尝试获取锁，如果获取成功，则则将锁数据存放的锁信息映射中threadData（ConcurrentMap<Thread, LockData>），如果获取锁失败，
+则等待锁释放，等待锁释放的过程，即注册锁路径是否可用观察器，是否可以获取锁的过程是查看是否可以创建锁目录下的临时序列目录，获取锁异常，则删除锁目录下的临时序列目录。
+
+释放锁的关键，即删除锁路径
+
+分布式屏障锁DistributedBarrier，主要根据路径的存在与否来决定屏障是否到达，当路径不存在时，解除屏障。创建路径成功，则到达屏障，等待屏障解除，在屏障路径已经创建，则忽略异常，及到达屏障。
+
+分布式屏障闭锁DistributedDoubleBarrier，实际使用锁目录实现，分布式屏障锁成员进入屏障时，创建对应的临时序列子节点，待所有注册到锁路径的临时序列子节点到达后，清空所目录的所有临时目录，
+即分布式屏障闭锁打开。
