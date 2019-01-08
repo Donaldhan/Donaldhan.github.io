@@ -2,16 +2,67 @@
 layout: page
 title: my blog
 subtitle: sub title
-date: 2018-11-04 15:17:19
+date: 2019-01-08 19:59:19
 author: donaldhan
 catalog: true
 category: life
 categories:
     - life
 tags:
-    - test
-    - donaldhan
-    - java  
+  - essay
 ---
 
-template， start ...
+很久没有写文章了，读了余华的小说活着之后，引起了我提笔的冲动？之所以阅读这篇小说的原因，源于今年6月份坎坷的生活经历。在六月份的一个深夜，我打电话给我的老父亲，活着为了什么，他只是简单的回答，活着是为了活着。虽然答案只有简单的7个字，但是它蕴含的意义，确难以体会，所以买了活着这本书。这本书在书桌上躺了大概半年，最近抽了两天时间，将其拜读完。
+
+以前听说过余华，没有深入去了解过，也听说过他的作品活着，当时并不以为然。余华以前从事牙科医生，后来开始写作，至于为何，非其本人不可明也。说起余华，不得不说他对待文学态度，用心专注。对于活着这本书，据余华本人透漏，灵感来源于美国民谣老黑奴。当时余华在北京8平方米的房间内，写完这本书。写到这，想掖偷一下，前人生活概莫能外。说的这我们欣赏看一下美国的经典民谣老黑奴。
+
+```
+Gone are the days when my heart was young and gay,
+Gone are my friends from the cotton fields away,
+Gone from the earth to a better land I know,
+I hear their gentle voices calling "Old Black Joe".
+
+I’m coming, I’m coming, for my head is bending low:
+I hear those gentle voices calling, "Old Black Joe".
+
+Why do I weep when my heart should feel no pain
+Why do I sigh that my friends come not again,
+Grieving for forms now departed long ago.
+I hear their gentle voices calling “Old Black Joe”.
+
+
+Where are the hearts once so happy and so free?
+The children so dear that I held upon my knee,
+Gone to the shore where my soul has longed to go.
+I hear their gentle voices calling "Old Black Joe".
+```
+
+中文版
+```
+快乐童年，如今一去不复返
+亲爱朋友，都已离开家园
+离开尘世到那天上的乐园
+我听见他们轻声把我呼唤
+我来了、我来了
+我已年老背又弯
+我听见他们轻声把我呼唤
+
+为何哭泣、如今我不应忧伤
+为何叹息、朋友不能重相见
+为何悲痛、亲人去世已多年
+我听见他们轻声把我呼唤
+我来了、我来了
+我已年老背又弯
+我听见他们轻声把我呼唤
+
+幸福伴侣、如今东飘西散
+怀中爱儿、早已离我去远方
+他们已到我所渴望的乐园
+我听见他们轻声把我呼唤
+我来了、我来了
+我已年老背又弯
+我听见他们轻声把我呼唤
+```
+单独欣赏歌词，鄙人是根本没有get整首歌的点。于是乎，听了一下原版民谣 *Old Black Joe*。民谣的前奏，给人一种凄凉，悲情的感觉。听到歌个末尾，给人一种，经历人间苍伤，坦然生活的从容。这里的坦然，跟我们的佛系生活的态度还是大有不同。
+
+回到活着这本书，作者从第三者的角度，去写身为地主富贵的悲惨一生。活着主要讲述了，富贵如何将祖上留下来的100田地及家产输光，经历父母双亡，被国名党拉去，做壮丁。因国民党的节节败退，蒋委员长的后勤保障，迟迟不来，身边的战友一个一个死去。国名党战争的失败，富贵得以与妻子家珍及儿女重逢。在大跃进期间，儿子有喜因献血救，县长生产失血过多的妻子，被医务人员给抽。之后一家三人过着，艰难的生活。随着女儿因生产外孙苦根，而死，妻子家珍也离他而去。女婿带着苦根，在城市中拉板车生活，然而女婿在一次事故中意外逝世。只能富贵与苦根两人相依为命。苦根在一次高烧中，因吃豆子，撑死，神游西方。富贵最后花了所有积蓄，买了一头因将被宰杀而流泪的老牛。
