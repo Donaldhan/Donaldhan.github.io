@@ -5,11 +5,11 @@ subtitle: sub title
 date: 2018-11-04 15:17:19
 author: donaldhan
 catalog: true
-category: spring-framework
+category: Hystrix
 categories:
-    - spring-framework
+    - Hystrix
 tags:
-    - spring-context
+    - Hystrix
 ---
 
 # 引言
@@ -79,7 +79,13 @@ In light of the above architectural considerations we chose to implement a solut
 * semaphores (via a tryAcquire, not a blocking call)
 * circuit breakers
 
+he Netflix DependencyCommand implementation wraps a network-bound dependency call with a preference towards executing in a separate thread and defines fallback logic which gets executed (step 8 in flow chart below) for any failure or rejection (steps 3, 4, 5a, 6b below) regardless of which type of fault tolerance (network or thread timeout, thread pool or semaphore rejection, circuit breaker) triggered it.
+
+![Netflix-DependencyCommand-Implementation](/image/Hystrix/Netflix-DependencyCommand-Implementation.png)   
+
 信号量配置的使用，在什么情况下触发？
+
+![Semaphores-trigger-saturated-by-latent-network-connections](/image/Hystrix/Semaphores-trigger-saturated-by-latent-network-connections.png)   
 
 Semaphores are used instead of threads for dependency executions known to not perform network calls (such as those only doing in-memory cache lookups) since the overhead of a separate thread is too high for these types of operations.
 
@@ -101,7 +107,41 @@ An immediate failure (“fail fast”) throws an exception which causes the app 
 
 However, there are often several preferable options for providing responses in a “fallback mode” to reduce impact of failure on users. Regardless of what causes a failure and how it is intercepted (timeout, rejection, short-circuited etc) the request will always pass through the fallback logic (step 8 in flow chart above) before returning to the user to give a DependencyCommand the opportunity to do something other than “fail fast”.
 
+# How do we respond to a user request when failure occurs?
 
+An immediate failure (“fail fast”) throws an exception which causes the app to shed load until the dependency returns to health. This is preferable to requests “piling up” as it keeps Tomcat request threads available to serve requests from healthy dependencies and enables rapid recovery once failed dependencies recover.
+
+However, there are often several preferable options for providing responses in a “fallback mode” to reduce impact of failure on users. Regardless of what causes a failure and how it is intercepted (timeout, rejection, short-circuited etc) the request will always pass through the fallback logic (step 8 in flow chart above) before returning to the user to give a DependencyCommand the opportunity to do something other than “fail fast”.
+
+Some approaches to fallbacks we use are, in order of their impact on the user experience:
+
+* Cache: Retrieve data from local or remote caches if the realtime dependency is unavailable, even if the data ends up being stale
+* Eventual Consistency: Queue writes (such as in SQS) to be persisted once the dependency is available again
+* Stubbed Data: Revert to default values when personalized options can’t be retrieved
+* Empty Response (“Fail Silent”): Return a null or empty list which UIs can then ignore
+
+# Example Use Case
+
+![Example-Use-Case](/image/Hystrix/Example-Use-Case.png)  
+
+The above diagram shows an example configuration where the dependency has no reason to hit the 99.5th percentile and thus cuts it short at the network timeout layer and immediately retries with the expectation to get median latency most of the time, and accomplish this all within the 300ms thread timeout.
+
+If the dependency has legitimate reasons to sometimes hit the 99.5th percentile (i.e. cache miss with lazy generation) then the network timeout will be set higher than it, such as at 325ms with 0 or 1 retries and the thread timeout set higher (350ms+).
+
+The threadpool is sized at 10 to handle a burst of 99th percentile requests, but when everything is healthy this threadpool will typically only have 1 or 2 threads active at any given time to serve mostly 40ms median calls.
+
+When configured correctly a timeout at the DependencyCommand layer should be rare, but the protection is there in case something other than network latency affects the time, or the combination of connect+read+retry+connect+read in a worst case scenario still exceeds the configured overall timeout.
+
+The aggressiveness of configurations and tradeoffs in each direction are different for each dependency.
+
+Configurations can be changed in realtime as needed as performance characteristics change or when problems are found all without risking the taking down of the entire app if problems or misconfigurations occur.
+
+# Conclusion
+The approaches discussed in this post have had a dramatic effect on our ability to tolerate and be resilient to system, infrastructure and application level failures without impacting (or limiting impact to) user experience.
+
+Despite the success of this new DependencyCommand resiliency system over the past 8 months, there is still a lot for us to do in improving our fault tolerance strategies and performance, especially as we continue to add functionality, devices, customers and international markets.
+
+If these kinds of challenges interest you, the API team is actively hiring:
 
 ```java
 ```
