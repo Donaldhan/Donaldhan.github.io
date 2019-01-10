@@ -136,6 +136,17 @@ The aggressiveness of configurations and tradeoffs in each direction are differe
 
 Configurations can be changed in realtime as needed as performance characteristics change or when problems are found all without risking the taking down of the entire app if problems or misconfigurations occur.
 
+# Isolating functionality rather than the transport layer
+Isolating functionality rather than the transport layer is valuable as it not only extends the bulkhead beyond network failures and latency, but also those caused by client code. Examples include request validation logic, conditional routing to different or multiple backends, request serialization, response deserialization, response validation, and decoration. Network responses can be latent, corrupted, or incompatibly changed at any time, which in turn can result in unexpected failures in this application logic.
+
+Bulkheading around all of this—transport layer, network clients and client code—permits reliable protection against changing behavior, misconfigurations, transitive dependencies performing unexpected network activity, response handling failures, and overall latency, regardless of where it comes from.
+
+Applying bulkheads at the functional level also enables addition of business logic for fallback behavior to allow graceful degradation when failure occurs. Failure may come via network or client code exceptions, timeouts, short-circuiting, or concurrent request throttling. All of them, however, can now be handled with the same failure handler to provide fallback responses. Some functionality may not be able to gracefully degrade, and will consequently fail fast and shed load until recovery, but many others can return stale data, use secondary systems, use defaults or other such patterns.
+
+Operations and insight into what is going on is equally important to the actual isolation techniques. The key aspects of this are low latency metrics, low latency configuration changes, and common insight into all service relationships regardless of how the network transport is being implemented.
+
+![Operations-insight](/image/Hystrix/Operations-insight.png)  
+
 # Conclusion
 The approaches discussed in this post have had a dramatic effect on our ability to tolerate and be resilient to system, infrastructure and application level failures without impacting (or limiting impact to) user experience.
 
