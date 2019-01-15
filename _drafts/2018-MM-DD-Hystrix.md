@@ -454,6 +454,25 @@ If, however, a particular command is heavily utilized concurrently and can batch
 ## Collapser Flow
 ![collapser-flow](/image/Hystrix/collapser-flow-1280.png)
 
+## Request Caching ???
+HystrixCommand and HystrixObservableCommand implementations can define a cache key which is then used to de-dupe calls within a request context in a concurrent-aware manner.
+
+The Hystrix RequestCache will execute the underlying run() method once and only once, and both threads executing the HystrixCommand will receive the same data despite having instantiated different instances.
+
+* Data retrieval is consistent throughout a request.
+Instead of potentially returning a different value (or fallback) each time the command is executed, the first response is cached and returned for all subsequent calls within the same request.
+
+* Eliminates duplicate thread executions.
+Since the request cache sits in front of the construct() or run() method invocation, Hystrix can de-dupe calls before they result in thread execution.
+
+If Hystrix didn’t implement the request cache functionality then each command would need to implement it themselves inside the construct or run method, which would put it after a thread is queued and executed.
+
+请求缓存在run()和construce()执行之前生效，所以可以有效减少不必要的线程开销。你可以通过实现getCachekey()方法来开启请求缓存。
+
+注解 	描述 	属性
+@CacheResult 	改注解用来标记请求命令返回的结果应该被缓存，它必须与@HystrixCommand注解结合使用 	cacheKeyMethod
+@CacheRemove 	该注解用来让请求命令的缓存失效，失效的缓存根据定义的key决定 	commandKey,cacheKeyMethod
+@CacheKey 	改注解用来在请求命令的参数上标记，使其作为缓存的Key值，如果没有标注则会使用所有参数。如果同时还使用了@CacheResult和@CacheRemove注解的cacheKeyMethod方法指定缓存Key的生成，那么该注解将不会起作用   value
 
 ```java
 ```
