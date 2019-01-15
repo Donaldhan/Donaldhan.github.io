@@ -27,7 +27,7 @@ tags:
 
 
 
-What does it do?
+# What does it do?
 1. Latency and Fault Tolerance
 Stop cascading failures. Fallbacks and graceful degradation. Fail fast and rapid recovery.
 
@@ -398,9 +398,62 @@ private static final Integer default_executionIsolationSemaphoreMaxConcurrentReq
 ```
 
 
+# HystrixCollapser请求合并
+* Collapser Properties：用来控制命令合并相关的行为。
+* maxRequestsInBatch：该参数用来设置一次请求合并批处理中允许的最大请求数。
+* timerDelayInMilliseconds：用来设置批处理过程中每个命令延迟的时间，单位为毫秒，默认值为10。
+* requestCache.enabled：设置批处理过程中是否开启请求缓存。
+
+使用场景：对负载要求较高，对延迟要求不高的高。请求高延时
+
+## Concept
+
+Request Collapsing enables many concurrent requests, on an external service, to be batched together into one request.
+
+For example if a user wanted to load bookmarks for 300 video objects, rather than performing 300 network calls against a web service, these requests could be batched into one request.
+
+Requests can be Collapsed around, the batch size and elapsed time since the batch started.
+
+## Advantages/Disadvantages
+
+### Advantages
+
+Reduces the number of threads and network connections needed to perform requests
+Reduces the load on the external service
+
+### Disadvantages
+
+An increased latency before the actual command is executed. The maximum cost is the size of the batch window
+Example
+
+The following example is taken from: Hystrix - Request Collapsing. With a slight modification, the batch size window has been increased to 2 seconds.
+
+The example demonstrates four concurrent calls being performed, and shows how the four concurrent requests are batched together.
+
+The following visualization shows just the first two calls, to keep the example concise.
+
+具体时序图，可以参考:
+https://design.codelytics.io/hystrix/request-collapsing
 
 
-###
+![collapser](/image/Hystrix/collapser-1280.png)
+
+
+## Global Context (Across All Tomcat Threads)
+The ideal type of collapsing is done at the global application level, so that requests from any user on any Tomcat thread can be collapsed together.
+
+For example, if you configure a HystrixCommand to support batching for any user on requests to a dependency that retrieves movie ratings, then when any user thread in the same JVM makes such a request, Hystrix will add its request along with any others into the same collapsed network call.
+
+Note that the collapser will pass a single HystrixRequestContext object to the collapsed network call, so downstream systems must need to handle this case for this to be an effective option.
+
+## What Is the Cost of Request Collapsing?
+The determination of whether this cost is worth it depends on the command being executed. A high-latency command won’t suffer as much from a small amount of additional average latency. Also, the amount of concurrency on a given command is key: There is no point in paying the penalty if there are rarely more than 1 or 2 requests to be batched together. In fact, in a single-threaded sequential iteration collapsing would be a major performance bottleneck as each iteration will wait the 10ms batch window time.
+
+If, however, a particular command is heavily utilized concurrently and can batch dozens or even hundreds of calls together, then the cost is typically far outweighed by the increased throughput achieved as Hystrix reduces the number of threads it requires and the number of network connections to dependencies.
+
+## Collapser Flow
+![collapser-flow](/image/Hystrix/collapser-flow-1280.png)
+
 
 ```java
 ```
