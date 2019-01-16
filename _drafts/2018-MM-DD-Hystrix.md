@@ -681,13 +681,17 @@ Thread Pool Properties
     maximumSize
     最大线程池，此参数生效，必须allowMaximumSizeToDivergeFromCoreSize为true，默认为10
     maxQueueSize
-    阻塞任务队列的大小，配置为正数是LinkedBlockingQueue，-1为SynchronousQueue。注意：此于队列实现不能重新调整大小，参数只用于任务的初始化，针对线程池执行器不能重新初始化的，也不支持重新调整大小。如果克服上线的限制，可以使用queueSizeRejectionThreshold
+    阻塞任务队列的大小，配置为正数是LinkedBlockingQueue，-1为SynchronousQueue。注意：此于队列实现不能重新调整大小，参数只用于任务的初始化，针对线程池执行器不能重新初始化的，也不支持重新调整大小。如果克服上线的限制，可以使用queueSizeRejectionThreshold。默认为-1.
     queueSizeRejectionThreshold
-
+    队列拒绝阈值，在未到达队列容量时，任务数量达到阈值，则拒绝执行，默认为5；之所以设置这个属性的原因，队列容量一旦设置，不可修改。如果maxQueueSize == -1，此配置无效。
     keepAliveTimeMinutes
+    当前，coresize<maximumSize时，默认为1；空闲线程的释放等待的时间。
     allowMaximumSizeToDivergeFromCoreSize
+    此配置允许，maximumSize>coreSize, 默认为false
     metrics.rollingStats.timeInMilliseconds
-    metrics.rollingStats.numBuckets
+    线程次metric，滑动窗口，默认为10s
+    metrics.rollingStats.numBuckets】
+    滑动窗口内的桶数量，默认为10。需要注意metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0，否则将会抛出异常。
 
 
 
@@ -703,6 +707,10 @@ Thread Pool Properties
 不同的场景和应用，有不同的tradeoffs方案。
 
 如果在真是环境中，如果配置失效，可以动态的调整配置参数。
+
+
+线程池配置策略:
+
 
 
 ###
