@@ -350,7 +350,7 @@ Netflix, in its design of Hystrix, chose the use of threads and thread-pools to 
 # Benefits of Thread Pools
 The benefits of isolation via threads in their own thread pools are:
 
-* The application is fully protected from runaway client libraries. The pool for a given dependency library can fill up without impacting the rest of the application.
+* The application is fully protected from run away client libraries. The pool for a given dependency library can fill up without impacting the rest of the application.
 * The application can accept new client libraries with far lower risk. If an issue occurs, it is isolated to the library and doesn’t affect everything else.
 * When a failed client becomes healthy again, the thread pool will clear up and the application immediately resumes healthy performance, as opposed to a long recovery when the entire Tomcat container is overwhelmed.
 * If a client library is misconfigured, the health of a thread pool will quickly demonstrate this (via increased errors, latency, timeouts, rejections, etc.) and you can handle it (typically in real-time via dynamic properties) without affecting application functionality.
@@ -663,20 +663,47 @@ Command Properties
       度量间隔，用户统计错误，成功错误请求的百分比，统计结果将用于是否触发熔断（错误百分比），默认为500ms
   Request Context
     requestCache.enabled
+    是否使用请求缓存key，默认true
     requestLog.enabled
+    是否开启命令执行，时间日志，默认为true
 Collapser Properties
     maxRequestsInBatch
+    允许批量处理的数量，默认为Integer.MAX_VALUE
     timerDelayInMilliseconds
+    创建批请求后，执行批请求的等待时间，默认为10ms
     requestCache.enabled
+    是否开启请求缓存
 Thread Pool Properties
+配置的属性与线程池的属性基本相同。
+
     coreSize
+    线程池核心线程池大小，默认为10
     maximumSize
+    最大线程池，此参数生效，必须allowMaximumSizeToDivergeFromCoreSize为true，默认为10
     maxQueueSize
+    阻塞任务队列的大小，配置为正数是LinkedBlockingQueue，-1为SynchronousQueue。注意：此于队列实现不能重新调整大小，参数只用于任务的初始化，针对线程池执行器不能重新初始化的，也不支持重新调整大小。如果克服上线的限制，可以使用queueSizeRejectionThreshold
     queueSizeRejectionThreshold
+
     keepAliveTimeMinutes
     allowMaximumSizeToDivergeFromCoreSize
     metrics.rollingStats.timeInMilliseconds
     metrics.rollingStats.numBuckets
+
+
+
+大部分情况下，默认10个线程变现已经很不错，实际上可以更小。如果线程池需要调大，则可以根据以下公式：
+（峰值每秒的请求数*健康状况下99%的响应时间+缓冲空间）
+一般原则，线程越小越好，因为线程池，承担着负载分流和控制延迟阻塞资源的消耗。
+![thread-configuration](/image/Hystrix/thread-configuration-1280.png)
+
+10个线程处理99%的请求，在监控健康的情况下，一两个活跃的线程可以服务中位数的请求。
+当我们很难准确的配置处理超时时间，可以保护处网络延迟之外的时间影响场景。
+如果我们降级掉最后一层网络的timeout的请求，大部分情况下，可以达到中位数的响应时间，如果同时可以在300ms内完成所有请求。
+
+不同的场景和应用，有不同的tradeoffs方案。
+
+如果在真是环境中，如果配置失效，可以动态的调整配置参数。
+
 
 ###
 
