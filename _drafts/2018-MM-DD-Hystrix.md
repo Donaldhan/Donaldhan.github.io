@@ -474,9 +474,209 @@ If Hystrix didn’t implement the request cache functionality then each command 
 @CacheRemove 	该注解用来让请求命令的缓存失效，失效的缓存根据定义的key决定 	commandKey,cacheKeyMethod
 @CacheKey 	改注解用来在请求命令的参数上标记，使其作为缓存的Key值，如果没有标注则会使用所有参数。如果同时还使用了@CacheResult和@CacheRemove注解的cacheKeyMethod方法指定缓存Key的生成，那么该注解将不会起作用   value
 
-```java
+
+
+
+
+# How-To-Use
+
+## Fallback
+You can support graceful degradation in a Hystrix command by adding a fallback method that Hystrix will call to obtain a default value or values in case the main command fails. You will want to implement a fallback for most Hystrix commands that might conceivably fail, with a couple of exceptions:
+
+* a command that performs a write operation
+If your Hystrix command is designed to do a write operation rather than to return a value (such a command might normally return a void in the case of a HystrixCommand or an empty Observable in the case of a HystrixObservableCommand), there isn’t much point in implementing a fallback. If the write fails, you probably want the failure to propagate back to the caller.
+* batch systems/offline compute
+If your Hystrix command is filling up a cache, or generating a report, or doing any sort of offline computation, it’s usually more appropriate to propagate the error back to the caller who can then retry the command later, rather than to send the caller a silently-degraded response.
+Whether or not your command has a fallback, all of the usual Hystrix state and circuit-breaker state/metrics are updated to indicate the command failure.
+
+
+## Error Propagation
+All exceptions thrown from the run() method except for HystrixBadRequestException count as failures and trigger getFallback() and circuit-breaker logic.
+
+You can wrap the exception that you would like to throw in HystrixBadRequestException and retrieve it via getCause(). The HystrixBadRequestException is intended for use cases such as reporting illegal arguments or non-system failures that should not count against the failure metrics and should not trigger fallback logic.
+
+
+
+# 如何配置
+The pool should be sized large enough to handle normal healthy traffic but small enough that it will constrain concurrent execution if backend calls become latent.
+
+ For more information see the Github Wiki: https://github.com/Netflix/Hystrix/wiki/Configuration#wiki-ThreadPool and https://github.com/Netflix/Hystrix/wiki/How-it-Works#wiki-Isolation
+
+## HystrixThreadPool
+ ``` java
+ /**
+    * Whether the queue will allow adding an item to it.
+    * <p>
+    * This allows dynamic control of the max queueSize versus whatever the actual max queueSize is so that dynamic changes can be done via property changes rather than needing an app
+    * restart to adjust when commands should be rejected from queuing up.
+    *
+    * @return boolean whether there is space on the queue
+    */
+   public boolean isQueueSpaceAvailable();
+   protected static class SingleThreadedPoolWithQueue implements HystrixThreadPool {
+
+        final LinkedBlockingQueue<Runnable> queue;
+        final ThreadPoolExecutor pool;
+        private final int rejectionQueueSizeThreshold;
+
+        public SingleThreadedPoolWithQueue(int queueSize) {
+            this(queueSize, 100);
+        }
+
+        public SingleThreadedPoolWithQueue(int queueSize, int rejectionQueueSizeThreshold) {
+            queue = new LinkedBlockingQueue<Runnable>(queueSize);
+            pool = new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, queue);
+            this.rejectionQueueSizeThreshold = rejectionQueueSizeThreshold;
+        }
+
+        @Override
+        public ThreadPoolExecutor getExecutor() {
+            return pool;
+        }
+
+        @Override
+        public Scheduler getScheduler() {
+            return new HystrixContextScheduler(HystrixPlugins.getInstance().getConcurrencyStrategy(), this);
+        }
+
+        @Override
+        public Scheduler getScheduler(Func0<Boolean> shouldInterruptThread) {
+            return new HystrixContextScheduler(HystrixPlugins.getInstance().getConcurrencyStrategy(), this, shouldInterruptThread);
+        }
+
+        @Override
+        public void markThreadExecution() {
+            // not used for this test
+        }
+
+        @Override
+        public void markThreadCompletion() {
+            // not used for this test
+        }
+
+        @Override
+        public void markThreadRejection() {
+            // not used for this test
+        }
+
+        @Override
+        public boolean isQueueSpaceAvailable() {
+            return queue.size() < rejectionQueueSizeThreshold;
+        }
+
+}
+ ```
+rejectionQueueSizeThreshold属性，用于控制线程池任务队列为多少时，具体接受任务。
+
+
+*请求缓存和请求合并，具体功能要自己实现。*
+
+如果关注负载，没有网络的请求但是关注延迟可以使用信号量执行策略：
+```Java
+public CommandUsingSemaphoreIsolation(int id) {
+       super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("ExampleGroup"))
+               // since we're doing an in-memory cache lookup we choose SEMAPHORE isolation
+               .andCommandPropertiesDefaults(HystrixCommandProperties.Setter()
+                       .withExecutionIsolationStrategy(ExecutionIsolationStrategy.SEMAPHORE)));
+       this.id = id;
+   }
+
 ```
 
+
+
+```java
+@HystrixCommand(fallbackMethod = "queryBookPageFailBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "100"),
+                    @HystrixProperty(name = "maximumSize", value = "300"),
+                    @HystrixProperty(name = "maxQueueSize", value = "1000"),
+                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "1000"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "50"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "200"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "4000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "true"),               //该方法不做超时校验
+                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "1000"), // 响应超时时间，默1s
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "1000")    //执行fallback方法的semaphore数量
+})
+```
+
+
+# 配置
+Global default from code<Dynamic global default property<Instance default from code<Dynamic instance property
+
+优先级依次递增：
+全局默认值< 动态配置全局默认属性< 代码层实例配置< 动态实例配置
+
+
+Command属性：
+Command Properties
+  Execution
+    execution.isolation.strategy
+    THREAD，SEMAPHORE ，默认为线程隔离策略，强烈建议使用线程隔离策略，线程策略可以避免网络超时带来的请求延时。针对没有网络请求和每秒有大量请求，并且每个请求线程的负载较高的情况下，可以使用信号量策略。信号量执行策略没有超时检查。
+    execution.isolation.thread.timeoutInMilliseconds
+    隔离线程执行超时时间，默认为1000ms。超时则执行fallback。
+    execution.timeout.enabled
+    是否执行线程执行超时检查，默认为true
+    execution.isolation.thread.interruptOnTimeout
+    线程执行超时，是否中断执行run
+    execution.isolation.thread.interruptOnCancel
+    线程执行请求取消是，是否中断线程，默认为false。
+    execution.isolation.semaphore.maxConcurrentRequests
+    信号量执行策略下，允许的并发请求数，默认为10/s,理论上讲，应该是为容器线程池的线程数，从隔离的原则上来说，建议为线程池数量的小部分。官方给出的参考为，内存级的度量数据请求，2个信号量，可以处理5000rps
+  Fallback
+  此配置使用线程和信号量两种隔离策略
+    fallback.isolation.semaphore.maxConcurrentRequests
+    同时降级的最大并发量，默认为10
+    fallback.enabled
+    执行失败，或拒绝执行发生时，是否调用降级方法，默认为true，false，则抛出Hystrix运行时异常
+  Circuit Breaker
+    circuitBreaker.enabled
+    针对请求处理失败，是否短路，追踪应用健康状况
+    circuitBreaker.requestVolumeThreshold
+    在一个滑动窗口内，开启熔断器检查统计条件，默认为20/10s
+    circuitBreaker.sleepWindowInMilliseconds
+    触发熔断器后，等待关闭熔断器的时间，默认为5000s
+    circuitBreaker.errorThresholdPercentage
+    在一个统计窗口内，达到错误百分比时，触发熔断，默认为50%
+    circuitBreaker.forceOpen
+    强制打开熔断器，拒绝所有请求，默认为false
+    circuitBreaker.forceClosed
+    强制关闭熔断器，忽略错误百分比，当期circuitBreaker.forceOpen配置为true，此配置忽略
+  Metrics
+      metrics.rollingStats.timeInMilliseconds
+      一个滑动度量窗口的时间，默认为10s
+      metrics.rollingStats.numBuckets
+      一个滑动窗口内，统计桶的数量，默认为10；这样做的目的是将滑动窗口分为多个小的统计小窗口，防止统计数据的丢失。需要注意metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0，否则将会抛出异常。
+      metrics.rollingPercentile.enabled
+      请求延时统计(mean, percentiles)，默认为true，没有则为-1
+      metrics.rollingPercentile.timeInMilliseconds
+      延时统计滑动窗口时间，默认为60s
+      metrics.rollingPercentile.numBuckets
+      延时统计窗口内的桶数，默认为6, 需要注意metrics.rollingPercentile.timeInMilliseconds % metrics.rollingPercentile.numBuckets == 0，否则将会抛出异常。
+      metrics.rollingPercentile.bucketSize
+      每个桶内的请求数，默认为100，如果在一个延时统计窗口的桶内，数量大于桶size，则将开一个新的桶。
+      metrics.healthSnapshot.intervalInMilliseconds
+      度量间隔，用户统计错误，成功错误请求的百分比，统计结果将用于是否触发熔断（错误百分比），默认为500ms
+  Request Context
+    requestCache.enabled
+    requestLog.enabled
+Collapser Properties
+    maxRequestsInBatch
+    timerDelayInMilliseconds
+    requestCache.enabled
+Thread Pool Properties
+    coreSize
+    maximumSize
+    maxQueueSize
+    queueSizeRejectionThreshold
+    keepAliveTimeMinutes
+    allowMaximumSizeToDivergeFromCoreSize
+    metrics.rollingStats.timeInMilliseconds
+    metrics.rollingStats.numBuckets
 
 ###
 
