@@ -637,11 +637,11 @@ Command Properties
     circuitBreaker.enabled
     针对请求处理失败，是否短路，追踪应用健康状况
     circuitBreaker.requestVolumeThreshold
-    在一个滑动窗口内，开启熔断器检查统计条件，默认为20/10s
+    在一个滑动窗口内，开启熔断器检查统计条件，默认为20/10s。需要注意，如果在十秒内，有19个请求，都出现错误，也不会，触发熔断。
     circuitBreaker.sleepWindowInMilliseconds
-    触发熔断器后，等待关闭熔断器的时间，默认为5000s
+    触发熔断器后，等待关闭熔断器的时间，默认为5000s。
     circuitBreaker.errorThresholdPercentage
-    在一个统计窗口内，达到错误百分比时，触发熔断，默认为50%
+    在一个统计窗口内，达到错误百分比时，触发熔断，默认为50%，主要看我们对错误民不敏感，如果敏感可以设置10%。
     circuitBreaker.forceOpen
     强制打开熔断器，拒绝所有请求，默认为false
     circuitBreaker.forceClosed
@@ -690,7 +690,7 @@ Thread Pool Properties
     此配置允许，maximumSize>coreSize, 默认为false
     metrics.rollingStats.timeInMilliseconds
     线程次metric，滑动窗口，默认为10s
-    metrics.rollingStats.numBuckets】
+    metrics.rollingStats.numBuckets
     滑动窗口内的桶数量，默认为10。需要注意metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0，否则将会抛出异常。
 
 
@@ -698,18 +698,106 @@ Thread Pool Properties
 大部分情况下，默认10个线程变现已经很不错，实际上可以更小。如果线程池需要调大，则可以根据以下公式：
 （峰值每秒的请求数*健康状况下99%的响应时间+缓冲空间）
 一般原则，线程越小越好，因为线程池，承担着负载分流和控制延迟阻塞资源的消耗。
+
+
+https://blog.bramp.net/post/2015/12/17/the-importance-of-tuning-your-thread-pools/
+队列理论，利特尔法则;
+![littlelaw.png](/image/Hystrix/littlelaw.png)
+
+
+
+
 ![thread-configuration](/image/Hystrix/thread-configuration-1280.png)
 
 10个线程处理99%的请求，在监控健康的情况下，一两个活跃的线程可以服务中位数的请求。
 当我们很难准确的配置处理超时时间，可以保护处网络延迟之外的时间影响场景。
 如果我们降级掉最后一层网络的timeout的请求，大部分情况下，可以达到中位数的响应时间，如果同时可以在300ms内完成所有请求。
 
+我们合理的timeout设置应该为300ms，也就是99.5%的访问延时，计算方法是，因为判断每次访问延时最多在250ms（TP99如果是200ms的话），再加一次重试时间50ms，就是300ms，感觉也应该足够了
+
 不同的场景和应用，有不同的tradeoffs方案。
 
 如果在真是环境中，如果配置失效，可以动态的调整配置参数。
 
+ThreadPoolExecutor
+当前任务提交时，如果线程没有达到核心size，即使有其他空闲线程，则创建一个线程。对于工作线程大于coresize，但小于maximumPoolSize，首先将任务添加到队列，直到任务队列满时，才创建线程；keepAliveTime运行大于coreSize的空闲线程，保活时间。
+
+即当线程池中的线程数大于corePoolSize时，如果一个线程空闲的时间达到keepAliveTime，则会终止，直到线程池中的线程数不超过corePoolSize。
+allowCoreThreadTimeOut默认是false，即核心线程不会超时关闭，除非手动关闭线程池才会销毁线程。
+
+SynchronousQueue
+每一插入操作，必须对应一个remove操作。
+消费者没拿走当前的产品，生产者是不能再给产品的。应该是为了保证消费者和生产者的节奏一致吧，其它的队列实际上有缓存的意思，比如说消费者在高峰期消费不了那么多，那么队列会缓存一部分产品，这样就不至于影响生产者的速度。
+
+LinkedBlockingQueue 可以扩展，但是我们可以使用queueSizeRejectionThreshold来动态控制队列大小。
+
+
+
 
 线程池配置策略:
+
+一般说来，大家认为线程池的大小经验值应该这样设置：（其中N为CPU的个数）
+    如果是CPU密集型应用，则线程池大小设置为N+1
+    如果是IO密集型应用，则线程池大小设置为2N+1（因为io读数据或者缓存的时候，线程等待，此时如果多开线程，能有效提高cpu利用率）
+如果一台服务器上只部署这一个应用并且只有这一个线程池，那么这种估算或许合理，具体还需自行测试验证。
+但是，IO优化中，这样的估算公式可能更适合：
+
+最佳线程数目 = （（线程等待时间+线程CPU时间）/线程CPU时间 ）* CPU数目
+
+因为很显然，*线程等待时间所占比例越高，需要越多线程。线程CPU时间所占比例越高，需要越少线程*。
+
+平均每个线程CPU运行时间为0.5s，而线程等待时间（非CPU运行时间，比如IO）为1.5s，CPU核心数为8，那么根据上面这个公式估算得到：((0.5+1.5)/0.5)\*8=32。这个公式进一步转化为：
+
+最佳线程数目 = （线程等待时间与线程CPU时间之比 + 1）* CPU数目
+
+如何来设置
+
+    需要根据几个值来决定
+        tasks ：每秒的任务数，假设为500~1000
+        taskcost：每个任务花费时间，假设为0.1s
+        responsetime：系统允许容忍的最大响应时间，假设为1s
+    做几个计算
+        corePoolSize = 每秒需要多少个线程处理？
+            threadcount = tasks/(1/taskcost) =tasks*taskcout =  (500~1000)\*0.1 = 50~100 个线程。corePoolSize设置应该大于50
+            根据8020原则，如果80%的每秒任务数小于800，那么corePoolSize设置为80即可
+        queueCapacity = (coreSizePool/taskcost)\*responsetime
+            计算可得 queueCapacity = 80/0.1*1 = 80。意思是队列里的线程可以等待1s，超过了的需要新开线程来执行
+            切记不能设置为Integer.MAX_VALUE，这样队列会很大，线程数只会保持在corePoolSize大小，当任务陡增时，不能新开线程来执行，响应时间会随之陡增。
+        maxPoolSize = (max(tasks)- queueCapacity)/(1/taskcost)
+            计算可得 maxPoolSize = (1000-80)/10 = 92
+            （最大任务数-队列容量）/每个线程每秒处理能力 = 最大线程数
+
+假设每秒rps为6000, 响应时间为0.2s，则需要线程数如下61000
+            6000 * 0.2 = 1200 + buffer = 1300，
+            一个服务器内一个线程池给1300个线程有点夸张，我们分，20台机
+            1300 / 20 = 65线程/每台。
+            如果你一个依赖服务占据的线程数量太多的话，会导致其他的依赖服务对应的线程池里没有资源可以用了。      
+当前核心线程数与每秒并发数相同。
+
+*线程队列大小*
+acceptable time range / time to complete a task.
+
+Concrete Example : if your client service expects that the task it submits would have to be completed in less than 100 seconds, and knowing that every task takes 1-2 seconds, you should limit the queue to 50-100 tasks because once you have 100 tasks waiting in the queue, you're pretty sure that the next one won't be completed in less than 100 seconds, thus rejecting the task to prevent the service from waiting for nothing.
+
+
+ArrayBlockingQueue helps prevent resource exhaustion when
+used with finite maximumPoolSizes, but can be more difficult to
+tune and control.  Queue sizes and maximum pool sizes may be traded
+off for each other: Using large queues and small pools minimizes
+CPU usage, OS resources, and context-switching overhead, but can
+lead to artificially low throughput.  If tasks frequently block (for
+example if they are I/O bound), a system may be able to schedule
+time for more threads than you otherwise allow. Use of small queues
+generally requires larger pool sizes, which keeps CPUs busier but
+may encounter unacceptable scheduling overhead, which also
+decreases throughput.  
+
+
+
+限制线程池队列的大小，可以防止资源被耗尽，但是很对控制和调整。队列大小和最大线程池size两者
+可以取一个这种，使用大队列，小线程池可以最小化CPU的使用，及资源消耗，上线文切换负载，将导致吞吐量降低。
+如果任务是IO密集型的，系统也许可以调度比设置的线程更多的线程。一般情况下，使用容量小的队列，需要一个
+更大的线程池size，这样可以保证CPU处于忙碌状态，但是会遇到不可接受的调度负载，也会降低吞度量。
 
 
 
