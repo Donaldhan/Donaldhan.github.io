@@ -795,11 +795,88 @@ decreases throughput.
 
 
 限制线程池队列的大小，可以防止资源被耗尽，但是很对控制和调整。队列大小和最大线程池size两者
-可以取一个这种，使用大队列，小线程池可以最小化CPU的使用，及资源消耗，上线文切换负载，将导致吞吐量降低。
+可以取一个traded off，使用大队列，小线程池可以最小化CPU的使用，及资源消耗，上线文切换负载，将导致吞吐量降低。
 如果任务是IO密集型的，系统也许可以调度比设置的线程更多的线程。一般情况下，使用容量小的队列，需要一个
 更大的线程池size，这样可以保证CPU处于忙碌状态，但是会遇到不可接受的调度负载，也会降低吞度量。
 
+# 挖宝活动
+2018-08-28 09:00:00	2018-08-28 12:00:00
 
+```Java
+@ResponseBody
+   @RequestMapping("crit")
+   @HystrixCommand(fallbackMethod = "critFallback",
+           threadPoolProperties = {
+                   @HystrixProperty(name = "coreSize", value = "100"),
+                   @HystrixProperty(name = "maximumSize", value = "300"),
+                   @HystrixProperty(name = "maxQueueSize", value = "1000"),
+                   @HystrixProperty(name = "queueSizeRejectionThreshold", value = "1000"),
+                   @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+           },
+           commandProperties = {
+                   @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "50"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                   @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "200"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                   @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "4000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                   @HystrixProperty(name = "execution.timeout.enabled", value = "true"),               //该方法不做超时校验
+                   @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "1000")    //执行fallback方法的semaphore数量
+           })
+```
+平均RT：20.15ms，最慢1002,1338,489
+并发93：93/20=5
+(rps):4854147/2/60=40451/20=2000*0.02=40；
+
+超时时间设为：500ms
+
+# 幸运大抽奖
+A:2018-05-09 10:00:00	2018-05-16 22:00:00
+
+S:2018-05-09 10:00:00	2018-05-09 22:00:00
+
+```Java
+@RequestMapping(value = "", method = {RequestMethod.POST})
+    @ResponseBody
+    @HystrixCommand(fallbackMethod = "lotteryFailBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "10"),
+                    @HystrixProperty(name = "maximumSize", value = "30"),
+                    @HystrixProperty(name = "maxQueueSize", value = "30"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "20"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "40"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "8000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "false"),               //该方法不做超时校验
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "100")    //执行fallback方法的semaphore数量
+            })
+```
+平均：80.65ms, 最慢的4s。            
+并发：23/20=2
+(rps):324010/2/60=2700/20=140*0.08=11.2
+
+超时时间设为350ms。
+
+
+3.世界杯竞猜
+2018-06-24 06:00:00	2018-06-27 21:00:00
+```java
+@HystrixCommand(fallbackMethod = "wagerFailBack", threadPoolProperties = {
+          @HystrixProperty(name = "coreSize", value = "10"), @HystrixProperty(name = "maximumSize", value = "30"),
+          @HystrixProperty(name = "maxQueueSize", value = "30"),
+          @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false,
+                                                                                           // 如果不设置该参数maximumSize=coreSize
+  }, commandProperties = { @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "20"), // （出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+          @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "40"), // 在统计数据之前，必须在10秒内发出3个请求。
+                                                                                          // 默认是20
+          @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "8000"), // （短路多久以后开始尝试是否恢复，默认5s）
+          @HystrixProperty(name = "execution.timeout.enabled", value = "false"), // 该方法不做超时校验
+          @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "100") // 执行fallback方法的semaphore数量
+  })
+```
+
+平均：107.54
+并发：4
+(rps):46586/2/60=388/20=19*0.1=19
 
 ###
 
