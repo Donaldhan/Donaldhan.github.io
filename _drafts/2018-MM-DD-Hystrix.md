@@ -878,6 +878,13 @@ S:2018-05-09 10:00:00	2018-05-09 22:00:00
 并发：4
 (rps):46586/2/60=388/20=19*0.1=19
 
+
+
+并发数，配置调试。
+
+-XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=256m -Xms512m -Xmx2048m -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+CMSClassUnloadingEnabled -XX:+ExplicitGCInvokesConcurrent -XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses -XX:+HeapDumpOnOutOfMemoryError
+
+
 ###
 
 ```java
