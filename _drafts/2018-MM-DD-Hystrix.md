@@ -169,16 +169,15 @@ Hystrix is designed to do the following:
 Hystrix works by:
 
 * Preventing any single dependency from using up all container (such as Tomcat) user threads.
-阻止任何单依赖耗光所有的容器的线程。
 * Shedding load and failing fast instead of queueing.
-分流负载，快速失败代理排队。
+分流负载，快速失败取代排队。
 * Providing fallbacks wherever feasible to protect users from failure.
 * Using isolation techniques (such as bulkhead, swimlane, and circuit breaker patterns) to limit the impact of any one dependency.
 使用隔离技术（隔离墙，泳道，熔断器）限制任一依赖的影响
 * Optimizing for time-to-discovery through near real-time metrics, monitoring, and alerting
 * Optimizing for time-to-recovery by means of low latency propagation of configuration changes and support for dynamic property changes in most aspects of Hystrix, which allows you to make real-time operational modifications with low latency feedback loops.
 * Protecting against failures in the entire dependency client execution, not just in the network traffic.
-防止真个客户端以来执行的失败，而不仅仅是网络拥挤。
+
 
 
 # How Does Hystrix Accomplish Its Goals?
@@ -799,6 +798,18 @@ decreases throughput.
 如果任务是IO密集型的，系统也许可以调度比设置的线程更多的线程。一般情况下，使用容量小的队列，需要一个
 更大的线程池size，这样可以保证CPU处于忙碌状态，但是会遇到不可接受的调度负载，也会降低吞度量。
 
+
+当前配置方案，最大队列和最大线程数相同。
+核心线程与最大线程数之比为8:10(8:2)
+最大队列与核心线程池相同，队列塞满，所有线程处于忙碌状态；
+线程也不是越多越好，如果到达最大线程，核心线程是不会销毁的。
+
+错误比例以压测为准：
+
+fallback.isolation.semaphore.maxConcurrentRequests，可以最大线程数*错误比率熔断率为准。
+
+
+
 # 挖宝活动
 2018-08-28 09:00:00	2018-08-28 12:00:00
 
@@ -857,7 +868,7 @@ S:2018-05-09 10:00:00	2018-05-09 22:00:00
 超时时间设为350ms。
 
 
-3.世界杯竞猜
+# 世界杯竞猜
 2018-06-24 06:00:00	2018-06-27 21:00:00
 ```java
 @HystrixCommand(fallbackMethod = "wagerFailBack", threadPoolProperties = {
@@ -889,6 +900,7 @@ S:2018-05-09 10:00:00	2018-05-09 22:00:00
 
 ```java
 ```
+
 
 
 ## 总结
