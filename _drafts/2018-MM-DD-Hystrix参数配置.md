@@ -34,9 +34,7 @@ tags:
 * [Netflix DependencyCommand Implementation](#netflix dependencycommand implementation)
 * [Request Collapsing](#request collapsing)
 * [Request Caching](#request caching)
-* [](#)
-* [](#)
-    * [](#)
+* [配置策略测试](#配置策略测试)
 * [总结](#总结)
 
 # What Is Hystrix For
@@ -405,11 +403,240 @@ decreases throughput.
 
 按照上面的描述，是不是的最大队列和和最大线程数相同？
 
+## 配置策略测试
+本部分的所有测试环境如下：   
+硬件环境为:Debian GNU/Linux 8   
+软件环境为：，cpu 4核，内存为8G，tomcat8，JDK8，apache-jmeter-4.0   
+虚拟机参数：-Xms4096m -Xmx4096m -XX:MaxPermSize=128m  
 
-核心线程与最大线程数之比为8:10(8:2)
-最大队列与核心线程池相同，队列塞满，所有线程处于忙碌状态；
-线程也不是越多越好，如果到达最大线程，核心线程是不会销毁的。
+### 接口原始性能测试
+我们设置所有压测，持续时间为5分钟。
+首先我们用200并发压测，压测数据如下：
+```
+summary = 151716 in 00:03:02 =  835.8/s Avg:   235 Min:     9 Max:  2292 Err:     0 (0.00%)
+summary +  26221 in 00:00:30 =  874.0/s Avg:   228 Min:     9 Max:  1487 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 177937 in 00:03:32 =  841.2/s Avg:   234 Min:     9 Max:  2292 Err:     0 (0.00%)
+summary +  27316 in 00:00:30 =  910.5/s Avg:   219 Min:    10 Max:  1239 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 205253 in 00:04:02 =  849.8/s Avg:   232 Min:     9 Max:  2292 Err:     0 (0.00%)
+summary +  26040 in 00:00:30 =  868.0/s Avg:   230 Min:    11 Max:  1278 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 231293 in 00:04:32 =  851.8/s Avg:   232 Min:     9 Max:  2292 Err:     0 (0.00%)
+summary +  25168 in 00:00:29 =  876.8/s Avg:   228 Min:    10 Max:  1449 Err:     0 (0.00%) Active: 0 Started: 200 Finished: 200
+summary = 256461 in 00:05:00 =  854.2/s Avg:   231 Min:     9 Max:  2292 Err:     0 (0.00%)
+```
+summary + 为每次的请求统一，summary = 为累计统计，最后一行为summary = 为最终的统计。
+我们来看200并发的最后一行，总共请求256461s, 支持的最大rps为854.2/s，平均耗时231ms，最小9ms，最大2292秒。
 
-错误比例以压测为准：
+我们再用300并发，压测数据如下：
+```
+summary +  26407 in 00:00:30 =  880.3/s Avg:   340 Min:    15 Max:  1424 Err:     0 (0.00%) Active: 300 Started: 300 Finished: 0
+summary = 135798 in 00:02:36 =  869.3/s Avg:   338 Min:    10 Max:  1888 Err:     0 (0.00%)
+summary +  25658 in 00:00:30 =  855.2/s Avg:   351 Min:    10 Max:  1534 Err:     0 (0.00%) Active: 300 Started: 300 Finished: 0
+summary = 161456 in 00:03:06 =  867.1/s Avg:   340 Min:    10 Max:  1888 Err:     0 (0.00%)
+summary +  26405 in 00:00:30 =  880.2/s Avg:   340 Min:    14 Max:  1751 Err:     0 (0.00%) Active: 300 Started: 300 Finished: 0
+summary = 187861 in 00:03:36 =  868.9/s Avg:   340 Min:    10 Max:  1888 Err:     0 (0.00%)
+summary +  25472 in 00:00:30 =  849.1/s Avg:   353 Min:    10 Max:  1510 Err:     0 (0.00%) Active: 300 Started: 300 Finished: 0
+summary = 213333 in 00:04:06 =  866.5/s Avg:   342 Min:    10 Max:  1888 Err:     0 (0.00%)
+summary +  25840 in 00:00:30 =  861.3/s Avg:   348 Min:    21 Max:  2110 Err:     0 (0.00%) Active: 300 Started: 300 Finished: 0
+summary = 239173 in 00:04:36 =  865.9/s Avg:   342 Min:    10 Max:  2110 Err:     0 (0.00%)
+summary +  20857 in 00:00:24 =  863.6/s Avg:   347 Min:    17 Max:  1418 Err:     0 (0.00%) Active: 0 Started: 300 Finished: 300
+summary = 260030 in 00:05:00 =  865.7/s Avg:   343 Min:    10 Max:  2110 Err:     0 (0.00%)
+```
+再来看400并发，压测数据如下：
+```
+summary = 159448 in 00:03:09 =  841.9/s Avg:   463 Min:    10 Max: 64279 Err:     0 (0.00%)
+summary +  26222 in 00:00:30 =  874.0/s Avg:   466 Min:    13 Max: 127180 Err:     2 (0.01%) Active: 400 Started: 400 Finished: 0
+summary = 185670 in 00:03:39 =  846.3/s Avg:   463 Min:    10 Max: 127180 Err:     2 (0.00%)
+summary +  26438 in 00:00:30 =  881.2/s Avg:   454 Min:    17 Max: 63439 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary = 212108 in 00:04:09 =  850.5/s Avg:   462 Min:    10 Max: 127180 Err:     2 (0.00%)
+summary +  25504 in 00:00:30 =  840.4/s Avg:   461 Min:    15 Max: 31703 Err:     0 (0.00%) Active: 400 Started: 400 Finished: 0
+summary = 237612 in 00:04:40 =  849.4/s Avg:   462 Min:    10 Max: 127180 Err:     2 (0.00%)
+summary +  18341 in 00:00:35 =  527.9/s Avg:   478 Min:    12 Max: 127181 Err:     1 (0.01%) Active: 10 Started: 400 Finished: 390
+summary = 255953 in 00:05:14 =  813.9/s Avg:   463 Min:    10 Max: 127181 Err:     3 (0.00%)
+summary +      9 in 00:00:38 =    0.2/s Avg: 56166 Min: 31111 Max: 127297 Err:     1 (11.11%) Active: 0 Started: 400 Finished: 400
+summary = 255962 in 00:05:53 =  725.2/s Avg:   465 Min:    10 Max: 127297 Err:     4 (0.00%)
+```
 
-fallback.isolation.semaphore.maxConcurrentRequests，可以最大线程数*错误比率熔断率为准。
+从上面可以看出，在200并发下，rps，rt：  
+summary = 256461 in 00:05:00 =  854.2/s Avg:   231 Min:     9 Max:  2292 Err:     0 (0.00%)
+在300并发的时候，rps，rt：   
+summary = 260030 in 00:05:00 =  865.7/s Avg:   343 Min:    10 Max:  2110 Err:     0 (0.00%)
+在300并发的时候，请求虽然增加12，但同时延迟增加了，110ms，当并发为400时，rps降低140，同时延时增加120ms。
+从上面可以看出，接口在200的并发情况下，rps，rt：表现较好，支持最大并发为300。
+
+再来看接口最慢RT时间：
+ ![slow-request](/image/Hystrix/slow-request.png)
+在200，300，400并发的情况下，最慢RT的下面分别为：913,662,1006ms。这个我们配置Hystrix参数的时候，会用到。
+
+下面我们测试Hystrix参数配置下的接口性能，一下所有测试为200并发。
+### Hystrix限流测试
+一般情况下，我们会考虑使用根据最大并发去设置参数，一般如下：  
+
+```Java
+@HystrixCommand(fallbackMethod = "noticesFallBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "20"),
+                    @HystrixProperty(name = "maximumSize", value = "300"),
+                    @HystrixProperty(name = "maxQueueSize", value = "200"),
+                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "200"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "20"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "40"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "8000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "false"),               //该方法不做超时校验
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "100")    //执行fallback方法的semaphore数量
+            })
+```
+
+压测结果：
+
+summary = 137472 in 00:02:57 =  776.4/s Avg:   253 Min:    15 Max:  3113 Err:     0 (0.00%)
+summary +  24784 in 00:00:30 =  826.1/s Avg:   241 Min:    17 Max:   905 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 162256 in 00:03:27 =  783.6/s Avg:   251 Min:    15 Max:  3113 Err:     0 (0.00%)
+summary +  23633 in 00:00:30 =  787.6/s Avg:   252 Min:    18 Max:  1250 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 185889 in 00:03:57 =  784.1/s Avg:   251 Min:    15 Max:  3113 Err:     0 (0.00%)
+summary +  23812 in 00:00:30 =  793.9/s Avg:   253 Min:    16 Max:  1239 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 209701 in 00:04:27 =  785.2/s Avg:   251 Min:    15 Max:  3113 Err:     0 (0.00%)
+summary +  24417 in 00:00:30 =  813.8/s Avg:   245 Min:    23 Max:  1228 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 234118 in 00:04:57 =  788.1/s Avg:   251 Min:    15 Max:  3113 Err:     0 (0.00%)
+summary +   2281 in 00:00:03 =  710.6/s Avg:   279 Min:    15 Max:   887 Err:     0 (0.00%) Active: 0 Started: 200 Finished: 200
+summary = 236399 in 00:05:00 =  787.2/s Avg:   251 Min:    15 Max:  3113 Err:     0 (0.00%)
+
+从上面可以看出，与未加限流200并发的测试相比，响应(231->251ms)和TPS(854.2->787.2), 添加限流，tps降低，延时增加。
+
+根据前文中提到的Hystrix参数配置策略，线程池配置策略，及接口原始性能测试数据，
+200并发，rps，rt：   
+summary = 256461 in 00:05:00 =  854.2/s Avg:   231 Min:     9 Max:  2292 Err:     0 (0.00%)   
+并发数：200,300,400   
+最慢调用下限：913,662,1006ms   
+
+
+我们调整配置如下：
+
+核心线程数： 854.2*0.231=197.3=198=200  
+核心线程数与缓冲线程为8:2原则  
+最大线程数：200/8*10=250  
+队列长度与最大线程数也为8:2原则，
+队列长度：200    
+容忍错误率为:10%  
+熔断器恢复时间，默认5s   
+超时时间设为:700ms，  200,300,400并发下的最慢调用下限
+降级并发量为最大线程数250*错误容忍率10%=25
+
+具体配置如下：
+```java
+ @HystrixCommand(fallbackMethod = "noticesFallBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "200"),
+                    @HystrixProperty(name = "maximumSize", value = "250"),
+                    @HystrixProperty(name = "maxQueueSize", value = "200"),
+                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "200"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "10"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "20"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "5000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "true"),
+                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "700"), //线程执行超时时间，默认为1s，应该可满足99.5%的请求
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "25")    //执行fallback方法的semaphore数量
+})
+```
+
+压测结果：  
+```
+summary = 264340 in 00:04:59 =  883.3/s Avg:   224 Min:     6 Max:  2579 Err:  1859 (0.70%)
+summary +    919 in 00:00:01 = 1016.6/s Avg:   201 Min:    11 Max:   547 Err:     0 (0.00%) Active: 0 Started: 200 Finished: 200
+summary = 265259 in 00:05:00 =  883.7/s Avg:   224 Min:     6 Max:  2579 Err:  1859 (0.70%)
+```
+
+从上面可以看出，在默认配合的情况下，经过参数调优后，响应(231->224ms)和TPS(854.2->883.7)，tps提高，延时降低。错误率为0.70%，在可接受的范围之内。
+
+
+我们设置最大队列为250,配置如下：
+```java
+@HystrixCommand(fallbackMethod = "noticesAndJumpPagesFallBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "200"),
+                    @HystrixProperty(name = "maximumSize", value = "250"),
+                    @HystrixProperty(name = "maxQueueSize", value = "250"),
+                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "200"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "10"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "20"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "5000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "true"),
+                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "700"), //线程执行超时时间，默认为1s，应该可满足99.5%的请求
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "25")    //执行fallback方法的semaphore数量
+})
+```
+
+压测结果：   
+```
+summary = 232655 in 00:04:24 =  880.1/s Avg:   224 Min:     2 Max: 15840 Err:  8475 (3.64%)
+summary +  26494 in 00:00:30 =  883.2/s Avg:   226 Min:    11 Max:  2403 Err:     0 (0.00%) Active: 200 Started: 200 Finished: 0
+summary = 259149 in 00:04:54 =  880.4/s Avg:   224 Min:     2 Max: 15840 Err:  8475 (3.27%)
+summary +   5615 in 00:00:06 =  959.0/s Avg:   209 Min:    13 Max:  1085 Err:     0 (0.00%) Active: 0 Started: 200 Finished: 200
+summary = 264764 in 00:05:00 =  881.9/s Avg:   224 Min:     2 Max: 15840 Err:  8475 (3.20%)
+```
+
+从上面可以看出，响应时间(224->224ms)和TPS(883.7->881.9)，延迟不变，tps提高大约2，可以几乎不计，但错误率提升(0.70%->3.20%)。可以理解为，当队列大小与
+最大线程相同时，带来的错误率的影响远大于带来的tps贡献。还不如对队列大小稍微限制，缓解线程池的压力。
+
+我们在设置超时时间为900ms。
+```java
+@HystrixCommand(fallbackMethod = "noticesAndJumpPagesFallBack",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "200"),
+                    @HystrixProperty(name = "maximumSize", value = "250"),
+                    @HystrixProperty(name = "maxQueueSize", value = "200"),
+                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "200"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") // 默认false, 如果不设置该参数maximumSize=coreSize
+            },
+            commandProperties = {
+                    @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "10"),   //（出错百分比阈值，当达到此阈值后，开始短路。默认50%）
+                    @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "20"),      // 在统计数据之前，必须在10秒内发出3个请求。  默认是20
+                    @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "5000"), //（短路多久以后开始尝试是否恢复，默认5s）
+                    @HystrixProperty(name = "execution.timeout.enabled", value = "true"),
+                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "900"), //线程执行超时时间，默认为1s，应该可满足99.5%的请求
+                    @HystrixProperty(name = "fallback.isolation.semaphore.maxConcurrentRequests", value = "25")    //执行fallback方法的semaphore数量
+            })
+```
+
+压测结果：
+```
+summary +  26996 in 00:00:30 =  899.9/s Avg:   222 Min:    11 Max:  1421 Err:     4 (0.01%) Active: 200 Started: 200 Finished: 0
+summary = 243936 in 00:04:59 =  817.0/s Avg:   242 Min:     2 Max: 14465 Err:  9052 (3.71%)
+summary +    950 in 00:00:02 =  559.5/s Avg:   362 Min:    20 Max:  1313 Err:     0 (0.00%) Active: 0 Started: 200 Finished: 200
+summary = 244886 in 00:05:00 =  815.6/s Avg:   242 Min:     2 Max: 14465 Err:  9052 (3.70%)
+```
+
+
+从上面可以看出，响应(224->242ms)和TPS(883.7->815.6)，当执行超时时间增加时（execution.isolation.thread.timeoutInMilliseconds）, 并反而增加了延时，降低了tps，同时错误率增加。原因应该为，当超时时间变大，这些线程占用的资源更久，进而影响tps、rt，及错误率。
+
+
+从以上分析来看，最大线程数和超时时间也不是越多也好。
+
+
+再来看，测试过程中的cpu，load，和mem，
+ ![loadCpuMem](/image/Hystrix/loadCpuMem.png)
+ 从上面可以看出，添加Hystrix限流，cpu，load，和mem并没有增加多少，相对率给分布式应用带来安全和性能的益处，远大于负载开销。
+
+
+# 总结
+根据Hystrix参数的配置说明和线程池的配置策略，具体参数配置规则如下：
+
+
+核心线程数=峰值每秒的请求数*健康状况下99%的响应时间   
+缓冲线程=核心线程数*2/8  
+最大线程数=核心线程数+缓冲线程  
+队列长度=核心线程数    
+容忍错误率为:10%  
+熔断器恢复时间，默认5s   
+超时时间设为: 可满足99.5%的访问延时，同时延时在可接受范围之内   
+降级并发量=最大线程数*错误容忍率
+
+具体参数配置，
