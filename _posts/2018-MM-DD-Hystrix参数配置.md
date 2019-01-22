@@ -32,6 +32,7 @@ tags:
   * [Threads & Thread Pools](#threads & thread pools)
   * [Semaphores](#semaphores)
 * [Netflix DependencyCommand Implementation](#netflix dependencycommand implementation)
+* [Circuit Breaker](#circuit breaker)
 * [Request Collapsing](#request collapsing)
 * [Request Caching](#request caching)
 * [配置策略测试](#配置策略测试)
@@ -78,6 +79,9 @@ Hystrix works by:
 * Optimizing for time-to-discovery through near real-time metrics, monitoring, and alerting
 * Optimizing for time-to-recovery by means of low latency propagation of configuration changes and support for dynamic property changes in most aspects of Hystrix, which allows you to make real-time operational modifications with low latency feedback loops.
 * Protecting against failures in the entire dependency client execution, not just in the network traffic.
+
+
+
 
 # Isolation
 Hystrix employs the bulkhead pattern to isolate dependencies from each other and to limit concurrent access to any one of them.
@@ -174,6 +178,32 @@ Semaphores are used instead of threads for dependency executions known to not pe
 We also use semaphores to protect against non-trusted fallbacks. Each DependencyCommand is able to define a fallback function (discussed more below) which is performed on the calling user thread and should not perform network calls. Instead of trusting that all implementations will correctly abide to this contract, it too is protected by a semaphore so that if an implementation is done that involves a network call and becomes latent, the fallback itself won’t be able to take down the entire app as it will be limited in how many threads it will be able to block.
 
 使用场景：对负载要求较高，对延迟要求不高的高。请求高延时
+
+
+# Circuit Breaker
+The following diagram shows how a HystrixCommand or HystrixObservableCommand interacts with a HystrixCircuitBreaker and its flow of logic and decision-making, including how the counters behave in the circuit breaker.
+
+![circuit-breaker-1280](/image/Hystrix/circuit-breaker-1280.png)
+
+
+The precise way that the circuit opening and closing occurs is as follows:
+1. Assuming the volume across a circuit meets a certain threshold (HystrixCommandProperties.circuitBreakerRequestVolumeThreshold())...
+
+在熔断器统计时间窗口（默认10s）内，达到请求阈值默认（20个）
+
+2. And assuming that the error percentage exceeds the threshold error percentage (HystrixCommandProperties.circuitBreakerErrorThresholdPercentage())...
+
+在统计窗口时间之前，错误率达到错误阈值，默认50%
+
+3. Then the circuit-breaker transitions from CLOSED to OPEN.
+
+如果达到1,2条件，则将会触发熔断，并睡眠一定的时间，默认为5s。
+4. While it is open, it short-circuits all requests made against that circuit-breaker.
+5. After some amount of time (HystrixCommandProperties.circuitBreakerSleepWindowInMilliseconds()), the next single request is let through (this is the HALF-OPEN state). If the request fails, the circuit-breaker returns to the OPEN state for the duration of the sleep window. If the request succeeds, the circuit-breaker transitions to CLOSED and the logic in 1. takes over again.
+
+如果熔断触发，睡眠给定的时间后，熔断器关闭，新进的请求，将会通过，如果请求失败，则重新触发熔断，并随眠给定的时间。
+
+如果以上五步都没有问题的情况下，再去检查线程池和信号量的配置。
 
 # Request Collapsing
 
