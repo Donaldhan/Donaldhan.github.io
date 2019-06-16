@@ -17,6 +17,7 @@ In most cases, you should specify the HADOOP_PID_DIR and HADOOP_LOG_DIR director
 
 
 ## idea intellij 连接hadoopHDFS插件
+https://github.com/Donaldhan/HadoopIntellijPlugin
 https://blog.csdn.net/kismet2399/article/details/85090839
 
 #工程创建
@@ -25,3 +26,5 @@ https://blog.csdn.net/chaoping315/article/details/78904970
 https://www.cnblogs.com/YellowstonePark/p/7699083.html
 
 从hadoop安装的example中，添加示例。
+
+读取dfs文件
