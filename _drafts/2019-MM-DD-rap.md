@@ -1,7 +1,7 @@
 ---
 layout: page
-title: my blog
-subtitle: sub title
+title: Comotomo Baby 奶壶
+subtitle: diss 考拉线下折扣店
 date: 2018-11-04 15:17:19
 author: donaldhan
 catalog: true
@@ -26,7 +26,18 @@ tags:
 ```
 嘿、嘿、嘿....
 let‘s get it.
-你看这
+昨天，在考拉折扣店铺
+买了一个Comotomo Baby 奶壶
+线上原价126
+买到手96
+
+你要问我为什么买奶壶
+这是my baby的礼物
+公主？圣主？随便，只希望像佩奇可爱的小猪
+
+
+我把她带着屋，辅助菠萝成为参天大树
+
 
 ```
 
