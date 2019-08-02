@@ -1,6 +1,6 @@
 ---
 layout: page
-title: 使用adb排查Android Q可疑的应用wifi万能钥匙
+title: 使用adb排查Android 可疑的应用wifi万能钥匙
 subtitle: 使用adb排查Android Q可疑的应用
 date: 2019-08-02 15:12:00
 author: donaldhan
@@ -60,7 +60,7 @@ adb start-server
 
 
 
-学会基本的使用，我们现在来排查流氓软件wifi万能钥匙
+学会基本的使用，我们现在来排查流氓软件wifi万能钥匙，用数据线连接手机和电脑，打开调试模式：
 
 使用adb 查看最顶层activity名称
 
