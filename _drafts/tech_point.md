@@ -1,6 +1,10 @@
 # 注意点
 https://blog.csdn.net/csdnnews/article/details/103154693  
-1. 秒杀
+# 架构师之路
+https://zhuanlan.zhihu.com/p/97215206
+# 
+
+1. 秒杀  
 https://zhuanlan.zhihu.com/p/89518837
 2. 红包
 3. 分页
@@ -14,4 +18,6 @@ https://zhuanlan.zhihu.com/p/89518837
 7. 分库分表
 8. 阿里双十一抢购
 9. 12306
-11. 淘宝搜索
+10. 淘宝搜索
+11. 分布式ID原则   
+https://zhuanlan.zhihu.com/p/82099063
