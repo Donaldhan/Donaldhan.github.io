@@ -11,6 +11,8 @@ https://zhuanlan.zhihu.com/p/89518837
 线程池的生命周期？
 5. 幂等
 6. 工作流
+https://segmentfault.com/a/1190000019161083?utm_source=tag-newest
+https://blog.csdn.net/warrior__/article/details/83477470
 7. 分库分表
 8. 阿里双十一抢购
 9. 12306
