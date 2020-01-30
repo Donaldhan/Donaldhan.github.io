@@ -2,3 +2,9 @@
 
 ./kafka-console-producer.sh --broker-list 192.168.230.128:9092 --topic my-replicated-topic  
 ./kafka-console-consumer.sh --bootstrap-server 192.168.230.128:9092 --from-beginning --topic my-replicated-topic 
+
+
+# 界面监控工具
+
+kafkatool
+kafka-manager
