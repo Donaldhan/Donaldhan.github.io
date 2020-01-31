@@ -1,7 +1,7 @@
 ---
 layout: page
-title: selenium-chrome-driver的一次趟坑.
-subtitle: selenium-chrome-driver的一次趟坑.
+title: Selenium(ChromeDriver)的一次趟坑
+subtitle: Selenium(ChromeDriver)的一次趟坑
 date: 2018-11-04 15:17:19
 author: donaldhan
 catalog: true
