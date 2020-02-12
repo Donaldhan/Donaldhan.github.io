@@ -5,11 +5,11 @@ subtitle: sub title
 date: 2020-11-04 15:17:19
 author: donaldhan
 catalog: true
-category: spring-framework
+category: BigData
 categories:
-    - spring-framework
+    - BigData
 tags:
-    - spring-context
+    - Hive
 ---
 
 # 引言
