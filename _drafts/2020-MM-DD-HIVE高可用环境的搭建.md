@@ -23,6 +23,79 @@ tags:
     * [](#)
 * [总结](#总结)
 
+```
+donaldhan@nameNode:/bdp$ scp -r ./hive/ donaldhan@resourceManager:/bdp/
+haproxy-1.7.9.tar.gz                                                                                                                                                      100% 1707KB   1.7MB/s   00:00    
+mysql-connector-java-5.1.41.jar                                                                                                                                           100%  970KB 969.5KB/s   00:00    
+mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar                                                                                                                     100%  180MB  25.7MB/s   00:07    
+apache-hive-2.3.4-bin.tar.gz                                                                                                                                              100%  221MB  14.8MB/s   00:15    
+donaldhan@nameNode:/bdp$ 
+```
+
+
+```
+donaldhan@secondlyNamenode:/bdp/hive$ tar -xvf apache-hive-2.3.4-bin.tar.gz 
+donaldhan@secondlyNamenode:/bdp/hive$ ls
+apache-hive-2.3.4-bin  apache-hive-2.3.4-bin.tar.gz  haproxy-1.7.9.tar.gz  mysql-connector-java-5.1.41.jar  mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar
+```
+
+```
+donaldhan@nameNode:/bdp/hive$ cp mysql-connector-java-5.1.41.jar  apache-hive-2.3.4-bin/lib/
+donaldhan@nameNode:/bdp/hive$ ls -al apache-hive-2.3.4-bin/lib | grep mysql
+-rw-rw-r--  1 donaldhan donaldhan   992805 Feb 13 22:00 mysql-connector-java-5.1.41.jar
+-rw-r--r--  1 donaldhan donaldhan     7954 Oct 25  2018 mysql-metadata-storage-0.9.2.jar
+donaldhan@nameNode:/bdp/hive$ 
+```
+
+```
+donaldhan@nameNode:/bdp/hive$ tar -xvf mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar -C  mysql-server-5.7.11/
+mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb
+libmysqlclient-dev_5.7.11-1ubuntu15.10_amd64.deb
+libmysqld-dev_5.7.11-1ubuntu15.10_amd64.deb
+mysql-client_5.7.11-1ubuntu15.10_amd64.deb
+mysql-server_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-client_5.7.11-1ubuntu15.10_amd64.deb
+mysql-common_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-test_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-source_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community_5.7.11-1ubuntu15.10_amd64.changes
+libmysqlclient20_5.7.11-1ubuntu15.10_amd64.deb
+mysql-testsuite_5.7.11-1ubuntu15.10_amd64.deb
+donaldhan@nameNode:/bdp/hive$ ls
+apache-hive-2.3.4-bin  apache-hive-2.3.4-bin.tar.gz  haproxy-1.7.9.tar.gz  mysql-connector-java-5.1.41.jar  mysql-server-5.7.11  mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar
+donaldhan@nameNode:/bdp/hive$ cd mysql-server-5.7.11/
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ ls
+libmysqlclient20_5.7.11-1ubuntu15.10_amd64.deb    mysql-common_5.7.11-1ubuntu15.10_amd64.deb            mysql-community-source_5.7.11-1ubuntu15.10_amd64.deb
+libmysqlclient-dev_5.7.11-1ubuntu15.10_amd64.deb  mysql-community_5.7.11-1ubuntu15.10_amd64.changes     mysql-community-test_5.7.11-1ubuntu15.10_amd64.deb
+libmysqld-dev_5.7.11-1ubuntu15.10_amd64.deb       mysql-community-client_5.7.11-1ubuntu15.10_amd64.deb  mysql-server_5.7.11-1ubuntu15.10_amd64.deb
+mysql-client_5.7.11-1ubuntu15.10_amd64.deb        mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb  mysql-testsuite_5.7.11-1ubuntu15.10_amd64.deb
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ 
+
+```
+
+```
+sudo dpkg -i {libmysqlclient20,libmysqlclient-dev,libmysqld-dev}_*.deb
+sudo dpkg -i mysql-{common,community-client,client,community-server,server}_*.deb
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ dpkg -l | grep mysql
+ii  libmysqlclient-dev                            5.7.11-1ubuntu15.10                        amd64        MySQL development headers
+ii  libmysqlclient20:amd64                        5.7.11-1ubuntu15.10                        amd64        MySQL shared client libraries
+ii  libmysqld-dev                                 5.7.11-1ubuntu15.10                        amd64        MySQL embedded server library
+ii  mysql-client                                  5.7.11-1ubuntu15.10                        amd64        MySQL Client meta package depending on latest version
+ii  mysql-common                                  5.7.11-1ubuntu15.10                        amd64        MySQL configuration for client and server
+ii  mysql-community-client                        5.7.11-1ubuntu15.10                        amd64        MySQL Client and client tools
+rc  mysql-community-server                        5.7.11-1ubuntu
+```
+
+
+
+```
+```
+
+
+```
+```
+
+
 
 
 
@@ -85,3 +158,103 @@ hive 3.1.1 高可用集群搭建（与zookeeper集成）搭建笔记：https://b
 
 
 ## 总结
+
+
+# 附
+
+## 安装mysql缺少so包
+```
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo dpkg -i  mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb
+(Reading database ... 160808 files and directories currently installed.)
+Preparing to unpack mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb ...
+.
+Unpacking mysql-community-server (5.7.11-1ubuntu15.10) over (5.7.11-1ubuntu15.10) ...
+dpkg: dependency problems prevent configuration of mysql-community-server:
+ mysql-community-server depends on mysql-client (= 5.7.11-1ubuntu15.10); however:
+  Package mysql-client is not installed.
+ mysql-community-server depends on libaio1 (>= 0.3.93); however:
+  Package libaio1 is not installed.
+ mysql-community-server depends on libmecab2v5 (>= 0.996-1.1ubuntu1); however:
+  Package libmecab2v5 is not installed.
+
+dpkg: error processing package mysql-community-server (--install):
+ dependency problems - leaving unconfigured
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for systemd (225-1ubuntu9) ...
+Processing triggers for man-db (2.7.4-1) ...
+Errors were encountered while processing:
+ mysql-community-server
+```
+
+```
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ apt-get install libaio1
+E: Could not open lock file /var/lib/dpkg/lock - open (13: Permission denied)
+E: Unable to lock the administration directory (/var/lib/dpkg/), are you root?
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ ^C
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get install ^C
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get install libmecab2v5
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+Package libmecab2v5 is not available, but is referred to by another package.
+This may mean that the package is missing, has been obsoleted, or
+is only available from another source
+
+E: Package 'libmecab2v5' has no installation candidate
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get update 
+E: Could not get lock /var/lib/apt/lists/lock - open (11: Resource temporarily unavailable)
+E: Unable to lock directory /var/lib/apt/lists/
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get upgrade
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+You might want to run 'apt-get -f install' to correct these.
+The following packages have unmet dependencies:
+ mysql-community-client : Depends: libaio1 (>= 0.3.93) but it is not installed
+ mysql-community-server : Depends: libaio1 (>= 0.3.93) but it is not installed
+                          Depends: libmecab2v5 (>= 0.996-1.1ubuntu1) but it is not installable
+E: Unmet dependencies. Try using -f.
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get upgrade -f 
+
+```
+https://bugs.mysql.com/bug.php?id=79798
+
+https://www.fatalerrors.org/a/mysql-community-server-depends-on-libmecab2-however-libmecab2-is-not-installed.html
+
+```
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo apt-get -f install
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+Correcting dependencies... Done
+The following package was automatically installed and is no longer required:
+  libdbusmenu-gtk4
+Use 'apt-get autoremove' to remove it.
+The following packages will be REMOVED:
+  mysql-community-server mysql-server
+0 upgraded, 0 newly installed, 2 to remove and 10 not upgraded.
+2 not fully installed or removed.
+After this operation, 136 MB disk space will be freed.
+Do you want to continue? [Y/n] y
+(Reading database ... 160904 files and directories currently installed.)
+Removing mysql-server (5.7.11-1ubuntu15.10) ...
+Removing mysql-community-server (5.7.11-1ubuntu15.10) ...
+Processing triggers for man-db (2.7.4-1) ...
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ sudo dpkg -l|grep mysql
+ii  libmysqlclient-dev                            5.7.11-1ubuntu15.10                        amd64        MySQL development headers
+ii  libmysqlclient20:amd64                        5.7.11-1ubuntu15.10                        amd64        MySQL shared client libraries
+ii  libmysqld-dev                                 5.7.11-1ubuntu15.10                        amd64        MySQL embedded server library
+ii  mysql-client                                  5.7.11-1ubuntu15.10                        amd64        MySQL Client meta package depending on latest version
+ii  mysql-common                                  5.7.11-1ubuntu15.10                        amd64        MySQL configuration for client and server
+ii  mysql-community-client                        5.7.11-1ubuntu15.10                        amd64        MySQL Client and client tools
+rc  mysql-community-server                        5.7.11-1ubuntu15.10                        amd64        MySQL Server and server tools
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ 
+
+
+sudo rm /var/lib/mysql/ -R
+sudo rm /etc/mysql/ -R
+sudo apt-get autoremove mysql* --purge
+sudo apt-get remove apparmor # select Yes in this step
+sudo apt-get install mysql-server mysql-common # Reenter password
+
+```
