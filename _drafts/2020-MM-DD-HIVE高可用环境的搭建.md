@@ -258,3 +258,21 @@ sudo apt-get remove apparmor # select Yes in this step
 sudo apt-get install mysql-server mysql-common # Reenter password
 
 ```
+
+
+https://serverfault.com/questions/752063/how-can-i-install-mysql-5-7-9-to-ubuntu-14-04
+
+package=mysql-apt-config_0.8.11-1_all.deb
+wget http://dev.mysql.com/get/$package
+sudo dpkg -i $package
+sudo apt-get update
+sudo apt-get install mysql-server
+
+
+package=mysql-apt-config_0.6.0-1_all.deb
+
+ http://dev.mysql.com/get/mysql-apt-config_0.6.0-1_all.deb
+
+
+ lock file
+ rm lock file
