@@ -2,7 +2,7 @@
 layout: page
 title: HIVE高可用环境的搭建
 subtitle: HIVE高可用环境的搭建
-date: 2020-11-04 15:17:19
+date: 2020-02-22 20:57:00
 author: donaldhan
 catalog: true
 category: BigData
@@ -89,6 +89,14 @@ rc  mysql-community-server                        5.7.11-1ubuntu
 
 
 ```
+donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ cat /etc/hosts
+127.0.0.1	localhost
+192.168.5.135  nameNode
+192.168.5.136 secondlyNameNode
+192.168.5.137 resourceManager
+192.168.5.135 ns
+192.168.3.106 mysqldb
+
 ```
 
 
@@ -266,7 +274,8 @@ package=mysql-apt-config_0.8.11-1_all.deb
 wget http://dev.mysql.com/get/$package
 sudo dpkg -i $package
 sudo apt-get update
-sudo apt-get install mysql-server
+sudo apt-get install mysql-community-server mysql-server
+
 
 
 package=mysql-apt-config_0.6.0-1_all.deb
@@ -276,3 +285,23 @@ package=mysql-apt-config_0.6.0-1_all.deb
 
  lock file
  rm lock file
+
+ ```
+ donaldhan@nameNode:/bdp/hive$ sudo apt-get install libmecab2
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+libmecab2 is already the newest version.
+0 upgraded, 0 newly installed, 0 to remove and 32 not upgraded.
+donaldhan@nameNode:/bdp/hive$ 
+
+ ```
+
+
+
+ ```
+  sudo apt-get install software-properties-common
+$ sudo add-apt-repository -y ppa:ondrej/mysql-5.7
+$ sudo apt-get update
+$ sudo apt-get install mysql-server
+ ```
