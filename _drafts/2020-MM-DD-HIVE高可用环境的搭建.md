@@ -339,6 +339,19 @@ donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$
 ```
 
 
+操作指令
+
+      1.后台启动服务. 在hive节点上启动即可
+
+          nohup hiveserver2 -hiveconf hive.root.logger=DEBUG,console  1> hive.log 2>&1 &
+
+     2.客户端访问  belline 敲入以下指令登录
+
+       !connect jdbc:hive2://hdp04:2181,hdp05:2181,hdp06:2181,hdp07:2181,hdp08:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2_zk root  "root"
+
+
+
+
 HIVE AdministratorDocumentation config：<https://cwiki.apache.org/confluence/display/Hive/Home#Home-AdministratorDocumentation>
 
 Apache Hive TM:h<ttps://cloud.tencent.com/developer/article/1561886>  
