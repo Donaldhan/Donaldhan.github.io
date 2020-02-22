@@ -99,39 +99,281 @@ donaldhan@nameNode:/bdp/hive/mysql-server-5.7.11$ cat /etc/hosts
 
 ```
 
+# 配置全局HIVE HOME路径
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ tail -n -6 ~/.bashrc 
+export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP}/lib/native
+export YARN_HOME=${HADOOP_HOME}
+export HADOOP_OPT="-Djava.library.path=${HADOOP_HOME}/lib/native"
+export HIVE_HOME=/bdp/hive/apache-hive-2.3.4-bin
+export PATH=${JAVA_HOME}/bin:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${ZOOKEEPER_HOME}/bin:${HBASE_HOME}/bin:${HIVE_HOME}/bin:${PATH}
+
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ 
 
 ```
+
+# 配置hive环境变量
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-env.sh.template hive-env.sh
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-env.sh
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ tail -n 5 hive-env.sh
+# export HIVE_AUX_JARS_PATH=
+HADOOP_HOME=/bdp/hadoop/hadoop-2.7.1
+HIVE_CONF_DIR=/bdp/hive/apache-hive-2.3.4-bin/conf
+HIVE_AUX_JARS_PATH=/bdp/hive/apache-hive-2.3.4-bin/lib
+```
+
+# 配置hive-site
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-default.xml.template hive-site.xml
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-site.xml 
+```
+具体如下：
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?><!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+--><configuration>
+  <!-- WARNING!!! This file is auto generated for documentation purposes ONLY! -->
+  <!-- WARNING!!! Any changes you make to this file will be ignored by Hive.   -->
+  <!-- WARNING!!! You must make your changes in hive-site.xml instead.         -->
+  <!-- Hive Execution Parameters -->
+i <property>
+    <name>hive.exec.scratchdir</name>
+    <value>/user/hive/tmp</value>
+    <description>HDFS root scratch dir for Hive jobs which gets created with write all (733) permission. For each connecting user, an HDFS scratch dir: ${hive.exec.scratchdir}/&lt;username&gt; is created, with ${hive.scratch.dir.permission}.</description>
+  </property>
+ <property>
+    <name>hive.exec.local.scratchdir</name>
+    <value>/bdp/hive/jobslog/${system:user.name}</value>
+    <description>Local scratch space for Hive jobs</description>
+  </property>
+  <property>
+    <name>hive.downloaded.resources.dir</name>
+    <value>/bdp/hive/jobslog/${hive.session.id}_resources</value>
+    <description>Temporary local directory for added resources in the remote file system.</description>
+  </property>
+<!-- warehouse config -->
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/user/hive/warehouse</value>
+    <description>location of default database for the warehouse</description>
+  </property>
+
+  <!-- metastore config -->
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://mysqldb:3306/hive_db?createDatabaseIfNotExist=true</value>
+    <description>
+      JDBC connect string for a JDBC metastore.
+      To use SSL to encrypt/authenticate the connection, provide database-specific SSL flag in the connection URL.
+      For example, jdbc:postgresql://myhost/db?ssl=true for postgres database.
+    </description>
+  </property>
+<property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+    <description>Driver class name for a JDBC metastore</description>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>root</value>
+    <description>Username to use against metastore database</description>
+  </property>
+ <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>123456</value>
+    <description>password to use against metastore database</description>
+  </property>
+  <!-- HiveServer2 HA config -->
+<property>
+    <name>hive.zookeeper.quorum</name>
+    <value>
+      nameNode:2181,secondlyNameNode:2181,resourceManager:2181
+    </value>
+    <description>
+      List of ZooKeeper servers to talk to. This is needed for:
+      1. Read/write locks - when hive.lock.manager is set to
+      org.apache.hadoop.hive.ql.lockmgr.zookeeper.ZooKeeperHiveLockManager,
+      2. When HiveServer2 supports service discovery via Zookeeper.
+      3. For delegation token storage if zookeeper store is used, if
+      hive.cluster.delegation.token.store.zookeeper.connectString is not set
+      4. LLAP daemon registry service
+      5. Leader selection for privilege synchronizer
+    </description>
+  </property>
+<property>
+    <name>hive.server2.support.dynamic.service.discovery</name>
+    <value>true</value>
+    <description>Whether HiveServer2 supports dynamic service discovery for its clients. To support this, each instance of HiveServer2 currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: hive.zookeeper.quorum in their connection string.</description>
+  </property>
+  <property>
+    <name>hive.server2.zookeeper.namespace</name>
+    <value>hiveserver2_zk</value>
+    <description>The parent node in ZooKeeper used by HiveServer2 when supporting dynamic service discovery.</description>
+  </property>
+  <property>
+    <name>hive.server2.zookeeper.publish.configs</name>
+    <value>true</value>
+    <description>Whether we should publish HiveServer2's configs to ZooKeeper.</description>
+</property>
+</configuration>
+
+```
+
+# 修改日志目录
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-log4j2.properties.template hive-log4j2.properties
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-log4j2.propertie
+
+property.hive.log.dir = /bdp/hive/log
+
+
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-exec-log4j2.properties.template hive-e
+hive-env.sh                           hive-env.sh.template                  hive-exec-log4j2.properties.template  
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-exec-log4j2.properties.template hive-exec-log4j2.properties
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-exec-log4j2.properties
+property.hive.log.dir = /bdp/hive/exelog
+```
+
+# copy 配置文件到其他两台机
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /home/donaldhan/.bashrc donaldhan@secondlyNameNode:/home/donaldhan/
+.bashrc                                       100% 4512     4.4KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /home/donaldhan/.bashrc donaldhan@resourceManager:/home/donaldhan/
+.bashrc                                       100% 4512     4.4KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-env.sh donaldhan@secondlyNameNode:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-env.sh                                   100% 2509     2.5KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-env.sh donaldhan@resourceManager:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-env.sh                                   100% 2509     2.5KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-site.xml  donaldhan@resourceManager:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-site.xml                                 100% 4824     4.7KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-site.xml  donaldhan@secondlyNameNode:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-site.xml                                 100% 4824     4.7KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-log4j2.properties  donaldhan@secondlyNameNode:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-log4j2.properties                        100% 2900     2.8KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-log4j2.properties  donaldhan@resourceManager:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-log4j2.properties                        100% 2900     2.8KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-exec-log4j2.properties   donaldhan@resourceManager:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-exec-log4j2.properties                   100% 2252     2.2KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ scp /bdp/hive/apache-hive-2.3.4-bin/conf/hive-exec-log4j2.properties   donaldhan@secondlyNameNode:/bdp/hive/apache-hive-2.3.4-bin/conf/
+hive-exec-log4j2.properties                   100% 2252     2.2KB/s   00:00    
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/conf$ 
+
+```
+
+hdfs-site.xml  文件配置
+```xml
+<property>
+<name>dfs.webhdfs.enabled</name>
+<value>true</value>
+</property>
+```
+
+core-site.xml 配置 这里配置很重要  还有要注意这里的name页签中的root 这里是hdfs登录的具体的用户名，写错了就会报错，访问hive的时候会报错
+
+```xml
+<property>
+     <name>hadoop.proxyuser.root.hosts</name>
+     <value>*</value>
+   </property>
+   <property>
+    <name>hadoop.proxyuser.root.groups</name>
+    <value>*</value>
+</property>
 ```
 
 
+启动HIVE
+首先在分布式环境中启动zk
+zkServer.sh start
+启动hadoop集群
+start-dfs.sh
 
 
 
-Apache Hive TM:https://cloud.tencent.com/developer/article/1561886
-HIVE快速入门教程2Hive架构:https://www.jianshu.com/p/eeb65dcfcc6a
-Hive的使用:https://www.jianshu.com/p/7bf9a390d7e6
-Hive教程:https://www.yiibai.com/hive/
-HIVE --- Metastore:http://www.pianshen.com/article/8317243978/
-Hive Metastore的故事:https://zhuanlan.zhihu.com/p/100585524
-Hive MetaStore的结构:https://www.jianshu.com/p/420ddb3bde7f
-Hive Metastore原理及配置:https://blog.csdn.net/qq_40990732/article/details/80914873
-Hive为什么要启用Metastore:https://blog.csdn.net/qq_35440040/article/details/82462269
+```
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ jps
+3650 NameNode
+4051 JournalNode
+4389 Jps
+3800 DataNode
+3433 QuorumPeerMain
+4271 DFSZKFailoverController
+```
+创建HIVE数仓目录和job中间目录
+```
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -mkdir -p /user/hive/warehouse
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -mkdir -p /user/hive/tmp
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -chmod 777 /user/hive/tmp 
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -chmod 777 /user/hive/warehouse
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -ls /user/hive/Found 2 items
+drwxrwxrwx   - donaldhan supergroup          0 2020-02-22 22:59 /user/hive/tmp
+drwxrwxrwx   - donaldhan supergroup          0 2020-02-22 22:59 /user/hive/warehouse
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ 
+```
+
+```
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ jps
+3650 NameNode
+4051 JournalNode
+4708 RunJar
+4888 Jps
+3800 DataNode
+3433 QuorumPeerMain
+4271 DFSZKFailoverController
+donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ 
+```
+
+
+HIVE AdministratorDocumentation config：<https://cwiki.apache.org/confluence/display/Hive/Home#Home-AdministratorDocumentation>
+
+Apache Hive TM:h<ttps://cloud.tencent.com/developer/article/1561886>  
+HIVE快速入门教程2Hive架构:<https://www.jianshu.com/p/eeb65dcfcc6a>   
+Hive的使用:<https://www.jianshu.com/p/7bf9a390d7e6>   
+Hive教程:<https://www.yiibai.com/hive/>   
+HIVE Metastore:<http://www.pianshen.com/article/8317243978/>  
+Hive Metastore的故事:<https://zhuanlan.zhihu.com/p/100585524>    
+Hive MetaStore的结构:<https://www.jianshu.com/p/420ddb3bde7f>   
+Hive Metastore原理及配置:<https://blog.csdn.net/qq_40990732/article/details/80914873>  
+Hive为什么要启用Metastore:<https://blog.csdn.net/qq_35440040/article/details/82462269> 
 
 Hive HA使用说明及Hive使用HAProxy配置HA(高可用)：
-https://www.aboutyun.com/thread-10938-1-1.html
+<https://www.aboutyun.com/thread-10938-1-1.html>  
 
 HAProxy用法详解 全网最详细中文文档：
-http://www.ttlsa.com/linux/haproxy-study-tutorial/
+<http://www.ttlsa.com/linux/haproxy-study-tutorial/>   
 
-HiveMetaStore高可用性(HA)配置:https://blog.csdn.net/rotkang/article/details/78683626
-
+HiveMetaStore高可用性(HA)配置:<https://blog.csdn.net/rotkang/article/details/78683626>  
 一个失败，连接另外一个
 
-HiveServer2 高可用配置：https://www.jianshu.com/p/3dfa4b4e7ce0
+HiveServer2 高可用配置：<https://www.jianshu.com/p/3dfa4b4e7ce0>   
 
-Dynamic HA Provider Configuration:https://cwiki.apache.org/confluence/display/KNOX/Dynamic+HA+Provider+Configuration
+构建高可用Hive HA和整合HBase开发环境:<https://blog.csdn.net/pysense/article/details/102987186>
 
-knox:http://knox.apache.org/
+hive 3.1.1 高可用集群搭建（与zookeeper集成）搭建笔记：<https://blog.csdn.net/liuhuabing760596103/article/details/89175063>
+
+Hive集群部署:<https://www.alongparty.cn/hive-cluster-deployment.html> 
+
+Centos7.6+Hadoop 3.1.2(HA)+Zookeeper3.4.13+Hbase1.4.9(HA)+Hive2.3.4+Spark2.4.0(HA)高可用集群搭建:<https://mshk.top/2019/03/centos-hadoop-zookeeper-hbase-hive-spark-high-availability/>   
+
+
+Dynamic HA Provider Configuration:<https://cwiki.apache.org/confluence/display/KNOX/Dynamic+HA+Provider+Configuration>   
+
+knox:<http://knox.apache.org/>  
 
 # WebHDFS
     Gateway: https://{gateway-host}:{gateway-port}/{gateway-path}/{cluster-name}/webhdfs
@@ -150,10 +392,6 @@ knox:http://knox.apache.org/
     Gateway: jdbc:hive2://{gateway-host}:{gateway-port}/;ssl=true;sslTrustStore={gateway-trust-store-path};trustStorePassword={gateway-trust-store-password};transportMode=http;httpPath={gateway-path}/{cluster-name}/hive
     Cluster: http://{hive-host}:10001/cliservice
     
-
-构建高可用Hive HA和整合HBase开发环境:https://blog.csdn.net/pysense/article/details/102987186
-
-hive 3.1.1 高可用集群搭建（与zookeeper集成）搭建笔记：https://blog.csdn.net/liuhuabing760596103/article/details/89175063
 
 
 
@@ -305,3 +543,39 @@ $ sudo add-apt-repository -y ppa:ondrej/mysql-5.7
 $ sudo apt-get update
 $ sudo apt-get install mysql-server
  ```
+
+
+ #  Couldn't create directory /bdb/hive/local/jobslog/
+ ```
+ 2020-02-22T23:07:31,704  WARN [main] server.HiveServer2: Error starting HiveServer2 on attempt 5, will retry in 60000ms
+java.lang.RuntimeException: Error applying authorization policy on hive configuration: Couldn't create directory /bdb/hive/local/jobslog/46fb3bec-497a-4029-8c10-13e409c15214_resources
+        at org.apache.hive.service.cli.CLIService.init(CLIService.java:117) ~[hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.CompositeService.init(CompositeService.java:59) ~[hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.server.HiveServer2.init(HiveServer2.java:142) ~[hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.server.HiveServer2.startHiveServer2(HiveServer2.java:607) [hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.server.HiveServer2.access$700(HiveServer2.java:100) [hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.server.HiveServer2$StartOptionExecutor.execute(HiveServer2.java:855) [hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.server.HiveServer2.main(HiveServer2.java:724) [hive-service-2.3.4.jar:2.3.4]
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_191]
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_191]
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_191]
+        at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_191]
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:221) [hadoop-common-2.7.1.jar:?]
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:136) [hadoop-common-2.7.1.jar:?]
+Caused by: java.lang.RuntimeException: Couldn't create directory /bdb/hive/local/jobslog/46fb3bec-497a-4029-8c10-13e409c15214_resources
+        at org.apache.hadoop.hive.ql.util.ResourceDownloader.ensureDirectory(ResourceDownloader.java:116) ~[hive-exec-2.3.4.jar:2.3.4]
+        at org.apache.hadoop.hive.ql.util.ResourceDownloader.<init>(ResourceDownloader.java:47) ~[hive-exec-2.3.4.jar:2.3.4]
+        at org.apache.hadoop.hive.ql.session.SessionState.<init>(SessionState.java:397) ~[hive-exec-2.3.4.jar:2.3.4]
+        at org.apache.hadoop.hive.ql.session.SessionState.<init>(SessionState.java:370) ~[hive-exec-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.cli.CLIService.applyAuthorizationConfigPolicy(CLIService.java:127) ~[hive-service-2.3.4.jar:2.3.4]
+        at org.apache.hive.service.cli.CLIService.init(CLIService.java:114) ~[hive-service-2.3.4.jar:2.3.4]
+```
+
+# 
+```
+2020-02-22T23:19:57,488  WARN [main] metastore.MetaStoreDirectSql: Self-test query [select "DB_ID" from "DBS"] failed; direct SQL is disabled
+javax.jdo.JDODataStoreException: Error executing SQL query "select "DB_ID" from "DBS"".
+	at org.datanucleus.api.jdo.NucleusJDOHelper.getJDOExceptionForNucleusException(NucleusJDOHelper.java:543) ~[datanucleus-api-jdo-4.2.4.jar:?]
+	at org.datanucleus.api.jdo.JDOQuery.executeInternal(JDOQuery.java:391) ~[datanucleus-api-jdo-4.2.4.jar:?]
+	at org.datanucleus.api.jdo.JDOQuery.execute(JDOQuery.java:216) ~[datanucleus-api-jdo-4.2.4.jar:?]
+```
