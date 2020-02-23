@@ -201,9 +201,7 @@ i <property>
   <!-- HiveServer2 HA config -->
 <property>
     <name>hive.zookeeper.quorum</name>
-    <value>
-      nameNode:2181,secondlyNameNode:2181,resourceManager:2181
-    </value>
+    <value>nameNode:2181,secondlyNameNode:2181,resourceManager:2181</value>
     <description>
       List of ZooKeeper servers to talk to. This is needed for:
       1. Read/write locks - when hive.lock.manager is set to
@@ -230,6 +228,33 @@ i <property>
     <value>true</value>
     <description>Whether we should publish HiveServer2's configs to ZooKeeper.</description>
 </property>
+<property>
+    <name>hive.server2.thrift.bind.host</name>
+    <value>nameNode</value>
+    <description>Bind host on which to run the HiveServer2 Thrift service.</description>
+  </property>
+
+  <property>
+    <name>hive.server2.thrift.port</name>
+    <value>10000</value>
+    <description>Port number of HiveServer2 Thrift interface when hive.server2.transport.mode is 'binary'.</description>
+  </property>
+
+  <property>
+    <name>hive.server2.thrift.http.port</name>
+    <value>10001</value>
+    <description>Port number of HiveServer2 Thrift interface when hive.server2.transport.mode is 'http'.</description>
+  </property>
+<property>
+    <name>hive.server2.thrift.client.user</name>
+    <value>donaldhan</value>
+    <description>Username to use against thrift client</description>
+  </property>
+  <property>
+    <name>hive.server2.thrift.client.password</name>
+    <value>123456</value>
+    <description>Password to use against thrift client</description>
+  </property>
 </configuration>
 
 ```
@@ -326,6 +351,78 @@ drwxrwxrwx   - donaldhan supergroup          0 2020-02-22 22:59 /user/hive/wareh
 donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ 
 ```
 
+
+# 初始化Metastore元信息Schema
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/bin$ schematool -dbType mysql  -initSchema
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Metastore connection URL:	 jdbc:mysql://mysqldb:3306/hive_db?createDatabaseIfNotExist=true
+Metastore Connection Driver :	 com.mysql.jdbc.Driver
+Metastore connection User:	 root
+Starting metastore schema initialization to 2.3.0
+Initialization script hive-schema-2.3.0.mysql.sql
+Initialization script completed
+schemaTool completed
+```
+
+
+# 查看元信息Schema
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/bin$ schematool -dbType mysql -info
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Metastore connection URL:	 jdbc:mysql://mysqldb:3306/hive_db?createDatabaseIfNotExist=true
+Metastore Connection Driver :	 com.mysql.jdbc.Driver
+Metastore connection User:	 root
+Hive distribution version:	 2.3.0
+Metastore schema version:	 2.3.0
+schemaTool completed
+```
+
+# 启动HiveServe2
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/bin$ ./hiveserver2 
+2020-02-23 11:11:32: Starting HiveServer2
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+```
+
+查看启动日志
+```
+donaldhan@nameNode:/bdp/hive/log$ tail -f hive.log
+2020-02-23T11:11:08,679  INFO [Thread-1] server.HiveServer2: Web UI has stopped
+2020-02-23T11:11:08,680  INFO [Thread-1] server.HiveServer2: Server instance removed from ZooKeeper.
+...
+vletContextHandler{/logs,file:/bdp/hive/log/}
+2020-02-23T11:11:51,809  INFO [main] server.AbstractConnector: Started SelectChannelConnector@0.0.0.0:10002
+2020-02-23T11:11:51,813  INFO [main] server.HiveServer2: Web UI has started on port 10002
+2020-02-23T11:11:51,813  INFO [main] http.HttpServer: Started HttpServer[hiveserver2] on port 10002
+
+```
+
+查看metastore schema的表信息
+```
+aux_table, bucketing_cols, cds, columns_v2, compaction_queue, completed_compactions, completed_txn_components, database_params, db_privs, dbs, delegation_tokens, func_ru, funcs, global_privs, hive_locks, idxs, index_params, key_constraints, master_keys, next_compaction_queue_id, next_lock_id, next_txn_id, notification_log, notification_sequence, nucleus_tables, part_col_privs, part_col_stats, part_privs, partition_events, partition_key_vals, partition_keys, partition_params, partitions, role_map, roles, sd_params, sds, sequence_table, serde_params, serdes, skewed_col_names, skewed_col_value_loc_map, skewed_string_list, skewed_string_list_values, skewed_values, sort_cols, tab_col_stats, table_params, tbl_col_privs, tbl_privs, tbls, txn_components, txns, type_fields, types, version, write_set
+```
+
+具体的Metadata的表关系图，可以通过下面的链接找到
+
+All the metadata for Hive tables and partitions are accessed through the Hive Metastore. Metadata is persisted using JPOX ORM solution (Data Nucleus) so any database that is supported by it can be used by Hive. Most of the commercial relational databases and many open source databases are supported. See the list of supported databases in section below.
+You can find an E/R diagram for the metastore here.
+
+AdminManual Metastore Administration:<https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+Administration>
+
+查看进程，多了一个RunJar的进行，启动成功
 ```
 donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ jps
 3650 NameNode
@@ -338,17 +435,67 @@ donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ jps
 donaldhan@nameNode:/bdp/hadoop/hadoop-2.7.1/etc$ 
 ```
 
+同时访问
+
+HiveServerWebUI:<http://namenode:10002/>
+
+可以查看HIVE的相关会话，查询及配置，日志等信息。
+
+
+# CLI命令行
+
+## HIVE CLI
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin$ bin/hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+Logging initialized using configuration in file:/bdp/hive/apache-hive-2.3.4-bin/conf/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+hive> select 1;
+OK
+1
+Time taken: 13.003 seconds, Fetched: 1 row(s)
+hive> 
+```
+由于新的开发将基于HiveServer2, Hive CLI将会别丢弃，使用新的命令工具，Beeline CLI。
+我们来看一下Beeline CLI的使用；
+
+## Beeline CLI
+```
+donaldhan@nameNode:/bdp/hive/apache-hive-2.3.4-bin/bin$ beeline 
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Beeline version 2.3.4 by Apache Hive
+beeline> 
+```
+
+HiveServer2+Clients:<https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Clients>
+
+
+
+## 使用jdbc方式连接
+
+HiveServer2Clients-JDBC:<https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Clients#HiveServer2Clients-JDBC>
 
 操作指令
 
-      1.后台启动服务. 在hive节点上启动即可
+1.后台启动服务. 在hive节点上启动即可
+```
+nohup hiveserver2 -hiveconf hive.root.logger=DEBUG,console  1> hive.log 2>&1 &
+```
 
-          nohup hiveserver2 -hiveconf hive.root.logger=DEBUG,console  1> hive.log 2>&1 &
 
-     2.客户端访问  belline 敲入以下指令登录
-
-       !connect jdbc:hive2://hdp04:2181,hdp05:2181,hdp06:2181,hdp07:2181,hdp08:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2_zk root  "root"
-
+2.客户端访问  belline 敲入以下指令登录
+```
+!connect jdbc:hive2://nameNode:2181,secondlyNameNode:2181,resourceManager:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2_zk;auth=noSasl
+```
 
 
 
@@ -584,7 +731,7 @@ Caused by: java.lang.RuntimeException: Couldn't create directory /bdb/hive/local
         at org.apache.hive.service.cli.CLIService.init(CLIService.java:114) ~[hive-service-2.3.4.jar:2.3.4]
 ```
 
-# 
+# Metastore元信息没有初始化
 ```
 2020-02-22T23:19:57,488  WARN [main] metastore.MetaStoreDirectSql: Self-test query [select "DB_ID" from "DBS"] failed; direct SQL is disabled
 javax.jdo.JDODataStoreException: Error executing SQL query "select "DB_ID" from "DBS"".
@@ -592,3 +739,31 @@ javax.jdo.JDODataStoreException: Error executing SQL query "select "DB_ID" from 
 	at org.datanucleus.api.jdo.JDOQuery.executeInternal(JDOQuery.java:391) ~[datanucleus-api-jdo-4.2.4.jar:?]
 	at org.datanucleus.api.jdo.JDOQuery.execute(JDOQuery.java:216) ~[datanucleus-api-jdo-4.2.4.jar:?]
 ```
+
+## 解决方式
+初始化metastore schema
+```
+schematool -dbType mysql -initSchema
+```
+
+获取schema信息
+```
+schematool -dbType mysql -info
+```
+
+
+Hive Schema Tool:<https://cwiki.apache.org/confluence/display/Hive/Hive+Schema+Tool>
+
+
+# java.lang.NumberFormatException: For input string: "2181
+```
+ [main] zookeeper.ZooKeeper: Initiating client connection, connectString=      nameNode:2181,secondlyNameNode:2181,resourceManager:2181
+    sessionTimeout=1200000 watcher=org.apache.curator.ConnectionState@4776e209
+2020-02-23T11:01:57,485 ERROR [main] imps.CuratorFrameworkImpl: Background exception was not retry-able or retry gave up
+java.lang.NumberFormatException: For input string: "2181
+   "
+	at java.lang.NumberFormatException.forInputString(NumberFormatException.java:65) ~[?:1.8.0_191]
+	at java.lang.Integer.parseInt(Integer.java:580) ~[?:1.8.0_191]
+
+```
+## 
