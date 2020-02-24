@@ -28,7 +28,15 @@ tags:
 
 ###
 
+启动hive
 
+hive --service metastore &
+
+ 
+
+启动 hiveserver2 开启此服务后才能通过java api调用
+
+ 访问http://192.168.1.10:10002   进入hiveweb页面
 
 ###
 

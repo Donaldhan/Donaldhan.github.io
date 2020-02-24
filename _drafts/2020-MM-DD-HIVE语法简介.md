@@ -31,16 +31,386 @@ https://donaldhan.github.io/bigdata/2020/02/22/HIVE%E9%AB%98%E5%8F%AF%E7%94%A8%E
 * [总结](#总结)
 
 
+
+
+
+
+Hadoop2.7.1伪分布式环境搭建:<https://www.iteye.com/blog/donald-draper-2317446>
+
+## 拷贝mysqljar到HIVE的lib文件下
+metastore使用
+```
+donaldhan@pseduoDisHadoop:/bdp/hive$ cp mysql-connector-java-5.1.41.jar  apache-hive-2.3.4-bin/lib/
+donaldhan@pseduoDisHadoop:/bdp/hive$ ls -al apache-hive-2.3.4-bin/lib | grep mysql
+-rw-rw-r--  1 donaldhan donaldhan   992805 Feb 13 22:00 mysql-connector-java-5.1.41.jar
+-rw-r--r--  1 donaldhan donaldhan     7954 Oct 25  2018 mysql-metadata-storage-0.9.2.jar
+donaldhan@pseduoDisHadoop:/bdp/hive$ 
+```
+
+## 安装mysql
+```
+donaldhan@pseduoDisHadoop:/bdp/hive$ tar -xvf mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar -C  mysql-server-5.7.11/
+mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb
+libmysqlclient-dev_5.7.11-1ubuntu15.10_amd64.deb
+libmysqld-dev_5.7.11-1ubuntu15.10_amd64.deb
+mysql-client_5.7.11-1ubuntu15.10_amd64.deb
+mysql-server_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-client_5.7.11-1ubuntu15.10_amd64.deb
+mysql-common_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-test_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community-source_5.7.11-1ubuntu15.10_amd64.deb
+mysql-community_5.7.11-1ubuntu15.10_amd64.changes
+libmysqlclient20_5.7.11-1ubuntu15.10_amd64.deb
+mysql-testsuite_5.7.11-1ubuntu15.10_amd64.deb
+donaldhan@pseduoDisHadoop:/bdp/hive$ ls
+apache-hive-2.3.4-bin  apache-hive-2.3.4-bin.tar.gz  haproxy-1.7.9.tar.gz  mysql-connector-java-5.1.41.jar  mysql-server-5.7.11  mysql-server_5.7.11-1ubuntu15.10_amd64.deb-bundle.tar
+donaldhan@pseduoDisHadoop:/bdp/hive$ cd mysql-server-5.7.11/
+donaldhan@pseduoDisHadoop:/bdp/hive/mysql-server-5.7.11$ ls
+libmysqlclient20_5.7.11-1ubuntu15.10_amd64.deb    mysql-common_5.7.11-1ubuntu15.10_amd64.deb            mysql-community-source_5.7.11-1ubuntu15.10_amd64.deb
+libmysqlclient-dev_5.7.11-1ubuntu15.10_amd64.deb  mysql-community_5.7.11-1ubuntu15.10_amd64.changes     mysql-community-test_5.7.11-1ubuntu15.10_amd64.deb
+libmysqld-dev_5.7.11-1ubuntu15.10_amd64.deb       mysql-community-client_5.7.11-1ubuntu15.10_amd64.deb  mysql-server_5.7.11-1ubuntu15.10_amd64.deb
+mysql-client_5.7.11-1ubuntu15.10_amd64.deb        mysql-community-server_5.7.11-1ubuntu15.10_amd64.deb  mysql-testsuite_5.7.11-1ubuntu15.10_amd64.deb
+donaldhan@pseduoDisHadoop:/bdp/hive/mysql-server-5.7.11$ 
+```
+
+```
+sudo dpkg -i mysql-common_*.deb
+sudo dpkg -i {libmysqlclient20,libmysqlclient-dev,libmysqld-dev}_*.deb
+sudo dpkg -i mysql-{community-client,client}_*.deb
+```
+
+配置mysql host
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/mysql-server-5.7.11$ cat /etc/hosts
+127.0.0.1	localhost
+192.168.5.139   pseduoDisHadoop
+192.168.3.106 mysqldb
+
+```
+*注意mysql我使用的是宿主机的mysql，本地的mysql安装存在问题，具体原因见上一篇文章。
+
+## 配置全局HIVE HOME路径
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ tail -n -6 ~/.bashrc 
+export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP}/lib/native
+export YARN_HOME=${HADOOP_HOME}
+export HADOOP_OPT="-Djava.library.path=${HADOOP_HOME}/lib/native"
+export HIVE_HOME=/bdp/hive/apache-hive-2.3.4-bin
+export PATH=${JAVA_HOME}/bin:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${ZOOKEEPER_HOME}/bin:${HBASE_HOME}/bin:${HIVE_HOME}/bin:${PATH}
+
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ 
+```
+
+## 配置hive环境变量
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-env.sh.template hive-env.sh
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-env.sh
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ tail -n 5 hive-env.sh
+# export HIVE_AUX_JARS_PATH=
+HADOOP_HOME=/bdp/hadoop/hadoop-2.7.1
+HIVE_CONF_DIR=/bdp/hive/apache-hive-2.3.4-bin/conf
+HIVE_AUX_JARS_PATH=/bdp/hive/apache-hive-2.3.4-bin/lib
+```
+
+### 配置hive-site
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-default.xml.template hive-site.xml
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-site.xml 
+```
+具体如下：
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?><!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+--><configuration>
+  <!-- WARNING!!! This file is auto generated for documentation purposes ONLY! -->
+  <!-- WARNING!!! Any changes you make to this file will be ignored by Hive.   -->
+  <!-- WARNING!!! You must make your changes in hive-site.xml instead.         -->
+  <!-- Hive Execution Parameters -->
+<property>
+    <name>hive.exec.scratchdir</name>
+    <value>/user/hive/tmp</value>
+    <description>HDFS root scratch dir for Hive jobs which gets created with write all (733) permission. For each connecting user, an HDFS scratch dir: ${hive.exec.scratchdir}/&lt;username&gt; is created, with ${hive.scratch.dir.permission}.</description>
+  </property>
+ <property>
+    <name>hive.exec.local.scratchdir</name>
+    <value>/bdp/hive/jobslog/${system:user.name}</value>
+    <description>Local scratch space for Hive jobs</description>
+  </property>
+  <property>
+    <name>hive.downloaded.resources.dir</name>
+    <value>/bdp/hive/jobslog/${hive.session.id}_resources</value>
+    <description>Temporary local directory for added resources in the remote file system.</description>
+  </property>
+<!-- warehouse config -->
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/user/hive/warehouse</value>
+    <description>location of default database for the warehouse</description>
+  </property>
+<!-- metastore config -->
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://mysqldb:3306/single_hive_db?createDatabaseIfNotExist=true</value>
+    <description>
+      JDBC connect string for a JDBC metastore.
+      To use SSL to encrypt/authenticate the connection, provide database-specific SSL flag in the connection URL.
+      For example, jdbc:postgresql://myhost/db?ssl=true for postgres database.
+    </description>
+  </property>
+<property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+    <description>Driver class name for a JDBC metastore</description>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>root</value>
+    <description>Username to use against metastore database</description>
+  </property>
+ <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>123456</value>
+    <description>password to use against metastore database</description>
+  </property>
+<!-- thrift config -->
+<property>
+    <name>hive.server2.thrift.bind.host</name>
+<!-- 这个不同的机器上面，对应不同的主机名 -->
+    <value>pseduoDisHadoop</value>
+    <description>Bind host on which to run the HiveServer2 Thrift service.</description>
+  </property>
+
+  <property>
+    <name>hive.server2.thrift.port</name>
+    <value>10000</value>
+    <description>Port number of HiveServer2 Thrift interface when hive.server2.transport.mode is 'binary'.</description>
+  </property>
+
+  <property>
+    <name>hive.server2.thrift.http.port</name>
+    <value>10001</value>
+    <description>Port number of HiveServer2 Thrift interface when hive.server2.transport.mode is 'http'.</description>
+  </property>
+<!-- 这里要和hadoop，core-site.xml 代理用户要一致 -->
+<property>
+    <name>hive.server2.thrift.client.user</name>
+    <value>hadoop</value>
+    <description>Username to use against thrift client</description>
+  </property>
+  <property>
+    <name>hive.server2.thrift.client.password</name>
+    <value>123456</value>
+    <description>Password to use against thrift client</description>
+  </property>
+<!-- 使用连接用户，执行Hive相关的操作 -->
+<property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
+    <description>
+      Setting this property to true will have HiveServer2 execute
+      Hive operations as the user making the calls to it.
+    </description>
+  </property>
+  <!-- java.io config -->
+<property>
+    <name>system:java.io.tmpdir</name>
+    <value>/bdp/hive/javaio</value>
+</property>
+<property>
+    <name>system:user.name</name>
+    <value>${user.name}</value>
+</property>
+</configuration>
+``` 
+
+## 修改日志目录
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-log4j2.properties.template hive-log4j2.properties
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-log4j2.propertie
+<!-- 修改如下属性 -->
+property.hive.log.dir = /bdp/hive/log
+
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-exec-log4j2.properties.template hive-exec-log4j2.properties
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ vim hive-exec-log4j2.properties
+<!-- 修改如下属性 -->
+property.hive.log.dir = /bdp/hive/exelog
+```
+## 开启hadoop的webhdfs配置
+hdfs-site.xml  文件配置
+```xml
+<property>
+<name>dfs.webhdfs.enabled</name>
+<value>true</value>
+</property>
+```
+
+## 配置hadoop访问用户
+
+core-site.xml 配置, 这个配置很重要  name页签中的hadoop登录hdfs的具体的用户名，如果写错的话，我们使用hadoop用户，访问hive的时候会没有权限访问。
+
+```xml
+<property>
+     <name>hadoop.proxyuser.hadoop.hosts</name>
+     <value>*</value>
+   </property>
+   <property>
+    <name>hadoop.proxyuser.hadoop.groups</name>
+    <value>*</value>
+</property>
+```
+
+## 启动Hadoop集群
+
+启动hadoop集群
+```
+start-dfs.sh
+```
+
+查看启动进程
+```
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1$ jps
+2354 NameNode
+2883 Jps
+2730 SecondaryNameNode
+2494 DataNode
+
+```
+
+## 创建HIVE数仓目录和job中间目录
+```
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -mkdir -p /user/hive/warehouse
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -mkdir -p /user/hive/tmp
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -chmod 777 /user/hive/tmp 
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -chmod 777 /user/hive/warehouse
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ hdfs dfs -ls /user/hive/
+Found 2 items
+drwxrwxrwx   - donaldhan supergroup          0 2020-02-22 22:59 /user/hive/tmp
+drwxrwxrwx   - donaldhan supergroup          0 2020-02-22 22:59 /user/hive/warehouse
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1/etc$ 
+```
+
+
+## 初始化Metastore元信息Schema
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/bin$ schematool -dbType mysql  -initSchema
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Metastore connection URL:	 jdbc:mysql://mysqldb:3306/hive_db?createDatabaseIfNotExist=true
+Metastore Connection Driver :	 com.mysql.jdbc.Driver
+Metastore connection User:	 root
+Starting metastore schema initialization to 2.3.0
+Initialization script hive-schema-2.3.0.mysql.sql
+Initialization script completed
+schemaTool completed
+```
+
+
+### 查看元信息Schema
+
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/bin$ schematool -dbType mysql -info
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Metastore connection URL:	 jdbc:mysql://mysqldb:3306/hive_db?createDatabaseIfNotExist=true
+Metastore Connection Driver :	 com.mysql.jdbc.Driver
+Metastore connection User:	 root
+Hive distribution version:	 2.3.0
+Metastore schema version:	 2.3.0
+schemaTool completed
+```
+
+# 启动HiveServe2
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/bin$ ./hiveserver2 
+2020-02-23 11:11:32: Starting HiveServer2
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/bdp/hive/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/bdp/hadoop/hadoop-2.7.1/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+```
+
+查看启动日志
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/log$ tail -f hive.log
+2020-02-23T11:11:08,679  INFO [Thread-1] server.HiveServer2: Web UI has stopped
+2020-02-23T11:11:08,680  INFO [Thread-1] server.HiveServer2: Server instance removed from ZooKeeper.
+...
+vletContextHandler{/logs,file:/bdp/hive/log/}
+2020-02-23T11:11:51,809  INFO [main] server.AbstractConnector: Started SelectChannelConnector@0.0.0.0:10002
+2020-02-23T11:11:51,813  INFO [main] server.HiveServer2: Web UI has started on port 10002
+2020-02-23T11:11:51,813  INFO [main] http.HttpServer: Started HttpServer[hiveserver2] on port 10002
+
+```
+
+在mysql的hive_db数据库中, 可以查看metastore schema的表信息
+```
+aux_table, bucketing_cols, cds, columns_v2, compaction_queue, completed_compactions, completed_txn_components, database_params, db_privs, dbs, delegation_tokens, func_ru, funcs, global_privs, hive_locks, idxs, index_params, key_constraints, master_keys, next_compaction_queue_id, next_lock_id, next_txn_id, notification_log, notification_sequence, nucleus_tables, part_col_privs, part_col_stats, part_privs, partition_events, partition_key_vals, partition_keys, partition_params, partitions, role_map, roles, sd_params, sds, sequence_table, serde_params, serdes, skewed_col_names, skewed_col_value_loc_map, skewed_string_list, skewed_string_list_values, skewed_values, sort_cols, tab_col_stats, table_params, tbl_col_privs, tbl_privs, tbls, txn_components, txns, type_fields, types, version, write_set
+```
+
+具体的Metadata的表关系图，可以通过下面的链接找到
+
+All the metadata for Hive tables and partitions are accessed through the Hive Metastore. Metadata is persisted using JPOX ORM solution (Data Nucleus) so any database that is supported by it can be used by Hive. Most of the commercial relational databases and many open source databases are supported. See the list of supported databases in section below.
+You can find an E/R diagram for the metastore here.
+
+AdminManual Metastore Administration:<https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+Administration>
+
+
+查看进程，多了一个RunJar的进行，启动成功
+```
+donaldhan@pseduoDisHadoop:/bdp/hadoop/hadoop-2.7.1$ jps
+2354 NameNode
+3714 RunJar
+2730 SecondaryNameNode
+3820 Jps
+2494 DataNode
+```
+
+同时访问
+
+HiveServerWebUI:<http://pseduoDisHadoop:10002/>
+
+可以查看HIVE的相关会话，查询及配置，日志等信息。
+
+## 总结
+
+
+
+# 附
+
+## 参考文献
 Hive DDL DML及SQL操作:<https://blog.csdn.net/HG_Harvey/article/details/77488314>  
 LanguageManual DDL:<https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL>  
 LanguageManual DML:<https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML>
 
+##  Call From java.net.UnknownHostException: ubuntu
+hdfs dfs -mkdir -p /user/hive/warehouse
+mkdir: Call From java.net.UnknownHostException: ubuntu: ubuntu: Name or service not known to pseduoDisHadoop:9000 failed on connection exception: java.net.ConnectException: Connection refused; For more details see:  http://wiki.apache.org/hadoop/ConnectionRefused
 
-###
+### 解决方式
+是由于hostname绑定问题，修改hostname如下，重启hadoop即可。
+```
+donaldhan@ubuntu:/bdp/hadoop/hadoop-2.7.1$ cat /etc/hostname 
+pseduoDisHadoop
+```
 
-
-
-###
-
-
-## 总结
