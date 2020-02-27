@@ -821,14 +821,578 @@ Found 1 items
 
 ## 表数据加载load
 
+具体语法如下：
+```
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+```
+
+LOCAL：如果加上表示从本地加载数据;默认不加，从hdfs中加载数据.
+OVERWRITE：加上表示覆盖表中数据
+
+
+加载数据到文件有两种方式，一种是从本地文件加载，一种从hdfs文件加载；我们先看第一种。
+
+### 本地文件加载数据
+
+从本地文件emp.txt加载数据到emp表中
+```
+0: jdbc:hive2://pseduoDisHadoop:10000>  load data local inpath '/bdp/hive/hiveLocalTables/emp.txt' overwrite into table emp;
+No rows affected (4.38 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+3 rows selected (4.226 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000>   load data local inpath '/bdp/hive/hiveLocalTables/emp.txt' into table emp;
+No rows affected (4.266 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+6 rows selected (4.651 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> load data local inpath '/bdp/hive/hiveLocalTables/emp.txt' overwrite into table emp;
+No rows affected (4.046 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+3 rows selected (0.444 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+从上面可以看出，使用overwrite方式，在加载数据前删除原有数据。再来看从hdfs文件加载。
+
+### hdfs文件加载数据
+
+首先将文件上传到HDFS中
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -mkdir -p /user/hive/data
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -put /bdp/hive/hiveLocalTables/emp.txt /user/hive/data
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/data
+Found 1 items
+-rw-r--r--   1 donaldhan supergroup        151 2020-02-27 22:07 /user/hive/data/emp.txt
+donaldhan@pseduoDisHadoop:~$ 
+```
+
+
+加载数据到表emp中
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> load data inpath '/user/hive/data/emp.txt' overwrite into table emp;
+No rows affected (1.28 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+3 rows selected (0.383 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> load data inpath '/user/hive/data/emp.txt'  into table emp;
+Error: Error while compiling statement: FAILED: SemanticException Line 1:17 Invalid path ''/user/hive/data/emp.txt'': No files matching path hdfs://pseduoDisHadoop:9000/user/hive/data/emp.txt (state=42000,code=40000)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+从hdfs方式加载完数据，需要注意hdfs上的文件将会被删除，一刀hdfs的垃圾箱中。
+
+
+
 ## 插入数据
+
+向表 emp 中插入数据
+```
+ insert into emp(empno,ename,job) values(1001,'TOM','MANAGER');
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (110.63 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 1001       | TOM        | MANAGER  | NULL     | NULL          | NULL     | NULL      | NULL        |
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+4 rows selected (0.327 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+插入数据实际为一个MR任务。
+
 
 ## 查询数据
 
+查询部门编号为10的员工信息
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where deptno=10;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+No rows selected (0.884 seconds)
+
+```
+查询姓名为SMITH的员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where ename='SMITH';
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+No rows selected (0.31 seconds)
+
+```
+查询员工编号小于等于7766的员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where empno <= 7766;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 1001       | TOM        | MANAGER  | NULL     | NULL          | NULL     | NULL      | NULL        |
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+4 rows selected (0.287 seconds)
+```
+
+查询员工工资大于1000小于1500的员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where sal between 1000 and 1500;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+No rows selected (0.297 seconds)
+
+
+```
+查询前5条记录
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp limit 5;
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 1001       | TOM        | MANAGER  | NULL     | NULL          | NULL     | NULL      | NULL        |
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+4 rows selected (0.315 seconds)
+```
+查询姓名为SCOTT或MARTIN的员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where ename in ('SCOTT','MARTIN');
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+No rows selected (0.266 seconds)
+```
+
+查询有津贴的员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where comm is not null; 
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| emp.empno  | emp.ename  | emp.job  | emp.mgr  | emp.hiredate  | emp.sal  | emp.comm  | emp.deptno  |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+| 123        | donald     | lawer    | 4568     | 2019-02-26    | 8000.0   | 3000.0    | 7896        |
+| 456        | rain       | teacher  | 1314     | 2018-01-25    | 5000.1   | 2000.2    | 4654        |
+| 789        | jamel      | cleaner  | NULL     | 20170609      | 3000.0   | 1000.3    | 7895        |
++------------+------------+----------+----------+---------------+----------+-----------+-------------+
+3 rows selected (0.357 seconds)
+```
+
+统计部门10下共有多少员工
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select count(*) from emp where deptno=10; 
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
++------+
+| _c0  |
++------+
+| 0    |
++------+
+1 row selected (72.948 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+COUNT为MR任务。
+
+查询员工的最大、最小、平均工资及所有工资的和
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select max(sal),min(sal),avg(sal),sum(sal) from emp;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
++---------+---------+--------------------+----------+
+|   _c0   |   _c1   |        _c2         |   _c3    |
++---------+---------+--------------------+----------+
+| 8000.0  | 3000.0  | 5333.366666666667  | 16000.1  |
++---------+---------+--------------------+----------+
+1 row selected (65.214 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+
+查询平均工资大于2000的部门
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select deptno,avg(sal) from emp group by deptno having avg(sal) > 2000;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
++---------+---------+
+| deptno  |   _c1   |
++---------+---------+
+| 4654    | 5000.1  |
+| 7895    | 3000.0  |
+| 7896    | 8000.0  |
++---------+---------+
+3 rows selected (60.831 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+查询员工的姓名和工资等级，按如下规则显示
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select ename, sal, 
+. . . . . . . . . . . . . . . . . . .> case 
+. . . . . . . . . . . . . . . . . . .> when sal < 1000 then 'lower'
+. . . . . . . . . . . . . . . . . . .> when sal > 1000 and sal <= 2000 then 'middle'
+. . . . . . . . . . . . . . . . . . .> when sal > 2000 and sal <= 4000 then 'high'
+. . . . . . . . . . . . . . . . . . .> else 'highest' end
+. . . . . . . . . . . . . . . . . . .> from emp;
++---------+---------+----------+
+|  ename  |   sal   |   _c2    |
++---------+---------+----------+
+| TOM     | NULL    | highest  |
+| donald  | 8000.0  | highest  |
+| rain    | 5000.1  | highest  |
+| jamel   | 3000.0  | high     |
++---------+---------+----------+
+4 rows selected (0.263 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+
+从上面可以看出，聚合类的操作，都需要运行MR任务。
+
 ## 导出数据
 
+语法：
+
+```
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
+  SELECT ... FROM ...
+```
+
+导出数据与加载数据LOCAL使用基本一致。如果加上LOCAL表示导出到本地默认不加，导出到hdfs，OVERWRITE关键字为不可选，即先删除，在导出。
+
+### 导出数据到本地
+将表emp中的数据导出到本地目录/bdp/hive/data/tmp下
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert overwrite local directory '/bdp/hive/data/tmp' row format delimited fields terminated by '\t' select * from emp;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (50.128 seconds)
+
+```
+
+查看文件：
+```
+donaldhan@pseduoDisHadoop:~$ cd /bdp/hive/data/tmp/
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ ll
+total 16
+drwxrwxr-x 2 donaldhan donaldhan 4096 Feb 27 22:41 ./
+drwxrwxr-x 3 donaldhan donaldhan 4096 Feb 27 22:41 ../
+-rw-r--r-- 1 donaldhan donaldhan  185 Feb 27 22:41 000000_0
+-rw-r--r-- 1 donaldhan donaldhan   12 Feb 27 22:41 .000000_0.crc
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ cat 000000_0 
+1001	TOM	MANAGER	\N	\N	\N	\N	\N
+123	donald	lawer	4568	2019-02-26	8000.0	3000.0	7896
+456	rain	teacher	1314	2018-01-25	5000.1	2000.2	4654
+789	jamel	cleaner	\N	20170609	3000.0	1000.3	7895
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ 
+
+```
+
+重新执行一遍
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert overwrite local directory '/bdp/hive/data/tmp' row format delimited fields terminated by '\t' select * from emp;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (46.835 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ ll
+total 16
+drwxrwxr-x 2 donaldhan donaldhan 4096 Feb 27 22:45 ./
+drwxrwxr-x 3 donaldhan donaldhan 4096 Feb 27 22:41 ../
+-rw-r--r-- 1 donaldhan donaldhan  185 Feb 27 22:45 000000_0
+-rw-r--r-- 1 donaldhan donaldhan   12 Feb 27 22:45 .000000_0.crc
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ cat 000000_0 
+1001	TOM	MANAGER	\N	\N	\N	\N	\N
+123	donald	lawer	4568	2019-02-26	8000.0	3000.0	7896
+456	rain	teacher	1314	2018-01-25	5000.1	2000.2	4654
+789	jamel	cleaner	\N	20170609	3000.0	1000.3	7895
+donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ 
+
+```
+文件内容被覆盖。
+
+### 导出数据到HDFS
+将表emp中的数据导出到hdfs的/user/hive/data目录下
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert overwrite directory '/user/hive/data' row format delimited fields terminated by '\t' select * from emp;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (54.917 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+在hdfs中查看文件数据
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/data
+Found 1 items
+-rwxr-xr-x   1 donaldhan supergroup        185 2020-02-27 22:48 /user/hive/data/000000_0
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/data/000000_0
+
+1001	TOM	MANAGER	\N	\N	\N	\N	\N
+123	donald	lawer	4568	2019-02-26	8000.0	3000.0	7896
+456	rain	teacher	1314	2018-01-25	5000.1	2000.2	4654
+789	jamel	cleaner	\N	20170609	3000.0	1000.3	7895
+donaldhan@pseduoDisHadoop:~$ 
+donaldhan@pseduoDisHadoop:~$ 
+
+```
+重试一遍
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert overwrite directory '/user/hive/data' row format delimited fields terminated by '\t' select * from emp;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (55.794 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/data
+Found 1 items
+-rwxr-xr-x   1 donaldhan supergroup        185 2020-02-27 22:51 /user/hive/data/000000_0
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/data/000000_0
+1001	TOM	MANAGER	\N	\N	\N	\N	\N
+123	donald	lawer	4568	2019-02-26	8000.0	3000.0	7896
+456	rain	teacher	1314	2018-01-25	5000.1	2000.2	4654
+789	jamel	cleaner	\N	20170609	3000.0	1000.3	7895
+donaldhan@pseduoDisHadoop:~$ 
+```
+数据被覆盖。
 
 ## 分区表
+Hive 可以创建分区表，主要用于解决由于单个数据表数据量过大进而导致的性能问题 Hive 中的分区表分为两种：静态分区和动态分区
+
+### 静态分区
+
+静态分区由分为两种：单级分区和多级分区。我们分别来看这两种方式
+1. 单级分区
+
+创建一种订单分区表
+
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> create table `order_partition`(
+. . . . . . . . . . . . . . . . . . .> order_number string,
+. . . . . . . . . . . . . . . . . . .> event_time string
+. . . . . . . . . . . . . . . . . . .> )
+. . . . . . . . . . . . . . . . . . .> partitioned by (event_month string)
+. . . . . . . . . . . . . . . . . . .> row format delimited fields terminated by '\t';
+No rows affected (1.356 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+0: jdbc:hive2://pseduoDisHadoop:10000> show tables;
++------------------------+
+|        tab_name        |
++------------------------+
+| emp                    |
+| emp2                   |
+| emp3                   |
+| order_partition        |
+| values__tmp__table__1  |
++------------------------+
+5 rows selected (0.251 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+我们先来看，从本地文件加载数据到分区表。
+
+* 加载本地文件数据到分区表
+将order.txt 文件中的数据加载到order_partition表中
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim order.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ pwd
+/bdp/hive/hiveLocalTables
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat order.txt 
+1	2020-02-27 22:59:23
+2	2020-02-27 22:59:24
+3	2020-02-27 22:59:25
+
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> load data local inpath '/bdp/hive/hiveLocalTables/order.txt' overwrite into table order_partition partition (event_month='2020-02');
+No rows affected (2.185 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
+| 1                             | 2020-02-27 22:59:23         | 2020-02                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-02                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-02                      |
++-------------------------------+-----------------------------+------------------------------+
+3 rows selected (0.34 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+查看hdfs上的文件夹order_partition下多一个分区字段+分区Value的文件加载（event_month=2020-02） ，他下面的文件就是我们本地对应的order.txt文件。
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition
+Found 1 items
+drwxrwxrwx   - donaldhan supergroup          0 2020-02-27 23:02 /user/hive/warehouse/test.db/order_partition/event_month=2020-02
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition/event_month=2020-02
+
+Found 1 items
+-rwxrwxrwx   1 donaldhan supergroup         66 2020-02-27 23:02 /user/hive/warehouse/test.db/order_partition/event_month=2020-02/order.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -cat /user/hive/warehouse/test.db/order_partition/event_month=2020-02/order.txt
+1	2020-02-27 22:59:23
+2	2020-02-27 22:59:24
+3	2020-02-27 22:59:25
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
+```
+
+* 使用hadoop shell 加载数据
+
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -rm -r /user/hive/warehouse/test.db/order_partition
+
+
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -rm -r /user/hive/warehouse/test.db/order_partition
+20/02/27 23:19:26 INFO fs.TrashPolicyDefault: Namenode trash configuration: Deletion interval = 0 minutes, Emptier interval = 0 minutes.
+Deleted /user/hive/warehouse/test.db/order_partition
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition
+ls: `/user/hive/warehouse/test.db/order_partition': No such file or directory
+```
+一不小心把分区表的文件夹给删了，不过没关系，这正是我们要做的，其实删除表文件下的分区问价夹即可。
+
+查询数据，这是表中已经没有数据量
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
++-------------------------------+-----------------------------+------------------------------+
+No rows selected (0.32 seconds)
+
+```
+
+创建分区分区文件夹，并将本地数据文件order.txt，上传到对应的分区目录下 /user/hive/warehouse/test.db/order_partition/event_month=2020-02：
+```
+
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -mkdir /user/hive/warehouse/test.db/order_partition
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -mkdir /user/hive/warehouse/test.db/order_partition/event_month=2020-02
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -put /bdp/hive/hiveLocalTables/order.txt /user/hive/warehouse/test.db/order_partition/event_month=2020-02
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition/event_month=2020-02
+Found 1 items
+-rw-r--r--   1 donaldhan supergroup         66 2020-02-27 23:22 /user/hive/warehouse/test.db/order_partition/event_month=2020-02/order.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
+```
+查看数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
+| 1                             | 2020-02-27 22:59:23         | 2020-02                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-02                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-02                      |
++-------------------------------+-----------------------------+------------------------------+
+3 rows selected (0.306 seconds)
+
+```
+当前数据已经有了。如果没有数据，我们可以使用如下命令进行修复
+```
+msck repair table order_partition;
+```
+
+我们再在HIVE数仓目录下，创建一个分区目录event_month=2020-01，并将数据文件order.txt上传上去；
+
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -mkdir /user/hive/warehouse/test.db/order_partition/event_month=2020-01
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -put /bdp/hive/hiveLocalTables/order.txt /user/hive/warehouse/test.db/order_partition/event_month=2020-01
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
+```
+
+这次我们再次查询没有将数据加载表中，我们修复分区数据后，再次查询，可以看到了。
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
+| 1                             | 2020-02-27 22:59:23         | 2020-02                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-02                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-02                      |
++-------------------------------+-----------------------------+------------------------------+
+3 rows selected (0.299 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> msck repair table order_partition;
+No rows affected (0.776 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
+| 1                             | 2020-02-27 22:59:23         | 2020-01                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-01                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-01                      |
+| 1                             | 2020-02-27 22:59:23         | 2020-02                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-02                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-02                      |
++-------------------------------+-----------------------------+------------------------------+
+6 rows selected (0.329 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+对于分区表，不建议直接使用select * 查询，性能低，建议查询时加上条件，如果加上条件后它会直接从指定的分区中查找数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition where event_month='2020-02';
++-------------------------------+-----------------------------+------------------------------+
+| order_partition.order_number  | order_partition.event_time  | order_partition.event_month  |
++-------------------------------+-----------------------------+------------------------------+
+| 1                             | 2020-02-27 22:59:23         | 2020-02                      |
+| 2                             | 2020-02-27 22:59:24         | 2020-02                      |
+| 3                             | 2020-02-27 22:59:25         | 2020-02                      |
++-------------------------------+-----------------------------+------------------------------+
+3 rows selected (0.483 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+
+2. 多级分区
+
+```
+```
+
+### 动态分区
     
 # 复杂数据类型操作
 ## Array
@@ -846,7 +1410,7 @@ Closing: 0: jdbc:hive2://pseduoDisHadoop:10000
 
 ### 
 ```
-``
+```
 
 ## 总结
 由于我们创建数据库时没有指定对应的数仓存储路径，默认为HDFS下的数仓目录user/hive/warehouse+数据库名+.db对应的文件夹。
@@ -857,6 +1421,19 @@ Closing: 0: jdbc:hive2://pseduoDisHadoop:10000
 总结：内部表与外部表的区别 
 如果是内部表，在删除时，MySQL中的元数据和HDFS中的数据都会被删除 
 如果是外部表，在删除时，MySQL中的元数据会被删除，HDFS中的数据不会被删除
+
+加载文件数据到Hive表有两种方式，一种是从本地文件加载，一种从hdfs文件加载。
+如果加上LOCAL表示从本地加载数据，默认不加，从hdfs中加载数据，添加
+OVERWRITE关键字，将会覆盖表中数据，及先删除，在加载。
+
+从hdfs方式加载完数据，需要注意hdfs上的文件将会被删除，一刀hdfs的垃圾箱中。
+
+
+插入数据实际为一个MR任务。聚合类的操作（max，min，avg，count），都需要运行MR任务。
+
+导出数据与加载数据LOCAL和OVERWRITE使用基本一致。如果加上LOCAL表示导出到本地默认不加，导出到hdfs，如果加OVERWRITE关键字，将会覆盖原文件中的数据，及先删除，在导出。
+
+从本地加载文件到分区表时，实际上是，将本地文件放到hdfs上的数据库分区表文件夹（order_partition）下的分区字段+分区Value（event_month=2020-02）文价夹。
 
 # 附
 ## 参考文献
