@@ -283,6 +283,21 @@ No rows affected (1.36 seconds)
 
 ## 创建表
 ```
+create table `emp`(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+)
+row format delimited fields terminated by '\t';
+```
+
+
+```
 0: jdbc:hive2://pseduoDisHadoop:10000> use test;
 No rows affected (0.227 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> create table `emp`(
@@ -719,6 +734,23 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$
 
 创建一张外部表
 ```
+create external table `emp_external`(
+ empno int,
+ ename string,
+ job string,
+ mgr int,
+ hiredate string,
+ sal double,
+ comm double,
+ deptno int
+ )
+ row format delimited fields terminated by '\t'
+ location '/user/hive/warehouse/external/emp';
+```
+
+
+
+```
 0: jdbc:hive2://pseduoDisHadoop:10000> create external table `emp_external`(
 . . . . . . . . . . . . . . . . . . .> empno int,
 . . . . . . . . . . . . . . . . . . .> ename string,
@@ -1065,6 +1097,16 @@ WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the futu
 ```
 查询员工的姓名和工资等级，按如下规则显示
 ```
+select ename, sal, 
+case 
+when sal < 1000 then 'lower'
+when sal > 1000 and sal <= 2000 then 'middle'
+when sal > 2000 and sal <= 4000 then 'high'
+else 'highest' end
+from emp;
+```
+
+```
 0: jdbc:hive2://pseduoDisHadoop:10000> select ename, sal, 
 . . . . . . . . . . . . . . . . . . .> case 
 . . . . . . . . . . . . . . . . . . .> when sal < 1000 then 'lower'
@@ -1208,7 +1250,16 @@ Hive 可以创建分区表，主要用于解决由于单个数据表数据量过
 静态分区由分为两种：单级分区和多级分区。我们分别来看这两种方式
 1. 单级分区
 
-创建一种订单分区表
+创建一种订单分区表 
+
+```
+create table `order_partition`(
+ order_number string,
+ event_time string
+ )
+ partitioned by (event_month string)
+ row format delimited fields terminated by '\t';
+```
 
 
 ```
@@ -1407,12 +1458,188 @@ mysql> select * from partition_keys;
 
 2. 多级分区
 
+创建表order_multi_partition
 ```
+create table `order_multi_partition`(
+order_number string,
+event_time string
+)
+partitioned by (event_month string, step string)
+row format delimited fields terminated by '\t';
+```
+加载数据到表order_multi_partition
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> create table `order_multi_partition`(
+. . . . . . . . . . . . . . . . . . .> order_number string,
+. . . . . . . . . . . . . . . . . . .> event_time string
+. . . . . . . . . . . . . . . . . . .> )
+. . . . . . . . . . . . . . . . . . .> partitioned by (event_month string, step string)
+. . . . . . . . . . . . . . . . . . .> row format delimited fields terminated by '\t';
+No rows affected (1.521 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> load data local inpath '/bdp/hive/hiveLocalTables/order.txt' overwrite into table order_multi_partition partition (event_month='2020-02',step=1);
+No rows affected (4.165 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_multi_partition;
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+| order_multi_partition.order_number  | order_multi_partition.event_time  | order_multi_partition.event_month  | order_multi_partition.step  |
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+| 1                                   | 2020-02-27 22:59:23               | 2020-02                            | 1                           |
+| 2                                   | 2020-02-27 22:59:24               | 2020-02                            | 1                           |
+| 3                                   | 2020-02-27 22:59:25               | 2020-02                            | 1                           |
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+3 rows selected (4.09 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+把step修改为2，再次加载数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_multi_partition;
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+| order_multi_partition.order_number  | order_multi_partition.event_time  | order_multi_partition.event_month  | order_multi_partition.step  |
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+| 1                                   | 2020-02-27 22:59:23               | 2020-02                            | 1                           |
+| 2                                   | 2020-02-27 22:59:24               | 2020-02                            | 1                           |
+| 3                                   | 2020-02-27 22:59:25               | 2020-02                            | 1                           |
+| 1                                   | 2020-02-27 22:59:23               | 2020-02                            | 2                           |
+| 2                                   | 2020-02-27 22:59:24               | 2020-02                            | 2                           |
+| 3                                   | 2020-02-27 22:59:25               | 2020-02                            | 2                           |
++-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
+6 rows selected (0.51 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
 ```
 
+查看hdfs中的目录结构
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/order_multi_partition/event_month=2020-02
+Found 2 items
+drwxrwxrwx   - donaldhan supergroup          0 2020-03-02 22:34 /user/hive/warehouse/test.db/order_multi_partition/event_month=2020-02/step=1
+drwxrwxrwx   - donaldhan supergroup          0 2020-03-02 22:36 /user/hive/warehouse/test.db/order_multi_partition/event_month=2020-02/step=2
+donaldhan@pseduoDisHadoop:~$ 
+
+```
+从上面可以看出，单级分区和多级分区唯一的区别就是多级分区在hdfs中的目录为多级。
+
 ### 动态分区
-    
+
+hive 中默认是静态分区，想要使用动态分区，需要设置如下参数，笔者使用的是临时设置，你也可以写在配置文件（hive-site.xml）里，永久生效。临时配置如下
+
+开启动态分区（默认为false，不开启）
+
+```
+set hive.exec.dynamic.partition=true;
+```
+指定动态分区模式，默认为strict，即必须指定至少一个分区为静态分区，nonstrict模式表示允许所有的分区字段都可以使用动态分区。
+
+```
+set hive.exec.dynamic.partition.mode=nonstrict;
+```
+创建表student
+
+```
+create table `student`(
+id int,
+name string,
+tel string,
+age int
+)
+row format delimited fields terminated by '\t';
+```
+
+student.txt文件内容如下
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim student.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat student.txt 
+1	donald	15965839766	23
+2	rain	13697082376	18
+3	jamel	15778566988	36
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
+
+```
+将文件student.txt中的内容加载到student表中
+```
+load data local inpath '/bdp/hive/hiveLocalTables/student.txt' overwrite into table student;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> load data local inpath '/bdp/hive/hiveLocalTables/student.txt' overwrite into table student;
+No rows affected (1.649 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from student;
++-------------+---------------+--------------+--------------+
+| student.id  | student.name  | student.tel  | student.age  |
++-------------+---------------+--------------+--------------+
+| 1           | donald        | 15965839766  | 23           |
+| 2           | rain          | 13697082376  | 18           |
+| 3           | jamel         | 15778566988  | 36           |
++-------------+---------------+--------------+--------------+
+3 rows selected (0.414 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+创建分区表stu_age_partition
+
+```
+create table `stu_age_partition`(
+id int,
+name string,
+tel string
+)
+partitioned by (age int)
+row format delimited fields terminated by '\t';
+```
+
+将student表的数据以age为分区插入到stu_age_partition表，试想如果student表中的数据很多，使用insert一条一条插入数据，很不方便，所以这个时候可以使用hive的动态分区来实现
+```
+insert into table stu_age_partition partition (age) select id,name,tel,age from student;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert into table stu_age_partition partition (age) select id,name,tel,age from student;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (104.21 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from stu_age_partition;
++-----------------------+-------------------------+------------------------+------------------------+
+| stu_age_partition.id  | stu_age_partition.name  | stu_age_partition.tel  | stu_age_partition.age  |
++-----------------------+-------------------------+------------------------+------------------------+
+| 2                     | rain                    | 13697082376            | 18                     |
+| 1                     | donald                  | 15965839766            | 23                     |
+| 3                     | jamel                   | 15778566988            | 36                     |
++-----------------------+-------------------------+------------------------+------------------------+
+3 rows selected (0.473 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+查询时，建议加上分区条件，性能高
+
+```
+select * from stu_age_partition;
+select * from stu_age_partition where age > 20;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from stu_age_partition where age > 20;
++-----------------------+-------------------------+------------------------+------------------------+
+| stu_age_partition.id  | stu_age_partition.name  | stu_age_partition.tel  | stu_age_partition.age  |
++-----------------------+-------------------------+------------------------+------------------------+
+| 1                     | donald                  | 15965839766            | 23                     |
+| 3                     | jamel                   | 15778566988            | 36                     |
++-----------------------+-------------------------+------------------------+------------------------+
+2 rows selected (0.998 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from stu_age_partition;
++-----------------------+-------------------------+------------------------+------------------------+
+| stu_age_partition.id  | stu_age_partition.name  | stu_age_partition.tel  | stu_age_partition.age  |
++-----------------------+-------------------------+------------------------+------------------------+
+| 2                     | rain                    | 13697082376            | 18                     |
+| 1                     | donald                  | 15965839766            | 23                     |
+| 3                     | jamel                   | 15778566988            | 36                     |
++-----------------------+-------------------------+------------------------+------------------------+
+3 rows selected (0.337 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
 # 复杂数据类型操作
+
+
 ## Array
 ## Map
 ## Struct
@@ -1453,6 +1680,8 @@ OVERWRITE关键字，将会覆盖表中数据，及先删除，在加载。
 
 从本地加载文件到分区表时，实际上是，将本地文件放到hdfs上的数据库分区表文件夹（order_partition）下的分区字段+分区Value（event_month=2020-02）文价夹。
 
+单级分区和多级分区唯一的区别就是多级分区在hdfs中的目录为多级。
+
 # 附
 ## 参考文献
 Hive DDL DML及SQL操作:<https://blog.csdn.net/HG_Harvey/article/details/77488314>  
@@ -1483,3 +1712,28 @@ row format delimited fields terminated by '\t';
 hive建表指定字段分隔符为制表符，之后上传文件，文件内容未被hive表正确识别问题 :<https://blog.csdn.net/u012443641/article/details/80021226>
 
 vim-set命令使用:<https://www.jianshu.com/p/97d34b62d40d>  
+
+## Dynamic partition strict mode requires at least one static partition column
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> insert into table stu_age_partition partition (age) select id,name,tel,age from student;
+Error: Error while compiling statement: FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column. To turn this off set hive.exec.dynamic.partition.mode=nonstrict (state=42000,code=10096)
+0: jdbc:hive2://pseduoDisHadoop:10000> insert into table stu_age_partition partition (age) select id,name,tel,age from student;
+Error: Error while compiling statement: FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column. To turn this off set hive.exec.dynamic.partition.mode=nonstrict (state=42000,code=10096)
+
+```
+
+### 解决方式
+
+主要是因为，hive 中默认是静态分区，想要使用动态分区，需要设置如下参数，笔者使用的是临时设置，你也可以写在配置文件（hive-site.xml）里，永久生效。临时配置如下
+
+开启动态分区（默认为false，不开启）
+
+```
+set hive.exec.dynamic.partition=true;
+```
+
+指定动态分区模式，默认为strict，即必须指定至少一个分区为静态分区，nonstrict模式表示允许所有的分区字段都可以使用动态分区。
+
+```
+set hive.exec.dynamic.partition.mode=nonstrict;
+```
