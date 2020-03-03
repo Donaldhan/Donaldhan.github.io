@@ -68,9 +68,11 @@ Transaction isolation: TRANSACTION_REPEATABLE_READ
 
 ## 创建数据库
 简单创建数据模式；
+
 ```
 create database test;
 ```
+
 查看对应的数据库存储位置；
 
 ```
@@ -86,6 +88,7 @@ create database test;
 
 
 指定数据库存储位置方式，创建数据库
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create database test1 location '/db/test1';
 No rows affected (0.689 seconds)
@@ -101,6 +104,7 @@ No rows affected (0.689 seconds)
 ```
 
 如果test数据库不存在再创建
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create database if not exists test1;
 No rows affected (0.247 seconds)
@@ -126,6 +130,7 @@ No rows affected (0.424 seconds)
 ```
 
 创建数据库，并为数据库添加描述信息
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create database test3 comment 'my test3 db' with dbproperties ('creator'='donaldhan','date'='2020-02-25');
 No rows affected (0.524 seconds)
@@ -142,7 +147,8 @@ No rows affected (0.524 seconds)
 
 ## 查看数据库
 
-查看所有数据
+查看所有数据  
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> show databases;
 +----------------+
@@ -154,7 +160,8 @@ No rows affected (0.524 seconds)
 2 rows selected (3.638 seconds)
 ```
 
-模糊查看数据库
+模糊查看数据库  
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> show databases like 'test*';
 +----------------+
@@ -195,6 +202,7 @@ No rows affected (0.524 seconds)
 
 
 ## 修改数据库
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> desc database extended test3;
 +----------+--------------+----------------------------------------------------+-------------+-------------+----------------------------------------------------+
@@ -211,11 +219,13 @@ No rows affected (0.524 seconds)
 删除数据库test3, 有如下两种方式：
 
 直接删除
+
 ```
 drop database test3
 ```
 
 存在则删除
+
 ```
 drop database if exists test3
 ```
@@ -239,12 +249,14 @@ Error: Error while compiling statement: FAILED: SemanticException [Error 10072]:
 ```
 
 如果数据库不存在删除，则回报：
+
 ```
 Error: Error while compiling statement: FAILED: SemanticException [Error 10072]: Database does not exist: test3
 ```
 
 
 如果数据库中有0或多个表时，不能直接删除，需要先删除表再删除数据库，否则回报如下错误
+
 ```
 InvalidOperationException(message:Database test3 is not empty. One or more tables exist.)
 ```
@@ -264,6 +276,7 @@ Error: org.apache.hive.service.cli.HiveSQLException: Error while processing stat
 
 
 如果想要删除含有表的数据库，在删除时加上cascade，表示级联删除（慎用），可以使用如下命令
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> drop database if exists test1 cascade;
 No rows affected (1.36 seconds)
@@ -282,6 +295,7 @@ No rows affected (1.36 seconds)
 
 
 ## 创建表
+
 ```
 create table `emp`(
 empno int,
@@ -363,6 +377,7 @@ No rows affected (1.406 seconds)
 ### 加载本地文件数据到数据表
 
 编辑emp数据text文本，以制表符为字段分割附
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim emp.txt 
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat emp.txt 
@@ -378,6 +393,7 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$
 
 
 从本地文件加载数据到数据表
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000>  load data local inpath '/bdp/hive/hiveLocalTables/emp.txt' overwrite into table emp;
 No rows affected (4.38 seconds)
@@ -396,6 +412,7 @@ No rows affected (4.38 seconds)
 ### 复制表
 
 * 只拷贝表结构
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create table emp2 like emp;
 No rows affected (1.005 seconds)
@@ -425,6 +442,7 @@ No rows selected (0.419 seconds)
 
 * 拷贝表结构及数据
 会运行MapReduce作业
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create table emp3 as select * from emp;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -463,6 +481,7 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ jps
 
 * 拷贝表的限定列
 创建表emp到emp_copy，emp_copy中只包含三列：empno，ename，job
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create table emp4 as select empno,ename,job from emp;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -484,6 +503,7 @@ No rows affected (78.651 seconds)
 ## 查询表
 
 ### 查看数据库下的所有表
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> show tables;
 +-----------+
@@ -509,6 +529,7 @@ No rows affected (78.651 seconds)
 ```
 
 ### 查看表结构
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> desc emp;
 +-----------+------------+----------+
@@ -546,6 +567,7 @@ No rows affected (78.651 seconds)
 *desc extended *方式，相比*desc*可以查看表的更详细信息，比如存储位置，所属db，ower，创建时间，上次访问时间等。
 
 ### 查看表的创建语句
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> show create table emp;
 +----------------------------------------------------+
@@ -584,6 +606,7 @@ No rows affected (78.651 seconds)
 
 
 修改表名emp2为emp_bak
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> alter table emp4 rename to emp_bak;
 No rows affected (0.704 seconds)
@@ -634,6 +657,7 @@ No rows affected (4.845 seconds)
 
 ```
 ### 清空表中所有数据
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> truncate table emp3;
 No rows affected (0.521 seconds)
@@ -652,14 +676,16 @@ No rows selected (0.246 seconds)
 HIVE提供了两种模式的表，我们分别来看一下。
 ### 内部表
 创建一张内部表 emp_managed
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create table emp_managed as select * from emp;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
 No rows affected (65.511 seconds)
 
-``
+```
 
 查看表emp_managed在hdfs中是否存在(/user/hive/warehouse/test.db/emp_managed)
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db
 Found 4 items
@@ -669,9 +695,11 @@ drwxrwxrwx   - donaldhan supergroup          0 2020-02-26 22:50 /user/hive/wareh
 drwxrwxrwx   - donaldhan supergroup          0 2020-02-26 23:09 /user/hive/warehouse/test.db/emp_managed
 donaldhan@pseduoDisHadoop
 ```
+
 存在
 
 登录mysql（TBLS中存放了hive中的所有表）数据库，查看hive的元数据信息
+
 ```
 mysql> use single_hive_db;
 Reading table information for completion of table and column names
@@ -691,16 +719,18 @@ mysql> select * from tbls;
 
 mysql> 
 
-``
+```
+
 emp_managed表元数据存在
 
 删除表emp_managed
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> drop table if exists emp_managed;
 No rows affected (0.875 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
-``
+```
 
 mysql 中hive的元数据被删除
 ```
@@ -716,9 +746,10 @@ mysql> mysql> select * from tbls;
 
 mysql> 
 
-``
+```
 
 表emp_managed 对应hdfs 中的文件夹被删除
+
 ```
 ehouse/test.db
 Found 3 items
@@ -727,12 +758,13 @@ drwxrwxrwx   - donaldhan supergroup          0 2020-02-26 21:50 /user/hive/wareh
 drwxrwxrwx   - donaldhan supergroup          0 2020-02-26 22:50 /user/hive/warehouse/test.db/emp3
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
 
-``
+```
 
 
 ### 外部表
 
 创建一张外部表
+
 ```
 create external table `emp_external`(
  empno int,
@@ -767,8 +799,10 @@ No rows affected (1.055 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 
-``
+```
+
 查看mysql中hive的元数据
+
 ```
 mysql> select * from tbls;
 +--------+-------------+-------+------------------+-----------+-----------+-------+--------------+----------------+--------------------+--------------------+--------------------+
@@ -783,20 +817,23 @@ mysql> select * from tbls;
 
 mysql> 
 
-``
+```
+
 
 外部表类型为：EXTERNAL_TABLE。
 
 新创建的表emp_external中是没有数据的，我们将emp.txt文件上传到hdfs的/user/hive/warehouse/external/emp目录下
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs  -put /bdp/hive/hiveLocalTables/emp.txt /user/hive/warehouse/external/emp
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/external/emp
 Found 1 items
 -rw-r--r--   1 donaldhan supergroup        151 2020-02-26 23:29 /user/hive/warehouse/external/emp/emp.txt
 
-``
+```
 
 上传完成后，表emp_external就有数据了，使用sql查看
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp_external;
 +---------------------+---------------------+-------------------+-------------------+------------------------+-------------------+--------------------+----------------------+
@@ -809,10 +846,12 @@ Found 1 items
 3 rows selected (0.45 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
-``
+```
+
 然后我们来删除这张表，它是一张外部表，注意和内部表有什么区别
 
 hive 中 表emp_external被删除
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> show tables;
 +-----------+
@@ -824,8 +863,10 @@ hive 中 表emp_external被删除
 +-----------+
 3 rows selected (0.22 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000>
-``
+```
+
 mysql 中 元数据被删除
+
 ```
 mysql> select * from tbls;
 +--------+-------------+-------+------------------+-----------+-----------+-------+----------+---------------+--------------------+--------------------+--------------------+
@@ -837,14 +878,17 @@ mysql> select * from tbls;
 +--------+-------------+-------+------------------+-----------+-----------+-------+----------+---------------+--------------------+--------------------+--------------------+
 3 rows in set (0.01 sec)
 
-``
+```
+
 hdfs 中的文件并不会被删除
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/external/emp
 Found 1 items
 -rw-r--r--   1 donaldhan supergroup        151 2020-02-26 23:29 /user/hive/warehouse/external/emp/emp.txt
 
-``
+```
+
 
 **小节**
 内部表与外部表的区别 
@@ -854,6 +898,7 @@ Found 1 items
 ## 表数据加载load
 
 具体语法如下：
+
 ```
 LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
 ```
@@ -867,6 +912,7 @@ OVERWRITE：加上表示覆盖表中数据
 ### 本地文件加载数据
 
 从本地文件emp.txt加载数据到emp表中
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000>  load data local inpath '/bdp/hive/hiveLocalTables/emp.txt' overwrite into table emp;
 No rows affected (4.38 seconds)
@@ -907,11 +953,13 @@ No rows affected (4.046 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 从上面可以看出，使用overwrite方式，在加载数据前删除原有数据。再来看从hdfs文件加载。
 
 ### hdfs文件加载数据
 
 首先将文件上传到HDFS中
+
 ```
 donaldhan@pseduoDisHadoop:~$ hdfs dfs -mkdir -p /user/hive/data
 donaldhan@pseduoDisHadoop:~$ hdfs dfs -put /bdp/hive/hiveLocalTables/emp.txt /user/hive/data
@@ -923,6 +971,7 @@ donaldhan@pseduoDisHadoop:~$
 
 
 加载数据到表emp中
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> load data inpath '/user/hive/data/emp.txt' overwrite into table emp;
 No rows affected (1.28 seconds)
@@ -940,6 +989,7 @@ Error: Error while compiling statement: FAILED: SemanticException Line 1:17 Inva
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 从hdfs方式加载完数据，需要注意hdfs上的文件将会被删除，一刀hdfs的垃圾箱中。
 
 
@@ -947,6 +997,7 @@ Error: Error while compiling statement: FAILED: SemanticException Line 1:17 Inva
 ## 插入数据
 
 向表 emp 中插入数据
+
 ```
  insert into emp(empno,ename,job) values(1001,'TOM','MANAGER');
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -965,12 +1016,14 @@ No rows affected (110.63 seconds)
 
 ```
 
+
 插入数据实际为一个MR任务。
 
 
 ## 查询数据
 
 查询部门编号为10的员工信息
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where deptno=10;
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -980,7 +1033,9 @@ No rows affected (110.63 seconds)
 No rows selected (0.884 seconds)
 
 ```
+
 查询姓名为SMITH的员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where ename='SMITH';
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -990,7 +1045,9 @@ No rows selected (0.884 seconds)
 No rows selected (0.31 seconds)
 
 ```
+
 查询员工编号小于等于7766的员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where empno <= 7766;
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -1005,6 +1062,7 @@ No rows selected (0.31 seconds)
 ```
 
 查询员工工资大于1000小于1500的员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where sal between 1000 and 1500;
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -1015,7 +1073,9 @@ No rows selected (0.297 seconds)
 
 
 ```
+
 查询前5条记录
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp limit 5;
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -1028,7 +1088,9 @@ No rows selected (0.297 seconds)
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
 4 rows selected (0.315 seconds)
 ```
+
 查询姓名为SCOTT或MARTIN的员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where ename in ('SCOTT','MARTIN');
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -1039,6 +1101,7 @@ No rows selected (0.266 seconds)
 ```
 
 查询有津贴的员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from emp where comm is not null; 
 +------------+------------+----------+----------+---------------+----------+-----------+-------------+
@@ -1052,6 +1115,7 @@ No rows selected (0.266 seconds)
 ```
 
 统计部门10下共有多少员工
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select count(*) from emp where deptno=10; 
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -1063,9 +1127,11 @@ WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the futu
 1 row selected (72.948 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 ```
+
 COUNT为MR任务。
 
 查询员工的最大、最小、平均工资及所有工资的和
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select max(sal),min(sal),avg(sal),sum(sal) from emp;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -1081,6 +1147,7 @@ WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the futu
 
 
 查询平均工资大于2000的部门
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select deptno,avg(sal) from emp group by deptno having avg(sal) > 2000;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -1095,7 +1162,9 @@ WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the futu
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 查询员工的姓名和工资等级，按如下规则显示
+
 ```
 select ename, sal, 
 case 
@@ -1151,6 +1220,7 @@ No rows affected (50.128 seconds)
 ```
 
 查看文件：
+
 ```
 donaldhan@pseduoDisHadoop:~$ cd /bdp/hive/data/tmp/
 donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ ll
@@ -1169,6 +1239,7 @@ donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$
 ```
 
 重新执行一遍
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> insert overwrite local directory '/bdp/hive/data/tmp' row format delimited fields terminated by '\t' select * from emp;
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
@@ -1192,6 +1263,7 @@ donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ cat 000000_0
 donaldhan@pseduoDisHadoop:/bdp/hive/data/tmp$ 
 
 ```
+
 文件内容被覆盖。
 
 ### 导出数据到HDFS
@@ -1204,7 +1276,9 @@ No rows affected (54.917 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 在hdfs中查看文件数据
+
 ```
 donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/data
 Found 1 items
@@ -1219,6 +1293,7 @@ donaldhan@pseduoDisHadoop:~$
 donaldhan@pseduoDisHadoop:~$ 
 
 ```
+
 重试一遍
 
 ```
@@ -1240,6 +1315,7 @@ donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/data/000000_0
 789	jamel	cleaner	\N	20170609	3000.0	1000.3	7895
 donaldhan@pseduoDisHadoop:~$ 
 ```
+
 数据被覆盖。
 
 ## 分区表
@@ -1285,10 +1361,12 @@ No rows affected (1.356 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 我们先来看，从本地文件加载数据到分区表。
 
 * 加载本地文件数据到分区表
 将order.txt 文件中的数据加载到order_partition表中
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim order.txt
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ pwd
@@ -1314,7 +1392,9 @@ No rows affected (2.185 seconds)
 3 rows selected (0.34 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 ```
+
 查看hdfs上的文件夹order_partition下多一个分区字段+分区Value的文件加载（event_month=2020-02） ，他下面的文件就是我们本地对应的order.txt文件。
+
 ```
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition
 Found 1 items
@@ -1342,6 +1422,7 @@ Deleted /user/hive/warehouse/test.db/order_partition
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -ls /user/hive/warehouse/test.db/order_partition
 ls: `/user/hive/warehouse/test.db/order_partition': No such file or directory
 ```
+
 一不小心把分区表的文件夹给删了，不过没关系，这正是我们要做的，其实删除表文件下的分区问价夹即可。
 
 查询数据，这是表中已经没有数据量
@@ -1357,6 +1438,7 @@ No rows selected (0.32 seconds)
 ```
 
 创建分区分区文件夹，并将本地数据文件order.txt，上传到对应的分区目录下 /user/hive/warehouse/test.db/order_partition/event_month=2020-02：
+
 ```
 
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ hdfs dfs -mkdir /user/hive/warehouse/test.db/order_partition
@@ -1367,7 +1449,9 @@ Found 1 items
 -rw-r--r--   1 donaldhan supergroup         66 2020-02-27 23:22 /user/hive/warehouse/test.db/order_partition/event_month=2020-02/order.txt
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
 ```
+
 查看数据
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
 +-------------------------------+-----------------------------+------------------------------+
@@ -1380,7 +1464,9 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$
 3 rows selected (0.306 seconds)
 
 ```
+
 当前数据已经有了。如果没有数据，我们可以使用如下命令进行修复
+
 ```
 msck repair table order_partition;
 ```
@@ -1394,6 +1480,7 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$
 ```
 
 这次我们再次查询没有将数据加载表中，我们修复分区数据后，再次查询，可以看到了。
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition;
 +-------------------------------+-----------------------------+------------------------------+
@@ -1423,6 +1510,7 @@ No rows affected (0.776 seconds)
 ```
 
 对于分区表，不建议直接使用select * 查询，性能低，建议查询时加上条件，如果加上条件后它会直接从指定的分区中查找数据
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_partition where event_month='2020-02';
 +-------------------------------+-----------------------------+------------------------------+
@@ -1459,6 +1547,7 @@ mysql> select * from partition_keys;
 2. 多级分区
 
 创建表order_multi_partition
+
 ```
 create table `order_multi_partition`(
 order_number string,
@@ -1467,7 +1556,9 @@ event_time string
 partitioned by (event_month string, step string)
 row format delimited fields terminated by '\t';
 ```
+
 加载数据到表order_multi_partition
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> create table `order_multi_partition`(
 . . . . . . . . . . . . . . . . . . .> order_number string,
@@ -1490,7 +1581,9 @@ No rows affected (4.165 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 把step修改为2，再次加载数据
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> select * from order_multi_partition;
 +-------------------------------------+-----------------------------------+------------------------------------+-----------------------------+
@@ -1509,6 +1602,7 @@ No rows affected (4.165 seconds)
 ```
 
 查看hdfs中的目录结构
+
 ```
 donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/order_multi_partition/event_month=2020-02
 Found 2 items
@@ -1517,6 +1611,7 @@ drwxrwxrwx   - donaldhan supergroup          0 2020-03-02 22:36 /user/hive/wareh
 donaldhan@pseduoDisHadoop:~$ 
 
 ```
+
 从上面可以看出，单级分区和多级分区唯一的区别就是多级分区在hdfs中的目录为多级。
 
 ### 动态分区
@@ -1528,11 +1623,13 @@ hive 中默认是静态分区，想要使用动态分区，需要设置如下参
 ```
 set hive.exec.dynamic.partition=true;
 ```
+
 指定动态分区模式，默认为strict，即必须指定至少一个分区为静态分区，nonstrict模式表示允许所有的分区字段都可以使用动态分区。
 
 ```
 set hive.exec.dynamic.partition.mode=nonstrict;
 ```
+
 创建表student
 
 ```
@@ -1555,7 +1652,9 @@ donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat student.txt
 donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
 
 ```
+
 将文件student.txt中的内容加载到student表中
+
 ```
 load data local inpath '/bdp/hive/hiveLocalTables/student.txt' overwrite into table student;
 ```
@@ -1575,6 +1674,7 @@ No rows affected (1.649 seconds)
 0: jdbc:hive2://pseduoDisHadoop:10000> 
 
 ```
+
 创建分区表stu_age_partition
 
 ```
@@ -1588,6 +1688,7 @@ row format delimited fields terminated by '\t';
 ```
 
 将student表的数据以age为分区插入到stu_age_partition表，试想如果student表中的数据很多，使用insert一条一条插入数据，很不方便，所以这个时候可以使用hive的动态分区来实现
+
 ```
 insert into table stu_age_partition partition (age) select id,name,tel,age from student;
 ```
