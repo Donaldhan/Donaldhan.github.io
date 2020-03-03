@@ -2,7 +2,7 @@
 layout: page
 title: HIVE客户端
 subtitle: HIVE客户端
-date: 2020-11-04 15:17:19
+date: 2020-03-03 23:04:00
 author: donaldhan
 catalog: true
 category: BigData
@@ -16,7 +16,7 @@ tags:
 上面一篇文章[HIVE单机环境搭建]，我们搭建了Hive的HA版本和单机版，今天我们来使用单机来看一下HIVE的相关DDL和DML语法。
 
 
-[HIVE单机环境搭建]:
+[HIVE单机环境搭建]:https://donaldhan.github.io/bigdata/2020/11/04/HIVE%E5%8D%95%E6%9C%BA%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA.html
  "HIVE单机环境搭建"
 
 
@@ -41,10 +41,10 @@ tags:
     * [分区表](#分区表)
     
 * [复杂数据类型操作](#复杂数据类型操作)
-    * [Array](#Array)
-    * [Map](#Map)
-    * [Struct](#Struct)
-    * [Array](#Array)
+    * [Array](#array)
+    * [Map](#map)
+    * [Struct](#struct)
+    * [Array](#array)
 
 
 * [总结](#总结)
@@ -1638,24 +1638,255 @@ select * from stu_age_partition where age > 20;
 ```
 
 # 复杂数据类型操作
-
-
+这部分建议使用HIVE2（beeline），hive2中解决了hive1中的单点故障，可以搭建高可用的hive集群，hive2界面显示格式要比hive1直观、好看（类似于mysql中的shell界面）
 ## Array
+创建一张带有数组的表tb_array
+```
+create table `tb_array`(
+name string,
+work_locations array<string>
+)
+row format delimited fields terminated by '\t'
+collection items terminated by ',';
+
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> desc tb_array;
++-----------------+----------------+----------+
+|    col_name     |   data_type    | comment  |
++-----------------+----------------+----------+
+| name            | string         |          |
+| work_locations  | array<string>  |          |
++-----------------+----------------+----------+
+2 rows selected (0.399 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+加载数据到表tb_array
+hive_array.txt文件内容如下
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim hive_array.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat hive_array.txt 
+jamel	guangzhou,hangzhou
+rain	fuyang,tongling,nanchang
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ 
+
+```
+
+命令如下：
+```
+load data local inpath '/bdp/hive/hiveLocalTables/hive_array.txt' overwrite into table tb_array;
+```
+
+表数据：
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select  * from tb_array;
++----------------+-----------------------------------+
+| tb_array.name  |      tb_array.work_locations      |
++----------------+-----------------------------------+
+| jamel          | ["guangzhou","hangzhou"]          |
+| rain           | ["fuyang","tongling","nanchang"]  |
++----------------+-----------------------------------+
+2 rows selected (4.112 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+查询jamel的第一个工作地点（数组下标从0开始）
+```
+select name,work_locations[0] from tb_array where name='jamel';
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select name,work_locations[0] from tb_array where name='jamel';
++--------+------------+
+|  name  |    _c1     |
++--------+------------+
+| jamel  | guangzhou  |
++--------+------------+
+1 row selected (1.883 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+查询每个人工作地点的数量（size）
+```
+select name,size(work_locations) from tb_array;
+```
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select name,size(work_locations) from tb_array;
++--------+------+
+|  name  | _c1  |
++--------+------+
+| jamel  | 2    |
+| rain   | 3    |
++--------+------+
+2 rows selected (0.434 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
 ## Map
-## Struct
-## Array
+创建一个带有map类型的表tb_map
+```
+create table `tb_map`(
+name string,
+scores map<string,int>
+)
+row format delimited fields terminated by '\t'
+collection items terminated by ','
+map keys terminated by ':';
 
-DML（Table） 操作
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> desc tb_map;;
++-----------+------------------+----------+
+| col_name  |    data_type     | comment  |
++-----------+------------------+----------+
+| name      | string           |          |
+| scores    | map<string,int>  |          |
++-----------+------------------+----------+
+2 rows selected (0.348 seconds)
+
+```
+
+加载数据到表tb_map
+hive_map.txt文件内容如下
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim hive_map.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat hive_map.txt 
+jamel	math:100,chinese:88,english:96
+rain	math:89,chinese:68,english:78
+
+```
+命令如下：
+```
+load data local inpath '/bdp/hive/hiveLocalTables/hive_map.txt' overwrite into table tb_map;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> load data local inpath '/bdp/hive/hiveLocalTables/hive_map.txt' overwrite into table tb_map;
+No rows affected (2.021 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from tb_map;
++--------------+-----------------------------------------+
+| tb_map.name  |              tb_map.scores              |
++--------------+-----------------------------------------+
+| jamel        | {"math":100,"chinese":88,"english":96}  |
+| rain         | {"math":89,"chinese":68,"english":78}   |
++--------------+-----------------------------------------+
+2 rows selected (0.364 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+查询所有学生的英语成绩
+```
+select name,scores['english'] from tb_map;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select name,scores['english'] from tb_map;
++--------+------+
+|  name  | _c1  |
++--------+------+
+| jamel  | 96   |
+| rain   | 78   |
++--------+------+
+2 rows selected (0.344 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+查询所有学生的英语和数学成绩
+
+```
+select name,scores['english'],scores['math'] from tb_map;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select name,scores['english'],scores['math'] from tb_map;
++--------+------+------+
+|  name  | _c1  | _c2  |
++--------+------+------+
+| jamel  | 96   | 100  |
+| rain   | 78   | 89   |
++--------+------+------+
+2 rows selected (0.323 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+## Struct
+
+创建一张带有结构体的表
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> desc tb_struct;
++-----------+------------------------------+----------+
+| col_name  |          data_type           | comment  |
++-----------+------------------------------+----------+
+| ip        | string                       |          |
+| userinfo  | struct<name:string,age:int>  |          |
++-----------+------------------------------+----------+
+2 rows selected (0.354 seconds)
+
+```
+加载文件hive_struct.txt中的数据到表tb_struct
+hive_struct.txt文件内容如下:
+
+
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ vim hive_struct.txt
+donaldhan@pseduoDisHadoop:/bdp/hive/hiveLocalTables$ cat hive_struct.txt 
+192.168.1.1#zhangsan:40
+192.168.1.2#lisi:50
+192.168.1.3#wangwu:60
+192.168.1.4#zhaoliu:70
+
+```
+
+命令如下：
+```
+load data local inpath '/bdp/hive/hiveLocalTables/hive_struct.txt' overwrite into table tb_struct;
+```
+
+表数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from tb_struct;
++---------------+-------------------------------+
+| tb_struct.ip  |      tb_struct.userinfo       |
++---------------+-------------------------------+
+| 192.168.1.1   | {"name":"zhangsan","age":40}  |
+| 192.168.1.2   | {"name":"lisi","age":50}      |
+| 192.168.1.3   | {"name":"wangwu","age":60}    |
+| 192.168.1.4   | {"name":"zhaoliu","age":70}   |
++---------------+-------------------------------+
+4 rows selected (0.27 seconds)
+
+```
+
+查询姓名及年龄
+```
+select userinfo.name,userinfo.age from tb_struct;
+```
+
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select userinfo.name,userinfo.age from tb_struct;
++-----------+------+
+|   name    | age  |
++-----------+------+
+| zhangsan  | 40   |
+| lisi      | 50   |
+| wangwu    | 60   |
+| zhaoliu   | 70   |
++-----------+------+
+4 rows selected (0.375 seconds)
+
+```
+
+退出beeline
+
 ```
 0: jdbc:hive2://pseduoDisHadoop:10000> !quit
 Closing: 0: jdbc:hive2://pseduoDisHadoop:10000
 
 ```
-
-
-### 
-```
-```
+至此，我们将hive的复查结构数据表讲完。
 
 ## 总结
 由于我们创建数据库时没有指定对应的数仓存储路径，默认为HDFS下的数仓目录user/hive/warehouse+数据库名+.db对应的文件夹。
@@ -1663,7 +1894,7 @@ Closing: 0: jdbc:hive2://pseduoDisHadoop:10000
 如果数据库中有0或多个表时，不能直接删除，需要先删除表再删除数据库；如果想要删除含有表的数据库，在删除时加上cascade，可以级联删除（慎用）。
 
 
-总结：内部表与外部表的区别 
+内部表与外部表的区别 ：  
 如果是内部表，在删除时，MySQL中的元数据和HDFS中的数据都会被删除 
 如果是外部表，在删除时，MySQL中的元数据会被删除，HDFS中的数据不会被删除
 
@@ -1671,7 +1902,7 @@ Closing: 0: jdbc:hive2://pseduoDisHadoop:10000
 如果加上LOCAL表示从本地加载数据，默认不加，从hdfs中加载数据，添加
 OVERWRITE关键字，将会覆盖表中数据，及先删除，在加载。
 
-从hdfs方式加载完数据，需要注意hdfs上的文件将会被删除，一刀hdfs的垃圾箱中。
+从hdfs方式加载完数据，需要注意hdfs上的文件将会被删除，移动hdfs的垃圾箱中。
 
 
 插入数据实际为一个MR任务。聚合类的操作（max，min，avg，count），都需要运行MR任务。
