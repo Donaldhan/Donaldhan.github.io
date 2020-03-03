@@ -1,7 +1,7 @@
 ---
 layout: page
-title: HIVE客户端
-subtitle: HIVE客户端
+title: HIVE客户端API
+subtitle: HIVE客户端API
 date: 2020-11-04 15:17:19
 author: donaldhan
 catalog: true

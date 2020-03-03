@@ -1,7 +1,7 @@
 ---
 layout: page
-title: HIVE客户端
-subtitle: HIVE客户端
+title: HIVE DDL&DML简介
+subtitle: HIVE DDL&DML简介
 date: 2020-03-03 23:04:00
 author: donaldhan
 catalog: true
@@ -16,7 +16,7 @@ tags:
 上面一篇文章[HIVE单机环境搭建]，我们搭建了Hive的HA版本和单机版，今天我们来使用单机来看一下HIVE的相关DDL和DML语法。
 
 
-[HIVE单机环境搭建]:https://donaldhan.github.io/bigdata/2020/11/04/HIVE%E5%8D%95%E6%9C%BA%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA.html
+[HIVE单机环境搭建]:https://donaldhan.github.io/bigdata/2020/11/04/HIVE%E5%8D%95%E6%9C%BA%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA.html  
  "HIVE单机环境搭建"
 
 
