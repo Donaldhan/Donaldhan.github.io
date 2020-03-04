@@ -13,8 +13,8 @@ tags:
 ---
 
 # 引言
-
-由于我们创建数据库时没有指定对应的数仓存储路径，默认为HDFS下的数仓目录user/hive/warehouse+数据库名+.db对应的文件夹。
+我们先来回顾一下上一篇[HIVE DDL&DML简介][]所讲内容。
+如果创建数据库时没有指定对应的数仓存储路径，默认为HDFS下的数仓目录user/hive/warehouse+数据库名+.db对应的文件夹。
 如果数据库中有0或多个表时，不能直接删除，需要先删除表再删除数据库；如果想要删除含有表的数据库，在删除时加上cascade，可以级联删除（慎用）。
 Hive表有两种，分别是内部表与外部表，如果是内部表，在删除时，MySQL中的元数据和HDFS中的数据都会被删除；
 如果是外部表，在删除时，MySQL中的元数据会被删除，HDFS中的数据不会被删除；
@@ -26,7 +26,9 @@ Hive表有两种，分别是内部表与外部表，如果是内部表，在删�
 从本地加载文件到分区表时，实际上是，将本地文件放到hdfs上的数据库分区表文件夹（order_partition）下的分区字段+分区Value（event_month=2020-02）文价夹。
 单级分区和多级分区唯一的区别就是多级分区在hdfs中的目录为多级。
 
+今天我们来看一下client api的使用。
 
+[HIVE DDL&DML简介]:https://donaldhan.github.io/bigdata/2020/03/03/HIVE-DDL&DML%E7%AE%80%E4%BB%8B.html    "HIVE DDL&DML简介"
 # 目录
 * [](#)
     * [](#)
@@ -36,6 +38,8 @@ Hive表有两种，分别是内部表与外部表，如果是内部表，在删�
 
 从搜索的结果来看，hive没有对应的client API，在大数据的场景中，应该没有这种java直接访问hive，要结合spark、今天我们只做一个简单的测试；
 
+
+HIVE单机环境搭建:<https://donaldhan.github.io/bigdata/2020/02/25/HIVE%E5%8D%95%E6%9C%BA%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA.html>   
 
 
 ###
@@ -61,3 +65,24 @@ hive --service metastore &
 使用hive客户端java api读写hive集群上的信息:<https://www.bbsmax.com/A/1O5EBAy7d7/>  
 hdinsight-java-hive-jdbc:<https://github.com/Azure-Samples/hdinsight-java-hive-jdbc>  
 HiveMetaStoreClient:<https://github.com/Re1tReddy/HiveMetaStoreClient>  
+
+
+```
+org.apache.thrift.server.TThreadPoolServer$WorkerProcess.run(TThreadPoolServer.java:286)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.apache.hadoop.hive.ql.parse.ParseException:line 1:108 cannot recognize input near ';' '<EOF>' '<EOF>' in serde properties specification
+	at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:211)
+	at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:77)
+	at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:70)
+	at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:468)
+	at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1317)
+	at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1295)
+	at org.apache.hive.service.cli.operation.SQLOperation.prepare(SQLOperation.java:204)
+	... 15 more
+Disconnected from the target VM, address: '127.0.0.1:54934', transport: 'socket'
+
+Process finished with exit code 1
+
+```
