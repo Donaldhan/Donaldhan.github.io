@@ -14,7 +14,6 @@ tags:
 
 # 引言
 
-应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
 
 
 # 目录
@@ -34,3 +33,12 @@ tags:
 
 
 ## 总结
+
+
+# 附
+
+## 参考文献
+flume:<http://flume.apache.org/>  
+Flume:<https://blog.csdn.net/qq_35078688/article/details/83552451>   
+Flume(一):<https://www.cnblogs.com/xuziyu/p/11004103.html>  
+Flume:<https://www.jianshu.com/p/323859671420>  
