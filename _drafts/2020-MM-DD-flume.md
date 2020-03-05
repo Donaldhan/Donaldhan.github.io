@@ -39,6 +39,7 @@ tags:
 
 ## 参考文献
 flume:<http://flume.apache.org/>  
+Flume构建日志采集系统:<https://www.jianshu.com/p/1183139ed3a0> 
 Flume:<https://blog.csdn.net/qq_35078688/article/details/83552451>   
 Flume(一):<https://www.cnblogs.com/xuziyu/p/11004103.html>  
 Flume:<https://www.jianshu.com/p/323859671420>  
