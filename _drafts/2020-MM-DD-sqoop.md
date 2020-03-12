@@ -1,20 +1,18 @@
 ---
 layout: page
-title: my blog
-subtitle: sub title
+title: Sqoop
+subtitle: Sqoop
 date: 2020-11-04 15:17:19
 author: donaldhan
 catalog: true
-category: spring-framework
-categories:
-    - spring-framework
+category: BigData
+    - BigData
 tags:
-    - spring-context
+    - Sqoop
 ---
 
 # 引言
 
-应用上下文和可配置应用上下文已看完，从这篇文章开始，我们将进入应用上下文的实现。
 
 
 # 目录
@@ -34,3 +32,11 @@ tags:
 
 
 ## 总结
+
+
+# 附
+[sqoop](http://sqoop.apache.org/)   
+[真正了解sqoop的一切](https://www.jianshu.com/p/ec9003d8918c)   
+[Sqoop简介](https://www.jianshu.com/p/4250382abbc6)   
+[]()   
+[]()   
