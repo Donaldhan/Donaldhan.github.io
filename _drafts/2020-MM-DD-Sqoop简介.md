@@ -105,10 +105,23 @@ export HIVE_HOME=/bdp/hive/apache-hive-2.3.4-bin
 
 我们主要测试mysql到HIVE， 由于Sqoop作业用的是MR，所以需要配置Hadoop的路径。
 
+
+
+
 将mysql的驱动包放到sqoop的lib目录下
 ```
 donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ cp /bdp/hive/mysql-connector-java-5.1.41.jar lib/
 ```
+
+下载sqoop-1.4.7.jar，avro-1.8.1.jar放到sqoop的lib文件加下
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ ls lib/
+ant-contrib-1.0b3.jar       mysql-connector-java-5.1.41.jar
+ant-eclipse-1.0-jvm1.2.jar  sqoop-1.4.7.jar
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.
+```
+
+
 
 添加Sqoop路径到系统路径
 ```
@@ -116,17 +129,127 @@ export SQOOP_HOME=/bdp/sqoop/sqoop-1.4.7
 export PATH=${SQOOP_HOME}/bin:${JAVA_HOME}/bin:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${ZOOKEEPER_HOME}/bin:${HBASE_HOME}/bin:${HIVE_HOME}/bin:${FLUME_HOME}/bin:${PATH}
 
 ```
+
+使用以下命令
+```
+sqoop version
+```
+
+查看是否安装成功
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ sqoop version
+...
+20/03/18 22:33:24 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7
+Sqoop 1.4.7
+git commit id 04c9c16335b71d44fdc7d4f1deabe6f575620b94
+Compiled by ec2-user on Tue Jun 12 19:50:32 UTC 2018
+
+```
 ## Sqoop的使用
 
-1. 查看数据库的名称：
-
+### 查看数据库的名称：
+```
 sqoop list-databases --connect jdbc:mysql://ip:3306/ --username 用户名--password 密码
+```
 
-sqoop list-databases --connect jdbc:mysql://mysqlDb:3306/ --username root --password 123456
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ sqoop list-databases --connect jdbc:mysql://192.168.3.107:3306/ --username root --password 123456
+...
+20/03/18 23:01:49 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.
+information_schema
+hive_db
+mysql
+performance_schema
+single_hive_db
+test
+```
 
-2. 列举出数据库中的表名：
-
+### 列举出数据库中的表名：
+```
 sqoop list-tables --connect jdbc:mysql://ip:3306/数据库名称 --username 用户名 --password 密码
+```
+
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ sqoop list-tables --connect jdbc:mysql://192.168.3.107:3306/test --username root --password 123456
+...
+20/03/18 23:06:09 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7
+20/03/18 23:06:09 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.
+20/03/18 23:06:09 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.
+blogs
+comments
+users
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ 
+```
+
+我们在mysql的test库中创建如下表
+```
+CREATE TABLE `books` (
+  `id` int(11) NOT NULL,
+  `book_name` varchar(64) DEFAULT NULL,
+  `book_price` decimal(10,0) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+```
+插入如下数据
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`) VALUES ('1', '贫穷的本质', '39');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`) VALUES ('2', '聪明的投资者', '42');
+```
+
+```
+mysql> select * from books;
++----+--------------+------------+
+| id | book_name    | book_price |
++----+--------------+------------+
+|  1 | 贫穷的本质   | 39         |
+|  2 | 聪明的投资者 | 42         |
++----+--------------+------------+
+2 rows in set
+
+mysql> 
+```
+
+
+### 导入数据
+从关系数据导出数据到HDFS，HIVE，或HBASE，具体命令解释如下
+
+
+
+```
+sqoop import  
+--connect jdbc:mysql://ip:3306/databasename  #指定JDBC的URL 其中database指的是(Mysql或者Oracle)中的数据库名
+--table  tablename  #要读取数据库database中的表名           
+--username root      #用户名 
+--password  123456  #密码    
+--target-dir   /path  #指的是HDFS中导入表的存放目录(注意：是目录)
+--fields-terminated-by '\t'   #设定导入数据后每个字段的分隔符，默认；分隔
+--lines-terminated-by '\n'    #设定导入数据后每行的分隔符
+--m 1  #并发的map数量1,如果不设置默认启动4个map task执行数据导入，则需要指定一个列来作为划分map task任务的依据
+-- where ’查询条件‘   #导入查询出来的内容，表的子集
+--incremental  append  #增量导入
+--check-column：column_id   #指定增量导入时的参考列
+--last-value：num   #上一次导入column_id的最后一个值
+--null-string ‘’   #导入的字段为空时，用指定的字符进行替换
+```
+
+```
+sqoop import  
+--connect jdbc:mysql://ip:3306/databasename
+--table  tablename      
+--username root    
+--password  123456 
+--target-dir   /path  
+--fields-terminated-by '\t'  
+--lines-terminated-by '\n'  
+--m 1  
+-- where 
+--incremental  append 
+--check-column：column_id 
+--last-value：num   
+--null-string ‘’  
+```
+
 
 
 # Sqoop2
@@ -154,6 +277,21 @@ sqoop list-tables --connect jdbc:mysql://ip:3306/数据库名称 --username 用
 ```
 Error: Could not find or load main class org.apache.sqoop.Sqoop
 ```
+问题原因：缺失sqoop-1.4.7.jar包，下载放到lib即可。
 
 [Sqoop找不到主类 Error: Could not find or load main class org.apache.sqoop.Sqoop](https://www.cnblogs.com/hxsyl/p/6552701.html)    
 [运行sqoop 报 Could not find or load main class org.apache.sqoop.Sqoop](http://blog.chinaunix.net/uid-22948773-id-3563685.html)
+
+
+### Caused by: java.lang.ClassNotFoundException: org.apache.avro.
+```
+Caused by: java.lang.ClassNotFoundException: org.apache.avro.LogicalType
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:382)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:349)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+	... 10 more
+
+```
+
+问题原因：缺失avro-1.8.1.jar包，下载放到lib即可。
