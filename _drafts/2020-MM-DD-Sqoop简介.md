@@ -181,6 +181,38 @@ users
 donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7$ 
 ```
 
+
+
+### 导入数据
+从关系数据导出数据到HDFS，HIVE，或HBASE；
+
+
+
+具体命令解释如下
+
+
+
+```
+sqoop import  
+--connect jdbc:mysql://ip:3306/databasename  #指定JDBC的URL 其中database指的是(Mysql或者Oracle)中的数据库名
+--table  tablename  #要读取数据库database中的表名           
+--username root      #用户名 
+--password  123456  #密码    
+--target-dir   /path  #指的是HDFS中导入表的存放目录(注意：是目录)
+--fields-terminated-by '\t'   #设定导入数据后每个字段的分隔符，默认；分隔
+--lines-terminated-by '\n'    #设定导入数据后每行的分隔符
+--m,--num-mappers 1  #并发的map数量1,如果不设置默认启动4个map task执行数据导入，则需要指定一个列来作为划分map task任务的依据
+-- where ’查询条件‘   #导入查询出来的内容，表的子集
+-e，--query	‘取数sql’
+--incremental  append  #增量导入
+--check-column：column_id   #指定增量导入时的参考列
+--last-value：num   #上一次导入column_id的最后一个值
+--null-string ‘’   #导入的字段为空时，用指定的字符进行替换
+```
+
+
+准备数据
+
 我们在mysql的test库中创建如下表
 ```
 CREATE TABLE `books` (
@@ -210,28 +242,115 @@ mysql> select * from books;
 mysql> 
 ```
 
+启动hadoop
+```
+start-dfs.sh 
+```
+启动yarn
+```
+start-yarn.sh 
+```
 
-### 导入数据
-从关系数据导出数据到HDFS，HIVE，或HBASE，具体命令解释如下
+创建hdfs目录，用户存放导出的数据
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -mkdir /user/sqoop
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user
+Found 3 items
+drwxr-xr-x   - donaldhan supergroup          0 2019-03-24 22:08 /user/donaldhan
+drwxr-xr-x   - donaldhan supergroup          0 2020-02-27 22:07 /user/hive
+drwxr-xr-x   - donaldhan supergroup          0 2020-03-19 22:40 /user/sqoop
+
+```
+
+```
+sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop/books2 --fields-terminated-by '\t' --m 1
+```
+
+查看导入的数据文件
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/sqoop/books
+Found 3 items
+-rw-r--r--   1 donaldhan supergroup          0 2020-03-19 23:24 /user/sqoop/books/_SUCCESS
+-rw-r--r--   1 donaldhan supergroup         21 2020-03-19 23:24 /user/sqoop/books/part-m-00000
+-rw-r--r--   1 donaldhan supergroup         24 2020-03-19 23:24 /user/sqoop/books/part-m-00001
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/sqoop/books/*01
+2	聪明的投资者	42
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/sqoop/books/*00
+1	贫穷的本质	39
+donaldhan@pseduoDisHadoop:~$ 
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/sqoop/books/*0*
+1	贫穷的本质	39
+2	聪明的投资者	42
+```
+
+
+从输出日志来看每次只抓取一条记录
+
+
+```
+20/03/19 23:34:25 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM `books` AS t LIMIT 1
+20/03/19 23:34:25 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM `books` AS t LIMIT 1
+```
+
+
+我们可以通过--fetch-size参数每次控制抓取大小
+
+```
+--fetch-size  2
+```
+
+执行的过程中，我们发现是无效的，因为被Mysql的驱动忽略
+
+```
+20/03/19 23:34:24 INFO manager.MySQLManager: Argument '--fetch-size 2' will probably get ignored by MySQL JDBC driver.
+```
+
+是否可以使用--m控制map任务数量，进而将所有的数据集中到一个文件中
+```
+--m 1
+```
+
+
+```
+sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop/books2 --fields-terminated-by '\t' --m 1
+```
+
+查看hdfs文件
+
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/sqoop/books2
+Found 2 items
+-rw-r--r--   1 donaldhan supergroup          0 2020-03-19 23:39 /user/sqoop/books2/_SUCCESS
+-rw-r--r--   1 donaldhan supergroup         45 2020-03-19 23:39 /user/sqoop/books2/part-m-00000
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/sqoop/books2/*0
+1	贫穷的本质	39
+2	聪明的投资者	42
+```
+
+从hdfs目录文件来看，答案是可定的。
+
+
+
+
+
+
+
+
+
 
 
 
 ```
-sqoop import  
---connect jdbc:mysql://ip:3306/databasename  #指定JDBC的URL 其中database指的是(Mysql或者Oracle)中的数据库名
---table  tablename  #要读取数据库database中的表名           
---username root      #用户名 
---password  123456  #密码    
---target-dir   /path  #指的是HDFS中导入表的存放目录(注意：是目录)
---fields-terminated-by '\t'   #设定导入数据后每个字段的分隔符，默认；分隔
---lines-terminated-by '\n'    #设定导入数据后每行的分隔符
---m 1  #并发的map数量1,如果不设置默认启动4个map task执行数据导入，则需要指定一个列来作为划分map task任务的依据
--- where ’查询条件‘   #导入查询出来的内容，表的子集
---incremental  append  #增量导入
---check-column：column_id   #指定增量导入时的参考列
---last-value：num   #上一次导入column_id的最后一个值
---null-string ‘’   #导入的字段为空时，用指定的字符进行替换
+sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop --fields-terminated-by '\t'   --lines-terminated-by '\n'  -m 1 
+
+
 ```
+sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop/test --fields-terminated-by '\t'  --lines-terminated-by '\n'  --incremental  append   --check-column：id   --last-value：1   --null-string '\\N'
+```
+
+
+
+
 
 ```
 sqoop import  
@@ -259,7 +378,7 @@ sqoop import  
 
 
 ## 总结
-
+将mysql导入到hdfs，可以使用--m控制map任务数量，进而将所有的数据集中到一个文件中；
 
 # 附
 ## 参考文献
@@ -295,3 +414,9 @@ Caused by: java.lang.ClassNotFoundException: org.apache.avro.LogicalType
 ```
 
 问题原因：缺失avro-1.8.1.jar包，下载放到lib即可。
+
+
+
+### Exception in thread "main" java.lang.NoClassDefFoundError: org/apache/commons/lang3/StringUtils
+
+缺失commons-lang3-3.8.1.jar，下载放到lib即可。
