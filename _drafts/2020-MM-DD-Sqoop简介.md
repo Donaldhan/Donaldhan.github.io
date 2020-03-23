@@ -19,9 +19,17 @@ tags:
 # 目录
 * [ Sqoop的优点](#sqoop的优点)
 * [Sqoop1](#sqoop1)
+    * [sqoop安装配置](#sqoop安装配置)
+    * [Sqoop的使用](#sqoop的使用)
+        * [导入数据](#导入数据)
+            * [导入mysql数据到HDFS](#导入mysql数据到hdfs)
+            * [导入mysql数据到HIVE](#导入mysql数据到hive)
+        * [导出数据](#导出数据)
     * [](#)
 * [Sqoop2](#sqoop2)
 * [总结](#总结)
+
+
 
 
 # Sqoop的优点
@@ -242,6 +250,8 @@ mysql> select * from books;
 mysql> 
 ```
 
+#### 导入mysql数据到HDFS
+
 启动hadoop
 ```
 start-dfs.sh 
@@ -330,18 +340,72 @@ donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/sqoop/books2/*0
 从hdfs目录文件来看，答案是可定的。
 
 
+#### 导入mysql数据到HIVE
 
+HIVE相关参数
+```
+Argument	Description
+--hive-home <dir>	Override $HIVE_HOME
+--hive-import	Import tables into Hive (Uses Hive’s default delimiters if none are set.)
+--hive-overwrite	Overwrite existing data in the Hive table.
+--create-hive-table	If set, then the job will fail if the target hive
+table exists. By default this property is false.
+--hive-table <table-name>	Sets the table name to use when importing to Hive.
+--hive-drop-import-delims	Drops \n, \r, and \01 from string fields when importing to Hive.
+--hive-delims-replacement	Replace \n, \r, and \01 from string fields with user defined string when importing to Hive.
+--hive-partition-key	Name of a hive field to partition are sharded on
+--hive-partition-value <v>	String-value that serves as partition key for this imported into hive in this job.
+--map-column-hive <map>	Override default mapping from SQL type to Hive type for configured columns. If specify commas in this argument, use URL encoded keys and values, for example, use DECIMAL(1%2C%201) instead of DECIMAL(1, 1).
 
+```
 
+我们使用上面的数据源，
 
+启动HIVE
+```
+ hiveserver2 
+```
 
+在启动之前，hdfs和yarn要启动。
 
+执行如下命令
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--hive-import  \
+--hive-overwrite  \
+--create-hive-table  \
+--delete-target-dir \
+--hive-database  test \
+--hive-table books
+```
+需要注意：Sqoop会自动创建对应的Hive表，但是hive-database 需要手动创建
+
+```
+donaldhan@pseduoDisHadoop:~$ beeline 
+beeline> !connect jdbc:hive2://pseduoDisHadoop:10000
+Connecting to jdbc:hive2://pseduoDisHadoop:10000
+Enter username for jdbc:hive2://pseduoDisHadoop:10000: hadoop
+Enter password for jdbc:hive2://pseduoDisHadoop:10000: ******
+Connected to: Apache Hive (version 2.3.4)
+Driver: Hive JDBC (version 2.3.4)
+Transaction isolation: TRANSACTION_REPEATABLE_READ
+0: jdbc:hive2://pseduoDisHadoop:10000> use test;
+No rows affected (1.008 seconds)
+
+```
 
 
 
 
 ```
 sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop --fields-terminated-by '\t'   --lines-terminated-by '\n'  -m 1 
+```
 
 
 ```
@@ -420,3 +484,41 @@ Caused by: java.lang.ClassNotFoundException: org.apache.avro.LogicalType
 ### Exception in thread "main" java.lang.NoClassDefFoundError: org/apache/commons/lang3/StringUtils
 
 缺失commons-lang3-3.8.1.jar，下载放到lib即可。
+
+### ERROR tool.ImportTool: Import failed: java.io.IOException: java.lang.ClassNotFoundException: org.apache.hadoop.hive.conf.HiveConf
+```
+20/03/23 22:47:05 ERROR tool.ImportTool: Import failed: java.io.IOException: java.lang.ClassNotFoundException: org.apache.hadoop.hive.conf.HiveConf
+```
+
+问题原因：无法找到HiveConf;  
+解决方式，声明HIVE LIB环境变量，具体如下
+```
+export HADOOP_CLASSPATH=${HADOOP_HOME}/lib/*:${HIVE_HOME}/lib/*
+```
+[sqoop：【error】mysql导出数据到hive报错HiveConfig:无法加载org.apache.hadoop.hive.conf.HiveConf。确保HIVE_CONF_DIR设置正确](https://www.cnblogs.com/drl-blogs/p/11086865.html)
+
+### Import failed: java.io.IOException: Hive CliDriver exited with status=40000
+```
+Caused by: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient
+	at org.apache.hadoop.hive.metastore.MetaStoreUtils.newInstance(MetaStoreUtils.java:1708)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.<init>(RetryingMetaStoreClient.java:83)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:133)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:104)
+	at org.apache.hadoop.hive.ql.metadata.Hive.createMetaStoreClient(Hive.java:3600)
+	at org.apache.ha
+20/03/23 22:57:11 ERROR tool.ImportTool: Import failed: java.io.IOException: Hive CliDriver exited with status=40000
+	at org.apache.sqoop.hive.HiveImport.executeScript(HiveImport.java:355)
+	at org.apache.sqoop.hive.HiveImport.importTable(HiveImport.java:241)
+	at org.apache.sqoop.tool.ImportTool.importTable(ImportTool.java:537)
+	at org.apache.sqoop.tool.ImportTool.run(ImportTool.java:628)
+	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)
+	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:70)
+	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
+
+```
+
+[Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient](https://stackoverflow.com/questions/41607643/unable-to-instantiate-org-apache-hadoop-hive-ql-metadata-sessionhivemetastorecli)
+
+[hive常见问题解决干货大全](https://www.cnblogs.com/zlslch/p/5944887.html)
