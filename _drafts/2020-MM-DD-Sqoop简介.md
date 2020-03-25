@@ -401,6 +401,11 @@ No rows affected (1.008 seconds)
 ```
 
 
+sqoop create-hive-table --connect jdbc:mysql://192.168.3.107:3306/test \
+--username root  \
+--password 123456  \
+--table books --hive-table books
+
 
 
 ```
@@ -519,7 +524,7 @@ Caused by: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.h
 
 ```
 
-[Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient](https://stackoverflow.com/questions/41607643/unable-to-instantiate-org-apache-hadoop-hive-ql-metadata-sessionhivemetastorecli)
+[Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient](https://stackoverflow.com/questions/41607643/unable-to-instantiate-org-apache-hadoop-hive-ql-metadata-sessionhivemetastorecli)  
 
-[hive常见问题解决干货大全](https://www.cnblogs.com/zlslch/p/5944887.html)
-[在hue 使用oozie sqoop 从mysql 导入hive 失败](https://www.cnblogs.com/chengjunhao/p/9815600.html)
+[hive常见问题解决干货大全](https://www.cnblogs.com/zlslch/p/5944887.html)   
+[在hue 使用oozie sqoop 从mysql 导入hive 失败](https://www.cnblogs.com/chengjunhao/p/9815600.html)  
