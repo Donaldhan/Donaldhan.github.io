@@ -360,6 +360,13 @@ table exists. By default this property is false.
 ```
 
 我们使用上面的数据源，
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-site.xml /bdp/sqoop/sqoop-1.4.7/conf/
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ ls /bdp/sqoop/sqoop-1.4.7/conf/
+hive-site.xml             sqoop-env.sh            sqoop-env-template.sh
+oraoop-site-template.xml  sqoop-env-template.cmd  sqoop-site-template.xml
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ 
+```
 
 启动HIVE
 ```
@@ -382,7 +389,7 @@ sqoop import  \
 --create-hive-table  \
 --delete-target-dir \
 --hive-database  test \
---hive-table books
+--hive-table books 
 ```
 需要注意：Sqoop会自动创建对应的Hive表，但是hive-database 需要手动创建
 
@@ -400,18 +407,196 @@ No rows affected (1.008 seconds)
 
 ```
 
+导入成功后，查看HIVE表数据：
+```
+1: jdbc:hive2://pseduoDisHadoop:10000> show tables;
++------------------------+
+|        tab_name        |
++------------------------+
+| books                  |
+| emp2                   |
+| emp3                   |
+| employee               |
+| order_multi_partition  |
+| order_partition        |
+| stu_age_partition      |
+| student                |
+| tb_array               |
+| tb_map                 |
+| tb_struct              |
++------------------------+
+11 rows selected (0.342 seconds)
+1: jdbc:hive2://pseduoDisHadoop:10000> select * from books;
++-----------+------------------+-------------------+
+| books.id  | books.book_name  | books.book_price  |
++-----------+------------------+-------------------+
+| 1         | 贫穷的本质            | 39.0              |
+| 2         | 聪明的投资者           | 42.0              |
++-----------+------------------+-------------------+
+2 rows selected (0.681 seconds)
+1: jdbc:hive2://pseduoDisHadoop:10000> 
+```
 
-sqoop create-hive-table --connect jdbc:mysql://192.168.3.107:3306/test \
+查看hive数仓的文件
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
+-rwxrwxrwx   1 donaldhan supergroup          0 2020-03-30 22:58 /user/hive/warehouse/test.db/books/_SUCCESS
+-rwxrwxrwx   1 donaldhan supergroup         21 2020-03-30 22:58 /user/hive/warehouse/test.db/books/part-m-00000
+-rwxrwxrwx   1 donaldhan supergroup         24 2020-03-30 22:58 /user/hive/warehouse/test.db/books/part-m-00001
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/part-m-00000
+1	贫穷的本质	39
+donaldhan@pseduoDisHadoop:~$ 
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/part-m-00001
+SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
+2	聪明的投资者	42
+```
+
+再来看先关的日志
+```
+20/03/30 22:52:37 INFO mapreduce.ImportJobBase: Publishing Hive/Hcat import job data to Listeners for table books
+20/03/30 22:52:37 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM `books` AS t LIMIT 1
+20/03/30 22:52:37 WARN hive.TableDefWriter: Column book_price had to be cast to a less precise type in Hive
+20/03/30 22:52:37 INFO hive.HiveImport: Loading uploaded data into Hive
+20/03/30 22:52:37 INFO conf.HiveConf: Found configuration file file:/bdp/sqoop/sqoop-1.4.7/conf/hive-site.xml
+...
+0/03/30 22:59:06 INFO session.SessionState: Deleted directory: /user/hive/tmp/donaldhan/f22f2ccc-0d3a-4f35-8560-d2271cf9be58 on fs with scheme hdfs
+20/03/30 22:59:06 INFO session.SessionState: Deleted directory: /bdp/hive/jobslog/donaldhan/f22f2ccc-0d3a-4f35-8560-d2271cf9be58 on fs with scheme file
+20/03/30 22:59:06 INFO metastore.HiveMetaStore: 0: Cleaning up thread local RawStore...
+20/03/30 22:59:06 INFO HiveMetaStore.audit: ugi=donaldhan	ip=unknown-ip-addr	cmd=Cleaning up thread local RawStore...	
+20/03/30 22:59:06 INFO metastore.HiveMetaStore: 0: Done cleaning up thread local RawStore
+20/03/30 22:59:06 INFO HiveMetaStore.audit: ugi=donaldhan	ip=unknown-ip-addr	cmd=Done cleaning up thread local RawStore	
+20/03/30 22:59:06 INFO hive.HiveImport: Hive import complete.
+```
+从上面可以看出，我们在没有指定Map任务数量的情况下，每条记录实际上是一个Map任务。
+
+下面我们使用 *--m* 控制map任务数量
+### 并行控制
+
+我们先向mysql的books、插一条数据：
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`) VALUES ('3', '去依附', '28');
+
+```
+
+使用--m控制map任务数量，进而将所有的数据集中到一个文件中，同时不再重新创建表，只需将数据表文件删除，重写文件捷库，具体如下：
+
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
 --username root  \
 --password 123456  \
---table books --hive-table books
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--hive-import  \
+--hive-overwrite  \
+--delete-target-dir \
+--hive-database  test \
+--hive-table books  \
+--m 1
+```
 
-
+查看hive数据表文件：
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
+-rwxrwxrwx   1 donaldhan supergroup          0 2020-03-30 23:14 /user/hive/warehouse/test.db/books/_SUCCESS
+-rwxrwxrwx   1 donaldhan supergroup         60 2020-03-30 23:14 /user/hive/warehouse/test.db/books/part-m-00000
 
 ```
-sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop --fields-terminated-by '\t'   --lines-terminated-by '\n'  -m 1 
+查看hive表数据：
+
+```
+1: jdbc:hive2://pseduoDisHadoop:10000> select * from books;
++-----------+------------------+-------------------+
+| books.id  | books.book_name  | books.book_price  |
++-----------+------------------+-------------------+
+| 1         | 贫穷的本质            | 39.0              |
+| 2         | 聪明的投资者           | 42.0              |
+| 3         | 去依附              | 28.0              |
++-----------+------------------+-------------------+
+3 rows selected (0.404 seconds)
+
 ```
 
+更多并行控制，参照
+[controlling_parallelism](http://sqoop.apache.org/docs/1.4.7/SqoopUserGuide.html#_controlling_parallelism)
+
+### 增量数据
+
+增量模式有两种模式，一种是根据给定字段，另外一个种是时间戳。
+
+#### append模式
+我们先向mysql的books、插一条数据：
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`) VALUES ('4', '涛动周期论', '66');
+
+```
+
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--hive-import  \
+--hive-database  test \
+--hive-table books  \
+--incremental  append  \
+--check-column  id   \
+--last-value  3 \
+--m 1
+```
+
+控制台日志
+```
+20/03/30 23:34:39 INFO hive.HiveImport: Hive import complete.
+20/03/30 23:34:39 INFO hive.HiveImport: Export directory is empty, removing it.
+20/03/30 23:34:39 INFO tool.ImportTool: Incremental import complete! To run another incremental import of all data following this import, supply the following arguments:
+20/03/30 23:34:39 INFO tool.ImportTool:  --incremental append
+20/03/30 23:34:39 INFO tool.ImportTool:   --check-column id
+20/03/30 23:34:39 INFO tool.ImportTool:   --last-value 4
+20/03/30 23:34:39 INFO tool.ImportTool: (Consider saving this with 'sqoop job --create')
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/lib$ 
+
+```
+
+查看hive的books数据
+```
+1: jdbc:hive2://pseduoDisHadoop:10000> select * from books;
++-----------+------------------+-------------------+
+| books.id  | books.book_name  | books.book_price  |
++-----------+------------------+-------------------+
+| 1         | 贫穷的本质            | 39.0              |
+| 2         | 聪明的投资者           | 42.0              |
+| 3         | 去依附              | 28.0              |
+| 4         | 涛动周期论            | 66.0              |
++-----------+------------------+-------------------+
+4 rows selected (0.481 seconds)
+1: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+新增一条；
+
+
+TODO
+
+
+增量模式还有一种为Lastmodified，根据时间戳来增量导入。这个是否会存在，临界点的记录遗漏的问题，这个需要验证。
+
+[Incremental Imports](http://sqoop.apache.org/docs/1.4.7/SqoopUserGuide.html#_incremental_imports)
+
+####  lastmodified模式
+
+-- where ’查询条件‘   #导入查询出来的内容，表的子集
+-e，--query	‘取数sql’
+ --null-string '\\N'
+
+导入部分数据select
+
+partionkey,分区导入
+
+导入筛选的指定数据
 
 ```
 sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop/test --fields-terminated-by '\t'  --lines-terminated-by '\n'  --incremental  append   --check-column：id   --last-value：1   --null-string '\\N'
@@ -523,8 +708,118 @@ Caused by: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.h
 	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
 
 ```
+问题原因分析
+```
+20/03/25 23:15:07 INFO session.SessionState: Created HDFS directory: /tmp/hive/donaldhan/99d95a39-1d2c-47f3-8e4b-33523b300727
+20/03/25 23:15:07 INFO session.SessionState: Created local directory: /tmp/donaldhan/99d95a39-1d2c-47f3-8e4b-33523b300727
+20/03/25 23:15:07 INFO session.SessionState: Created HDFS directory: /tmp/hive/donaldhan/99d95a39-1d2c-47f3-8e4b-33523b300727/_tmp_space.db
+```
+
+从上面可以看出创建的是临时文件。
+
+
+再看相关的日志：
+
+```
+WARN DataNucleus.Query: Query for candidates of org.apache.hadoop.hive.metastore.model.MDatabase and subclasses resulted in no possible candidates
+Required table missing : "DBS" in Catalog "" Schema "". DataNucleus requires this table to perform its persistence operations. Either your MetaData is incorrect, or you need to enable "datanucleus.schema.autoCreateTables"
+org.datanucleus.store.rdbms.exceptions.MissingTableException: Required table missing : "DBS" in Catalog "" Schema "". DataNucleus requires this table to perform its persistence operations. Either your MetaData is incorrect, or you need to enable "datanucleus.schema.autoCreateTables"
+	at org.datanucleus.store.rdbms.table.AbstractTable.exists(AbstractTable.java:606)
+...
+java.sql.SQLSyntaxErrorException: Table/View 'DBS' does not exist.
+	at org.apache.derby.impl.jdbc.SQLExceptionFactory40.getSQLException(Unknown Source)
+	at org.apache.derby.impl.jdbc.Util.generateCsSQLException(Unknown Source)
+	at org.apache.derby.impl.jdbc.TransactionResourceImpl.wrapInSQLException(Unknown Source)
+```
+
+找不到对应的table和Schema
+
+```
+20/03/25 23:15:24 ERROR metastore.RetryingHMSHandler: HMSHandler Fatal error: MetaException(message:Version information not found in metastore. )
+	at org.apache.hadoop.hive.metastore.ObjectStore.checkSchema(ObjectStore.java:7564)
+	at org.apache.hadoop.hive.metastore.ObjectStore.verifySchema(ObjectStore.java:7542)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.hive.metastore.RawStoreProxy.invoke(RawStoreProxy.java:101)
+```
+
+
+```
+20/03/25 23:15:24 WARN metadata.Hive: Failed to register all functions.
+java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient
+	at org.apache.hadoop.hive.metastore.MetaStoreUtils.newInstance(MetaStoreUtils.java:1708)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.<init>(RetryingMetaStoreClient.java:83)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:133)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:104)
+	at org.apache.hadoop.hive.ql.metadata.Hive.createMetaStoreClient(Hive.java:3600)
+	at org.apache.hadoop.hive.ql.metadata.Hive.getMSC(Hive.java:3652)
+	...
+Caused by: MetaException(message:Version information not found in metastore. )
+	at org.apache.hadoop.hive.metastore.ObjectStore.checkSchema(ObjectStore.java:7564)
+	at org.apache.hadoop.hive.metastore.ObjectStore.verifySchema(ObjectStore.java:7542)
+```
+尝试修改HIVE配置文件,添加如下属性
+```
+<property>
+  <name>hive.metastore.schema.verification</name>
+  <value>false</value>
+   <description>
+   Enforce metastore schema version consistency.
+   True: Verify that version information stored in metastore matches with one from Hive jars.  Also disable automatic
+         schema migration attempt. Users are required to manully migrate schema after Hive upgrade which ensures
+         proper metastore schema migration. (Default)
+   False: Warn if the version information stored in metastore doesn't match with one from in Hive jars.
+   </description>
+</property>
+<property>
+  <name>datanucleus.schema.autoCreateTables</name>
+  <value>true</value>
+</property>
+
+```
+没有作用
+```
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ cp hive-site.xml /bdp/sqoop/sqoop-1.4.7/conf/
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ ls /bdp/sqoop/sqoop-1.4.7/conf/
+hive-site.xml             sqoop-env.sh            sqoop-env-template.sh
+oraoop-site-template.xml  sqoop-env-template.cmd  sqoop-site-template.xml
+donaldhan@pseduoDisHadoop:/bdp/hive/apache-hive-2.3.4-bin/conf$ 
+
+```
 
 [Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient](https://stackoverflow.com/questions/41607643/unable-to-instantiate-org-apache-hadoop-hive-ql-metadata-sessionhivemetastorecli)  
 
 [hive常见问题解决干货大全](https://www.cnblogs.com/zlslch/p/5944887.html)   
 [在hue 使用oozie sqoop 从mysql 导入hive 失败](https://www.cnblogs.com/chengjunhao/p/9815600.html)  
+
+[Sqoop importing is failing with ERROR com.jolbox.bonecp.BoneCP - Unable to start/stop JMX](https://community.cloudera.com/t5/Support-Questions/Sqoop-importing-is-failing-with-ERROR-com-jolbox-bonecp/td-p/86535)
+
+[Sqoop 安装——sqoop1.4.7](https://blog.csdn.net/weixin_42003671/article/details/88665042)
+
+
+### Import failed: java.io.IOException: Hive CliDriver exited with status=1
+```
+20/03/30 22:52:56 ERROR tool.ImportTool: Import failed: java.io.IOException: Hive CliDriver exited with status=1
+	at org.apache.sqoop.hive.HiveImport.executeScript(HiveImport.java:355)
+	at org.apache.sqoop.hive.HiveImport.importTable(HiveImport.java:241)
+	at org.apache.sqoop.tool.ImportTool.importTable(ImportTool.java:537)
+20/03/30 22:52:55 ERROR exec.DDLTask: org.apache.hadoop.hive.ql.metadata.HiveException: AlreadyExistsException(message:Table books already exists)
+``` 
+
+问题原因，表已存在，将表删除即可。
+```
+1: jdbc:hive2://pseduoDisHadoop:10000> drop table books;
+No rows affected (5.203 seconds)
+
+```
+
+### Unknown incremental import mode:  append. Use 'append' or 'lastmodified'.
+```
+Unknown incremental import mode:  append. Use 'append' or 'lastmodified'.
+Try --help for usage instructions.
+
+```
+
+问题原因，无法识别导入模式，检查命令的拼写是否存在错误。
