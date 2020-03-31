@@ -216,8 +216,14 @@ sqoop import  
 --check-column：column_id   #指定增量导入时的参考列
 --last-value：num   #上一次导入column_id的最后一个值
 --null-string ‘’   #导入的字段为空时，用指定的字符进行替换
+--columns <col,col,col…> #筛选指定的字段
+--direct	#用户数据库的直接通道
+--fetch-size <n>	#每次抓取的记录数
 ```
 
+**注意：**  
+--direct模式使用的是直接导入快速路径，此通道的性能可能高于使用JDBC。
+对于MySQL：MySQL Direct Connector允许使用mysqldump和mysqlimport工具功能，而不是SQL选择和插入，更快地导入和导出MySQL。
 
 准备数据
 
@@ -521,9 +527,111 @@ donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
 更多并行控制，参照
 [controlling_parallelism](http://sqoop.apache.org/docs/1.4.7/SqoopUserGuide.html#_controlling_parallelism)
 
+#### where和query选项的使用
+
+我们来看一下使用一下where和query选项的使用
+
+先将HIVE BOOKS表删除
+```
+drop table books;
+```
+
+**--where选项的使用**
+
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--null-string '\\N'  \
+--null-non-string '\\N'  \
+--where 'id < 3' \
+--hive-import  \
+--target-dir /user/hive/warehouse/test.db/books \
+--hive-table test.books \
+--m 1 
+```
+
+注意hive-table要加schema，不然，会到默认库中；
+
+我们观察日志
+```
+Loading data to table test.books
+20/03/31 23:04:31 INFO exec.Task: Loading data to table test.books from hdfs://pseduoDisHadoop:9000/user/hive/warehouse/test.db/books
+```
+可以发现，导入mysql到hive，实际为先将数据到hdfs文件中，然后创建hive表，将文件数据加载的hive表中。
+
+查看表数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from books;
++-----------+------------------+-------------------+
+| books.id  | books.book_name  | books.book_price  |
++-----------+------------------+-------------------+
+| 1         | 贫穷的本质            | 39.0              |
+| 2         | 聪明的投资者           | 42.0              |
++-----------+------------------+-------------------+
+2 rows selected (0.401 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+我们再来看--query选项  
+
+**--query选项的使用**
+
+query选项我们可以进行多表关联查询比如：
+```
+$ sqoop import \
+  --query 'SELECT a.*, b.* FROM a JOIN b on (a.id == b.id) WHERE $CONDITIONS' \
+  --split-by a.id --target-dir /user/foo/joinresults
+```
+
+这里我们就不在示范了。
+
+先将HIVE BOOKS表删除
+```
+drop table books;
+```
+
+执行如下命令
+
+
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--null-string '\\N'  \
+--null-non-string '\\N'  \
+--query 'select * from books where $CONDITIONS' \
+--split-by id  \
+--hive-import  \
+--target-dir /user/hive/warehouse/test.db/books \
+--hive-table test.books \
+--m 1 
+```
+
+查看表数据
+
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from books;
++-----------+------------------+-------------------+
+| books.id  | books.book_name  | books.book_price  |
++-----------+------------------+-------------------+
+| 1         | 贫穷的本质            | 39.0              |
+| 2         | 聪明的投资者           | 42.0              |
+| 3         | 去依附              | 28.0              |
++-----------+------------------+-------------------+
+
+除了全量，筛选模式外，sqoop还可以增量导入数据。增量模式有两种模式，一种是根据给定字段，另外一个种是时间戳。
+
 ### 增量数据
 
-增量模式有两种模式，一种是根据给定字段，另外一个种是时间戳。
+下面我们分别来看这里两种模式
 
 #### append模式
 我们先向mysql的books、插一条数据：
@@ -531,6 +639,8 @@ donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
 INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`) VALUES ('4', '涛动周期论', '66');
 
 ```
+
+增量同步id为3之后的数据
 
 ```
 sqoop import  \
@@ -576,10 +686,7 @@ donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/lib$
 4 rows selected (0.481 seconds)
 1: jdbc:hive2://pseduoDisHadoop:10000> 
 ```
-新增一条；
-
-
-TODO
+从上面可以看出，append模式主要根据某个字段进行增量同步，这个字段一般为主键比如id。
 
 
 增量模式还有一种为Lastmodified，根据时间戳来增量导入。这个是否会存在，临界点的记录遗漏的问题，这个需要验证。
@@ -588,42 +695,134 @@ TODO
 
 ####  lastmodified模式
 
--- where ’查询条件‘   #导入查询出来的内容，表的子集
--e，--query	‘取数sql’
- --null-string '\\N'
-
-导入部分数据select
-
-partionkey,分区导入
-
-导入筛选的指定数据
-
+先将HIVE BOOKS表删除
 ```
-sqoop import --connect  jdbc:mysql://192.168.3.107:3306/test --username 'root' --password '123456' --table books --target-dir /user/sqoop/test --fields-terminated-by '\t'  --lines-terminated-by '\n'  --incremental  append   --check-column：id   --last-value：1   --null-string '\\N'
+drop table books;
 ```
 
-
-
-
-
+修改mysql的book表接口
 ```
-sqoop import  
---connect jdbc:mysql://ip:3306/databasename
---table  tablename      
---username root    
---password  123456 
---target-dir   /path  
---fields-terminated-by '\t'  
---lines-terminated-by '\n'  
---m 1  
--- where 
---incremental  append 
---check-column：column_id 
---last-value：num   
---null-string ‘’  
+ALTER TABLE books ADD COLUMN `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '创建时间'
 ```
 
+初始化数据如下：
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('1', '贫穷的本质', '39', '2020-03-29 23:23:54');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('2', '聪明的投资者', '42', '2020-03-30 23:23:54');
+```
+具体如下：
+```
+mysql> select * from books;
++----+--------------+------------+---------------------+
+| id | book_name    | book_price | update_time         |
++----+--------------+------------+---------------------+
+|  1 | 贫穷的本质   | 39         | 2020-03-29 23:23:54 |
+|  2 | 聪明的投资者 | 42         | 2020-03-30 23:23:54 |
++----+--------------+------------+---------------------+
+4 rows in set
 
+mysql> 
+```
+
+执行如下语句：
+
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--target-dir /user/hive/warehouse/test.db/books \
+--hive-database  test \
+--hive-table books \
+--incremental  lastmodified  \
+--merge-key id \
+--last-value "2020-03-29 23:23:54" \
+--check-column  update_time   \
+--m 1
+```
+
+
+
+如果我们的数据是自增不减，则可以使用创建时间，如果旧的记录会更新，可以使用
+更新字段。merge-key选项，针对旧的记录我们可以，对记录进行更新。
+
+执行命令
+
+```
+20/03/31 23:53:43 INFO tool.ImportTool: Final destination exists, will run merge job.
+20/03/31 23:53:43 INFO tool.ImportTool: Moving data from temporary directory _sqoop/8d1ccb57b639484da8fff5341cc7ed93_books to final destination /user/hive/warehouse/test.db/books
+20/03/31 23:53:43 INFO tool.ImportTool: Incremental import complete! To run another incremental import of all data following this import, supply the following arguments:
+
+...
+
+20/03/31 23:53:43 INFO tool.ImportTool: Moving data from temporary directory _sqoop/8d1ccb57b639484da8fff5341cc7ed93_books to final destination /user/hive/warehouse/test.db/books
+20/03/31 23:53:43 INFO tool.ImportTool: Incremental import complete! To run another incremental import of all data following this import, supply the following arguments:
+20/03/31 23:53:43 INFO tool.ImportTool:  --incremental lastmodified
+20/03/31 23:53:43 INFO tool.ImportTool:   --check-column update_time
+20/03/31 23:53:43 INFO tool.ImportTool:   --last-value 2020-03-31 23:53:15.0
+20/03/31 23:53:43 INFO tool.ImportTool: (Consider saving this with 'sqoop job --create')
+```
+从日志来看，sqoop建议将任务包装为job这样我们就可以重复执行任务了。
+
+查看hdfs文件：
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
+-rw-r--r--   1 donaldhan supergroup          0 2020-03-31 23:53 /user/hive/warehouse/test.db/books/_SUCCESS
+-rw-r--r--   1 donaldhan supergroup         89 2020-03-31 23:53 /user/hive/warehouse/test.db/books/part-m-00000
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/part-m-00000
+
+1	贫穷的本质	39	2020-03-29 23:23:54.0
+2	聪明的投资者	42	2020-03-31 23:52:56.0
+donaldhan@pseduoDisHadoop:~$ 
+
+```
+需要注意的是，lastmodified模式是不支持hive-import的模式的，我们通过脚本将数据加载到hive表中。
+
+
+<!-- TODO 创建JOB模式 -->
+2020-03-31 23:52:56
+
+
+新增两条记录，并修改id为2的记录；
+```
+UPDATE  books SET book_price = 68 WHERE id =2;
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('3', '去依附', '28', '2020-03-31 23:23:57');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('4', '涛动周期论', '66', '2020-03-31 23:23:58');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('5', '区块链原理', '23', '2020-03-31 23:23:58');
+```
+
+重新执行上面的导入语句
+
+查询结果
+新增两条记录，同时记录2更新。
+
+我的sqoop版本不支持这种模式，支持的可以尝试一下，上面是我mock的想法。
+
+
+TODO
+
+
+
+
+
+
+
+
+## partionkey,分区导入:
+
+分区表的折衷方法
+[sqoop 导入hive分区表的方法](https://blog.csdn.net/weibin_6388/article/details/78192658)
+[Sqoop 数据导入多分区Hive解决方法](https://blog.csdn.net/taisenki/article/details/78974121) 
+[Sqoop-从hive导出分区表到MySQL](https://www.cnblogs.com/kouryoushine/p/7844352.html) 
+
+官方如何分区？？？
+
+
+
+## job？
 
 # Sqoop2
 ![sqoop2_framwork](/image/sqoop/sqoop2_framwork.webp)
@@ -632,7 +831,9 @@ sqoop import  
 
 
 ## 总结
-将mysql导入到hdfs，可以使用--m控制map任务数量，进而将所有的数据集中到一个文件中；
+将mysql导入到hdfs，可以使用--m控制map任务数量，进而将所有的数据集中到一个文件中；导入mysql到hive，实际为先将数据到hdfs文件中，然后创建hive表，将文件数据加载的hive表中。除了全量，筛选模式外，sqoop还可以增量导入数据。增量模式有两种模式，一种是根据给定字段append模式，另外一个种是时间戳增量更新模式lastmodified模式。append模式主要根据某个字段进行增量同步，这个字段一般为主键比如id。针对，如果我们的数据是自增不减，则可以使用创建时间，如果旧的记录会更新，可以使用更新字段。merge-key选项，针对旧的记录我们可以，对记录进行更新。lastmodified模式是不支持hive-import的模式的，我们通过脚本将数据加载到hive表中。
+
+
 
 # 附
 ## 参考文献
@@ -823,3 +1024,27 @@ Try --help for usage instructions.
 ```
 
 问题原因，无法识别导入模式，检查命令的拼写是否存在错误。
+
+### Cannot specify --query and --table together.
+```
+20/03/31 22:35:25 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.
+Cannot specify --query and --table together.
+Try --help for usage instructions.
+```
+问题原因， --query and --table不能一起使用
+
+
+### Query [select * from books where id < 3] must contain '$CONDITIONS' in WHERE clause.
+20/03/31 22:41:10 ERROR tool.ImportTool: Import failed: java.io.IOException: Query [select * from books where id < 3] must contain '$CONDITIONS' in WHERE clause.
+	at org.apache.sqoop.manager.ConnManager.getColumnTypes(ConnManager.java:332)
+
+问题原因：--query选项必须包含$CONDITIONS，与--split-by结合使用。
+
+
+### --incremental lastmodified option for hive imports is not supported
+```
+
+--incremental lastmodified 和 --hive-import 竟然不能同时使用。把 lastmodified 改成 append 后就可以运行了。 或者将--hive-import去掉；
+```
+
+[sqoop-incremental-import-to-hive-table](https://stackoverflow.com/questions/47264844/sqoop-incremental-import-to-hive-table)
