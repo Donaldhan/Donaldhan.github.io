@@ -24,12 +24,12 @@ tags:
         * [导入数据](#导入数据)
             * [导入mysql数据到HDFS](#导入mysql数据到hdfs)
             * [导入mysql数据到HIVE](#导入mysql数据到hive)
+			* [分区表](#分区表)
         * [导出数据](#导出数据)
+		* [job作业](#job作业)
     * [](#)
 * [Sqoop2](#sqoop2)
 * [总结](#总结)
-
-
 
 
 # Sqoop的优点
@@ -782,36 +782,101 @@ donaldhan@pseduoDisHadoop:~$
 需要注意的是，lastmodified模式是不支持hive-import的模式的，我们通过脚本将数据加载到hive表中。
 
 
-<!-- TODO 创建JOB模式 -->
-2020-03-31 23:52:56
-
-
-新增两条记录，并修改id为2的记录；
+新增一条记录，并修改id为2的记录；
 ```
 UPDATE  books SET book_price = 68 WHERE id =2;
-INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('3', '去依附', '28', '2020-03-31 23:23:57');
-INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('4', '涛动周期论', '66', '2020-03-31 23:23:58');
-INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('5', '区块链原理', '23', '2020-03-31 23:23:58');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('3', '去依附', '28', '2020-04-01 23:08:44');
 ```
 
-重新执行上面的导入语句
+执行如下脚本：
 
-查询结果
-新增两条记录，同时记录2更新。
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--target-dir /user/hive/warehouse/test.db/books \
+--hive-database  test \
+--hive-table books \
+--incremental  lastmodified  \
+--merge-key id \
+--last-value "2020-03-31 23:52:56" \
+--check-column  update_time   \
+--m 1
+```
 
-我的sqoop版本不支持这种模式，支持的可以尝试一下，上面是我mock的想法。
+查看hdfs文件
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -ls /user/hive/warehouse/test.db/books
+-rw-r--r--   1 donaldhan supergroup          0 2020-04-01 23:15 /user/hive/warehouse/test.db/books/_SUCCESS
+-rw-r--r--   1 donaldhan supergroup         89 2020-04-01 23:15 /user/hive/warehouse/test.db/books/part-r-00000
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/part-r-00000
+1	贫穷的本质	39	2020-03-29 23:23:54.0
+2	聪明的投资者	68	2020-04-01 23:08:44.0
+3	去依附	28	2020-04-01 23:08:44.0
+
+```
+从上面可以看出记录2和新增记录3的数据已经同步。
+
+我们再新增一条数据。
 
 
-TODO
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('4', '涛动周期论', '66', '2020-04-01 23:08:44');
+```
 
+注意这次我们新增的记录和上次同步记录的最后更新时间是相同的为2020-04-01 23:08:44。
 
+执行如下命令
 
+```
+sqoop import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--target-dir /user/hive/warehouse/test.db/books \
+--hive-database  test \
+--hive-table books \
+--incremental  lastmodified  \
+--merge-key id \
+--last-value "2020-04-01 23:08:44" \
+--check-column  update_time   \
+--m 1
+```
 
+查看hdfs文件数据
+```
+donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/part-r-00000
+1	贫穷的本质	39	2020-03-29 23:23:54.0
+2	聪明的投资者	68	2020-04-01 23:08:44.0
+3	去依附	28	2020-04-01 23:08:44.0
+4	涛动周期论	66	2020-04-01 23:08:44.0
+```
 
+从数据来看，时间点重合sqoop同步数据没有问题，
 
+从日志来看
 
+```
+20/04/01 23:23:34 INFO manager.SqlManager: Executing SQL statement: SELECT t.* FROM `books` AS t LIMIT 1
+20/04/01 23:23:34 INFO tool.ImportTool: Incremental import based on column `update_time`
+20/04/01 23:23:34 INFO tool.ImportTool: Lower bound value: '2020-04-01 23:08:44'
+20/04/01 23:23:34 INFO tool.ImportTool: Upper bound value: '2020-04-01 23:23:35.0'
+20/04/01 23:23:34 WARN manager.MySQLManager: It looks like you are importing from mysql.
 
-## partionkey,分区导入:
+```
+没有没有根据时间戳去筛选，sqoop是如何判断记录4为新增数据的呢？我怀疑sqoop同步日志应该记录的有id相关的信息，用于处理时间戳相同的记录问题。只是猜测。
+
+## 分区表
+
+<!-- TODO 分区表 -->
+partionkey,分区导入:
 
 分区表的折衷方法
 [sqoop 导入hive分区表的方法](https://blog.csdn.net/weibin_6388/article/details/78192658)
@@ -822,7 +887,14 @@ TODO
 
 
 
-## job？
+
+
+## 导出数据
+
+## job作业
+
+job --create作业名 
+
 
 # Sqoop2
 ![sqoop2_framwork](/image/sqoop/sqoop2_framwork.webp)
