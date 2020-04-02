@@ -875,25 +875,299 @@ donaldhan@pseduoDisHadoop:~$ hdfs dfs -cat /user/hive/warehouse/test.db/books/pa
 
 ## 分区表
 
-<!-- TODO 分区表 -->
-partionkey,分区导入:
-
-分区表的折衷方法
-[sqoop 导入hive分区表的方法](https://blog.csdn.net/weibin_6388/article/details/78192658)
-[Sqoop 数据导入多分区Hive解决方法](https://blog.csdn.net/taisenki/article/details/78974121) 
-[Sqoop-从hive导出分区表到MySQL](https://www.cnblogs.com/kouryoushine/p/7844352.html) 
-
-官方如何分区？？？
+HIVE虽然没有提供分区表相关的方式，但我们通过其他方式来实现，比如说重写Sqoop的相关实现，比如说按照hive的数仓存储模式导入数据。今天我们采用第二种方式来实现分区导入；
 
 
+首先创建分区表：
+```
+ create table `books_partition`(
+ `id` int ,
+  `book_name` string  ,
+  `book_price` decimal ,
+  `update_time` timestamp  COMMENT '更新时间'
+ )partitioned by (day int) row format delimited fields terminated by '\t';
+```
+
+导入数据
+```
+sqoop import \
+--connect  jdbc:mysql://192.168.3.107:3306/test  \
+--username 'root' \
+--password '123456' \
+--table books \
+--target-dir /user/hive/warehouse/test.db/books_partition/day=20200402   \
+--fields-terminated-by '\t'  \
+--m 1
+```
+
+加载分区数据
+```
+alter table books_partition add partition(day='20200402') location '/user/hive/warehouse/test.db/books_partition/day=20200402';
+```
+
+查询分区数据
+```
+No rows selected (0.549 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> alter table books_partition add partition(day='20200402') location '/user/hive/warehouse/test.db/books_partition/day=20200402';
+No rows affected (0.726 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from books_partition;
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+| books_partition.id  | books_partition.book_name  | books_partition.book_price  | books_partition.update_time  | books_partition.day  |
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+| 1                   | 贫穷的本质                      | 39                          | 2020-03-29 23:23:54.0        | 20200402             |
+| 2                   | 聪明的投资者                     | 68                          | 2020-04-01 23:08:44.0        | 20200402             |
+| 3                   | 去依附                        | 28                          | 2020-04-01 23:08:44.0        | 20200402             |
+| 4                   | 涛动周期论                      | 66                          | 2020-04-01 23:08:44.0        | 20200402             |
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+4 rows selected (0.781 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
 
 
+同样的方法，将day改为20200401。
 
+
+导入数据
+```
+sqoop import \
+--connect  jdbc:mysql://192.168.3.107:3306/test  \
+--username 'root' \
+--password '123456' \
+--table books \
+--target-dir /user/hive/warehouse/test.db/books_partition/day=20200401   \
+--fields-terminated-by '\t'  \
+--m 1
+```
+
+加载分区数据
+```
+alter table books_partition add partition(day='20200401') location '/user/hive/warehouse/test.db/books_partition/day=20200401';
+```
+
+查询数据
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from books_partition where day=20200401 ;
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+| books_partition.id  | books_partition.book_name  | books_partition.book_price  | books_partition.update_time  | books_partition.day  |
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+| 1                   | 贫穷的本质                      | 39                          | 2020-03-29 23:23:54.0        | 20200401             |
+| 2                   | 聪明的投资者                     | 68                          | 2020-04-01 23:08:44.0        | 20200401             |
+| 3                   | 去依附                        | 28                          | 2020-04-01 23:08:44.0        | 20200401             |
+| 4                   | 涛动周期论                      | 66                          | 2020-04-01 23:08:44.0        | 20200401             |
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+4 rows selected (1.264 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+
+```
+
+删除分区数据的方法
+```
+ALTER TABLE books_partition DROP IF EXISTS PARTITION(day='20200401');
+```
+
+再次查看，数据被删除
+```
+0: jdbc:hive2://pseduoDisHadoop:10000> ALTER TABLE books_partition DROP IF EXISTS PARTITION(day='20200401');
+No rows affected (1.133 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> select * from books_partition where day=20200401 ;
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+| books_partition.id  | books_partition.book_name  | books_partition.book_price  | books_partition.update_time  | books_partition.day  |
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
++---------------------+----------------------------+-----------------------------+------------------------------+----------------------+
+No rows selected (0.433 seconds)
+0: jdbc:hive2://pseduoDisHadoop:10000> 
+```
+除了从mysql到hive，我们还可以将hive的数据文件导出到mysql数据表中，注意目标mysql表必须
 ## 导出数据
 
+(目标表必须在mysql数据库中已经建好，数据存放在hdfs中)：
+```
+sqoop export
+--connect jdbs:mysql://ip:3600/库名 #指定JDBC的URL 其中database指的是(Mysql或者Oracle)中的数据库名
+--username用户名  #数据库的用户名
+--password密码     #数据库的密码
+--table表名        #需要导入到数据库中的表名
+--export-dir导入数据的名称    #hdfs上的数据文件
+--fields-terminated-by "\t"       #HDFS中被导出的文件字段之间的分隔符
+--lines-terminated-by "\n"    #设定导入数据后每行的分隔符
+--m 1  #并发的map数量1,如果不设置默认启动4个map task执行数据导入，则需要指定一个列来作为划分map task任务的依据
+--incremental  append  #增量导入
+--check-column：column_id   #指定增量导入时的参考列
+--last-value：num   #上一次导入column_id的最后一个值
+--null-string '\\N'   #导出的字段为空时，用指定的字符进行替换
+```
+
+执行如下命令
+```
+sqoop export   \
+--connect 'jdbc:mysql://192.168.3.107:3306/test?useUnicode=true&characterEncoding=utf-8'  \
+--username root  \
+--password 123456  \
+--table books \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--null-string '\\N'  \
+--null-non-string '\\N'  \
+--export-dir /user/hive/warehouse/test.db/books_partition/day=20200402 \
+--m 1 
+```
+
+注意要加**?useUnicode=true&characterEncoding=utf-8**防止乱码
+
+日志输出
+```
+20/04/02 22:21:43 INFO input.FileInputFormat: Total input paths to process : 1
+20/04/02 22:21:43 INFO input.FileInputFormat: Total input paths to process : 1
+20/04/02 22:21:43 INFO mapreduce.JobSubmitter: number of splits:1
+20/04/02 22:21:43 INFO Configuration.deprecation: mapred.map.tasks.speculative.execution is deprecated. Instead, use mapreduce.map.speculative
+20/04/02 22:21:43 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1585835907835_0003
+...
+		Bytes Written=0
+20/04/02 22:22:15 INFO mapreduce.ExportJobBase: Transferred 350 bytes in 33.8856 seconds (10.3289 bytes/sec)
+20/04/02 22:22:15 INFO mapreduce.ExportJobBase: Exported 4 records.
+donaldhan@pseduoDisHadoop:~$ 
+
+```
+
+查看mysql表的数据
+```
+mysql> truncate table `books`;
+Query OK, 0 rows affected
+
+mysql> select * from books;
+Empty set
+
+mysql> select * from books;
++----+--------------+------------+---------------------+
+| id | book_name    | book_price | update_time         |
++----+--------------+------------+---------------------+
+|  1 | 贫穷的本质   | 39         | 2020-03-29 23:23:54 |
+|  2 | 聪明的投资者 | 68         | 2020-04-01 23:08:44 |
+|  3 | 去依附       | 28         | 2020-04-01 23:08:44 |
+|  4 | 涛动周期论   | 66         | 2020-04-01 23:08:44 |
++----+--------------+------------+---------------------+
+4 rows in set
+```
+
+在我们做导入的时候，我们sqoop建议我们使用job作业，执行导入任务，以便对任务进行管理，下面我们来看一下。
 ## job作业
 
-job --create作业名 
+创建job我们需要job存储起来，job存储方案有，通过配置--meta-connect或者在conf/sqoop-site.xml 里配置 sqoop.metastore.client.autoconnect.url 参数来指定是否使用metastore-client，具体如下：
+
+* 方案A(推荐)：不使用metastore-client
+
+如果job信息放到 ${HOME}/.sqoop 目录下，此目录下有两个文件：
+
+1. metastore.db.properties：metastore的配置信息
+2. etastore.db.script：job的详细信息，通过sql语句存储
+
+* 方案B： 不使用metastore-client
+
+此时，job的信息会存储到配置的 autoconnect.url 的 SQOOP_SESSION 表里，但是此方案需要修改sqoop源码解决事务问题。
+
+配置 cat sqoop-site.xml 文件
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ cp sqoop-site-template.xml sqoop-site.xml
+```
+具体内容如下：
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>sqoop.jobbase.serialize.sqoopoptions</name>
+    <value>true</value>
+    <description>If true, then all options will be serialized into job.xml
+    </description>
+  </property>
+  <!-- 本地存储方式hslqdb -->
+  <property>
+    <name>sqoop.metastore.server.location</name>
+    <value>/bdp/sqoop/sqoop-metastore/shared.db</value>
+    <description>Path to the shared metastore database files.
+    If this is not set, it will be placed in ~/.sqoop/.
+    </description>
+  </property>
+  <property>
+    <name>sqoop.metastore.server.port</name>
+    <value>16000</value>
+    <description>Port that this metastore should listen on.
+    </description>
+  </property>
+  <!-- 创建job可以不用指定meta-connect -->
+  <property>
+    <name>sqoop.metastore.client.autoconnect.url</name>
+    <value>jdbc:hsqldb:hsql://pseduoDisHadoop:16000/sqoop</value>
+  </property>
+</configuration>
+``` 
+
+创建对应的log文件夹：
+启动metastore
+
+```
+start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
+```
+
+
+
+命令格式如下：
+```
+sqoop job --create 作业名 -- import　--connect jdbc:mysql://ip:3306/数据库 --username 用户名 --table 表名 --password 密码 --m 1 --target-dir  存放目录
+```
+
+即在我们导入，导出命令添加如下选项
+```
+job --create 作业名
+```
+注意*-- import*中间是有空格的。
+
+我们上面的增量模式任务，创建为job
+
+```
+sqoop job --create sync_books_append  \
+-- import  \
+--connect jdbc:mysql://192.168.3.107:3306/test  \
+--username root  \
+--password 123456  \
+--table books  \
+--fields-terminated-by "\t"  \
+--lines-terminated-by "\n"  \
+--hive-import  \
+--hive-database  test \
+--hive-table books  \
+--incremental  append  \
+--check-column  id   \
+--last-value  0 \
+--m 1
+```
+
+--meta-connect jdbc:hsqldb:hsql://pseduoDisHadoop:16000/sqoop \ 
+<!-- Invalid metadata version. -->
+
+20/04/02 23:45:49 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
+
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('1', '贫穷的本质', '39', '2020-03-29 23:23:54');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('2', '聪明的投资者', '68', '2020-04-01 23:08:44');
+```
+
+
+```
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('3', '去依附', '28', '2020-04-01 23:08:44');
+INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('4', '涛动周期论', '66', '2020-04-01 23:08:44');
+
+```
+
+
+关闭metastore
+```
+ stop-metastore.sh -p sqoop-metastore
+```
+
+
+
+
 
 
 # Sqoop2
@@ -913,8 +1187,16 @@ job --create作业名
 [sqoop github](https://github.com/apache/sqoop)  
 [真正了解sqoop的一切](https://www.jianshu.com/p/ec9003d8918c)   
 [Sqoop简介](https://www.jianshu.com/p/4250382abbc6)   
-[Sqoop1.4.7UserGuide](http://sqoop.apache.org/docs/1.4.7/SqoopUserGuide.html)   
-[]()   
+[Sqoop1.4.7UserGuide](http://sqoop.apache.org/docs/1.4.7/SqoopUserGuide.html)    
+[Sqoop使用笔记](https://www.jianshu.com/p/bb78ccd0252f)    
+
+分区表的折衷方法  
+[sqoop 导入hive分区表的方法](https://blog.csdn.net/weibin_6388/article/details/78192658)  
+[Sqoop 数据导入多分区Hive解决方法](https://blog.csdn.net/taisenki/article/details/78974121)  
+[Sqoop-从hive导出分区表到MySQL](https://www.cnblogs.com/kouryoushine/p/7844352.html)   
+
+[sqoop使用mysql做为metastore](https://my.oschina.net/icoding/blog/632615)
+[sqoop1使用metastore保存job](https://blog.csdn.net/yang63515074/article/details/80540852)
 
 
 ## 问题集
@@ -1120,3 +1402,41 @@ Try --help for usage instructions.
 ```
 
 [sqoop-incremental-import-to-hive-table](https://stackoverflow.com/questions/47264844/sqoop-incremental-import-to-hive-table)
+
+
+### ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Could not load HSQLDB JDBC driver
+问题原因，sqoop metastore没有启动。
+
+
+### ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Exception creating SQL connection
+```
+ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Exception creating SQL connection
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:216)
+
+```
+问题原因，sqoop metastore没有启动。
+
+### Exception in thread "main" java.lang.NoClassDefFoundError: org/hsqldb/Server
+```
+Exception in thread "main" java.lang.NoClassDefFoundError: org/hsqldb/Server
+	at org.apache.sqoop.metastore.hsqldb.HsqldbMetaStore.start(HsqldbMetaStore.java:111)
+
+```
+
+缺少hsqldb jar包，下载即可。
+[Sqoop metastore cannot be started due to missing hsqldb jar file](https://www.mail-archive.com/dev@sqoop.apache.org/msg00460.html)
+
+### 
+```
+20/04/02 23:45:49 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:202)
+	at org.apache.sqoop.metastore.hsqldb.AutoHsqldbStorage.open(AutoHsqldbStorage.java:112)
+	at org.apache.sqoop.tool.JobTool.run(JobTool.java:289)
+	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)
+	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:70)
+	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
+	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)
+
+```
