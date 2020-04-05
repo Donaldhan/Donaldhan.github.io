@@ -1097,7 +1097,7 @@ donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ cp sqoop-site-template.xm
   <!-- 创建job可以不用指定meta-connect -->
   <property>
     <name>sqoop.metastore.client.autoconnect.url</name>
-    <value>jdbc:hsqldb:hsql://pseduoDisHadoop:16000/sqoop</value>
+    <value>jdbc:hsqldb:hsql://127.0.0.1:16000/sqoop</value>
   </property>
 </configuration>
 ``` 
@@ -1106,7 +1106,16 @@ donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ cp sqoop-site-template.xm
 启动metastore
 
 ```
-start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
+sqoop metastore &
+```
+
+启动完在创建了一个sqoop-metastore文件夹，存放hsqldb相关的数据
+
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop$ cd sqoop-metastore/
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-metastore$ ls
+shared.db.lck  shared.db.properties  shared.db.tmp
+shared.db.log  shared.db.script
 ```
 
 
@@ -1142,7 +1151,9 @@ sqoop job --create sync_books_append  \
 --m 1
 ```
 
---meta-connect jdbc:hsqldb:hsql://pseduoDisHadoop:16000/sqoop \ 
+
+
+--meta-connect jdbc:hsqldb:hsql://127.0.0.1:16000/sqoop \
 <!-- Invalid metadata version. -->
 
 20/04/02 23:45:49 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
@@ -1159,6 +1170,12 @@ INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALU
 
 ```
 
+启动metastore
+```
+```
+start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
+```
+```
 
 关闭metastore
 ```
@@ -1197,6 +1214,12 @@ INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALU
 
 [sqoop使用mysql做为metastore](https://my.oschina.net/icoding/blog/632615)
 [sqoop1使用metastore保存job](https://blog.csdn.net/yang63515074/article/details/80540852)
+
+
+[HSQLDB快速指南](http://www.vue5.com/hsqldb/hsqldb_quick_guide.html)  
+[HSQLDB使用](https://www.jianshu.com/p/06f8978be739)     
+[HSQLDB 安装与使用](https://www.cnblogs.com/saintaxl/archive/2012/01/20/2328356.html)  
+[HSQLDB Client 命令行访问](https://www.jianshu.com/p/d3e951641b7c)   
 
 
 ## 问题集
@@ -1426,9 +1449,14 @@ Exception in thread "main" java.lang.NoClassDefFoundError: org/hsqldb/Server
 缺少hsqldb jar包，下载即可。
 [Sqoop metastore cannot be started due to missing hsqldb jar file](https://www.mail-archive.com/dev@sqoop.apache.org/msg00460.html)
 
-### 
+### I/O error performing job operation: java.io.IOException: Invalid metadata version.
 ```
-20/04/02 23:45:49 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
+20/04/06 00:03:39 WARN hsqldb.HsqldbJobStorage: Could not interpret as a number: null
+20/04/06 00:03:39 ERROR hsqldb.HsqldbJobStorage: Can not interpret metadata schema
+20/04/06 00:03:39 ERROR hsqldb.HsqldbJobStorage: The metadata schema version is null
+20/04/06 00:03:39 ERROR hsqldb.HsqldbJobStorage: The highest version supported is 0
+20/04/06 00:03:39 ERROR hsqldb.HsqldbJobStorage: To use this version of Sqoop, you must downgrade your metadata schema.
+20/04/06 00:03:39 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
 	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:202)
 	at org.apache.sqoop.metastore.hsqldb.AutoHsqldbStorage.open(AutoHsqldbStorage.java:112)
 	at org.apache.sqoop.tool.JobTool.run(JobTool.java:289)
@@ -1438,5 +1466,35 @@ Exception in thread "main" java.lang.NoClassDefFoundError: org/hsqldb/Server
 	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)
 	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
 	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)
+
+
+```
+
+[How to change sqoop metastore](https://stackoverflow.com/questions/24078668/how-to-change-sqoop-metastore)  
+
+```
+GRANT DBA TO SA
+SET SCHEMA SYSTEM_LOBS
+INSERT INTO BLOCKS VALUES(0,2147483647,0)
+```
+
+
+### 
+
+```
+ FATAL [HSQLDB Server @769e7ee8] hsqldb.db.HSQLDB714AEF38D6.ENGINE - could not reopen database
+org.hsqldb.HsqlException: Database lock acquisition failure: lockFile: org.hsqldb.persist.LockFile@4976de43[file =/bdp/sqoop/sqoop-metastore/shared.db.lck, exists=false, locked=false, valid=false, ] method: openRAF reason: java.io.FileNotFoundException: /bdp/sqoop/sqoop-metastore/shared.db.lck (Not a directory
+```
+
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-metastore$ ls
+shared.db.lck  shared.db.properties  shared.db.tmp
+shared.db.log  shared.db.script
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-metastore$ tail -n 5 shared.db.script 
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+GRANT DBA TO SA
 
 ```
