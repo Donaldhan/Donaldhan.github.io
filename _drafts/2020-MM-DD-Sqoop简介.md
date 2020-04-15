@@ -1070,53 +1070,56 @@ mysql> select * from books;
 donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ cp sqoop-site-template.xml sqoop-site.xml
 ```
 具体内容如下：
+使用mysql存储sqoop metastore信息。
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
-  <property>
-    <name>sqoop.jobbase.serialize.sqoopoptions</name>
-    <value>true</value>
-    <description>If true, then all options will be serialized into job.xml
+ <property>
+    <name>sqoop.metastore.client.enable.autoconnect</name>
+    <value>false</value>
+    <description>If true, Sqoop will connect to a local metastore
+      for job management when no other metastore arguments are
+      provided.
     </description>
   </property>
-  <!-- 本地存储方式hslqdb -->
-  <property>
-    <name>sqoop.metastore.server.location</name>
-    <value>/bdp/sqoop/sqoop-metastore/shared.db</value>
-    <description>Path to the shared metastore database files.
-    If this is not set, it will be placed in ~/.sqoop/.
-    </description>
-  </property>
-  <property>
-    <name>sqoop.metastore.server.port</name>
-    <value>16000</value>
-    <description>Port that this metastore should listen on.
-    </description>
-  </property>
-  <!-- 创建job可以不用指定meta-connect -->
   <property>
     <name>sqoop.metastore.client.autoconnect.url</name>
-    <value>jdbc:hsqldb:hsql://127.0.0.1:16000/sqoop</value>
+    <value>jdbc:mysql://mysqldb:3306/sqoop?createDatabaseIfNotExist=true</value>
+  </property>
+  <property>
+    <name>sqoop.metastore.client.autoconnect.username</name>
+    <value>root</value>
+  </property>
+  <property>
+    <name>sqoop.metastore.client.autoconnect.password</name>
+    <value>123456</value>
   </property>
 </configuration>
-``` 
-
-创建对应的log文件夹：
-启动metastore
 
 ```
-sqoop metastore &
+
+创建表结构
+```
+CREATE TABLE SQOOP_ROOT (
+    version INT, 
+    propname VARCHAR(128) NOT NULL,
+    propval VARCHAR(256),
+    CONSTRAINT SQOOP_ROOT_unq UNIQUE (version, propname)
+);
 ```
 
-启动完在创建了一个sqoop-metastore文件夹，存放hsqldb相关的数据
+```
+INSERT INTO 
+    SQOOP_ROOT 
+VALUES(
+    NULL,
+    'sqoop.hsqldb.job.storage.version',
+    '0'
+);
+```
 
-```
-donaldhan@pseduoDisHadoop:/bdp/sqoop$ cd sqoop-metastore/
-donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-metastore$ ls
-shared.db.lck  shared.db.properties  shared.db.tmp
-shared.db.log  shared.db.script
-```
+
 
 
 
@@ -1135,8 +1138,9 @@ job --create 作业名
 
 ```
 sqoop job --create sync_books_append  \
+--meta-connect 'jdbc:mysql://mysqldb:3306/sqoop?user=root&password=123456' \
 -- import  \
---connect jdbc:mysql://192.168.3.107:3306/test  \
+--connect jdbc:mysql://192.168.3.104:3306/test  \
 --username root  \
 --password 123456  \
 --table books  \
@@ -1151,12 +1155,90 @@ sqoop job --create sync_books_append  \
 --m 1
 ```
 
+### 查看所有job
+```
+sqoop job --list \
+--meta-connect 'jdbc:mysql://mysqldb:3306/sqoop?user=root&password=123456' 
+```
 
 
---meta-connect jdbc:hsqldb:hsql://127.0.0.1:16000/sqoop \
-<!-- Invalid metadata version. -->
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ sqoop job --list \
+> --meta-connect 'jdbc:mysql://mysqldb:3306/sqoop?user=root&password=123456' 
+Available jobs:
+  sync_books_append
 
-20/04/02 23:45:49 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Invalid metadata version.
+```
+
+### 查看指定的job
+```
+sqoop job --show sync_books_append \
+--meta-connect 'jdbc:mysql://mysqldb:3306/sqoop?user=root&password=123456' 
+```
+
+
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ sqoop job --show sync_books_append \
+> --meta-connect 'jdbc:mysql://mysqldb:3306/sqoop?user=root&password=123456' 
+...
+Job: sync_books_append
+Tool: import
+Options:
+----------------------------
+verbose = false
+hcatalog.drop.and.create.table = false
+codegen.output.delimiters.escape = 0
+codegen.output.delimiters.enclose.required = false
+codegen.input.delimiters.field = 0
+split.limit = null
+hbase.create.table = false
+mainframe.input.dataset.type = p
+db.require.password = false
+skip.dist.cache = false
+hdfs.append.dir = false
+codegen.input.delimiters.escape = 0
+import.fetch.size = null
+accumulo.create.table = false
+codegen.input.delimiters.enclose.required = false
+reset.onemapper = false
+codegen.output.delimiters.record = 10
+import.max.inline.lob.size = 16777216
+sqoop.throwOnError = false
+hbase.bulk.load.enabled = false
+hcatalog.create.table = false
+db.clear.staging.table = false
+codegen.input.delimiters.record = 0
+enable.compression = false
+hive.overwrite.table = false
+hive.import = false
+codegen.input.delimiters.enclose = 0
+accumulo.batch.size = 10240000
+hive.drop.delims = false
+customtool.options.jsonmap = {}
+codegen.output.delimiters.enclose = 0
+hdfs.delete-target.dir = false
+codegen.output.dir = .
+codegen.auto.compile.dir = true
+relaxed.isolation = false
+mapreduce.num.mappers = 4
+accumulo.max.latency = 5000
+import.direct.split.size = 0
+sqlconnection.metadata.transaction.isolation.level = 2
+codegen.output.delimiters.field = 44
+export.new.update = UpdateOnly
+incremental.mode = None
+hdfs.file.format = TextFile
+sqoop.oracle.escaping.disabled = true
+codegen.compile.dir = /tmp/sqoop-donaldhan/compile/d7db0462296072540d2e6f46b97642f9
+direct.import = false
+temporary.dirRoot = _sqoop
+hive.fail.table.exists = false
+db.batch = false
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-1.4.7/conf$ 
+
+```
+
+### 执行job
 
 ```
 INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALUES ('1', '贫穷的本质', '39', '2020-03-29 23:23:54');
@@ -1170,6 +1252,9 @@ INSERT INTO `test`.`books` (`id`, `book_name`, `book_price`, `update_time`) VALU
 
 ```
 
+
+
+sqoop metastore &
 启动metastore
 ```
 ```
@@ -1220,6 +1305,79 @@ start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
 [HSQLDB使用](https://www.jianshu.com/p/06f8978be739)     
 [HSQLDB 安装与使用](https://www.cnblogs.com/saintaxl/archive/2012/01/20/2328356.html)  
 [HSQLDB Client 命令行访问](https://www.jianshu.com/p/d3e951641b7c)   
+
+## 
+
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>sqoop.jobbase.serialize.sqoopoptions</name>
+    <value>true</value>
+    <description>If true, then all options will be serialized into job.xml
+    </description>
+  </property>
+   <property>
+    <name>sqoop.metastore.client.autoconnect.username</name>
+    <value>SA</value>
+    <description>The username to bind to the metastore.
+    </description>
+  </property>
+  <property>
+    <name>sqoop.metastore.client.autoconnect.password</name>
+    <value></value>
+    <description>The password to bind to the metastore.
+    </description>
+  </property>
+
+  <!-- sqoop执行时会让输入密码，这里value改成true后，会自动保存密码，这样就可以做定时任务(job自动执行) -->
+   <property>
+    <name>sqoop.metastore.client.record.password</name>
+    <value>true</value>
+    <description>If true, allow saved passwords in the metastore.
+    </description>
+  </property>
+
+  <!-- 本地存储方式hslqdb -->
+  <property>
+    <name>sqoop.metastore.server.location</name>
+    <value>/bdp/sqoop/sqoop-metastore/shared.db</value>
+    <description>Path to the shared metastore database files.
+    If this is not set, it will be placed in ~/.sqoop/.
+    </description>
+  </property>
+  <property>
+    <name>sqoop.metastore.server.port</name>
+    <value>16000</value>
+    <description>Port that this metastore should listen on.
+    </description>
+  </property>
+  <!-- 创建job可以不用指定meta-connect -->
+  <property>
+    <name>sqoop.metastore.client.autoconnect.url</name>
+    <value>jdbc:hsqldb:hsql://127.0.0.1:16000/sqoop</value>
+  </property>
+</configuration>
+``` 
+
+创建对应的log文件夹：
+启动metastore
+
+```
+sqoop metastore &
+```
+
+启动完在创建了一个sqoop-metastore文件夹，存放hsqldb相关的数据
+
+```
+donaldhan@pseduoDisHadoop:/bdp/sqoop$ cd sqoop-metastore/
+donaldhan@pseduoDisHadoop:/bdp/sqoop/sqoop-metastore$ ls
+shared.db.lck  shared.db.properties  shared.db.tmp
+shared.db.log  shared.db.script
+```
 
 
 ## 问题集
@@ -1479,7 +1637,7 @@ INSERT INTO BLOCKS VALUES(0,2147483647,0)
 ```
 
 
-### 
+### FileNotFoundException: /bdp/sqoop/sqoop-metastore/shared.db.lck (Not a directory
 
 ```
  FATAL [HSQLDB Server @769e7ee8] hsqldb.db.HSQLDB714AEF38D6.ENGINE - could not reopen database
@@ -1498,3 +1656,74 @@ GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
 GRANT DBA TO SA
 
 ```
+
+
+```
+sqoop metastore &
+```
+上述启动方式，会默认在当前目录先创建一个sqoop-metastore，及hsqldb的数据库数据文件。
+
+使用
+
+```
+start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
+```
+启动metastore， 没有对应的sqoop-metastore文件夹，或者/bdp/sqoop/sqoop-metastore/shared.db.lck文件缺失。
+
+
+
+# Caused by: java.sql.SQLInvalidAuthorizationSpecException: invalid authorization specification
+```
+SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
+20/04/15 23:09:33 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Exception creating SQL connection
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:216)
+	at org.apache.sqoop.metastore.hsqldb.AutoHsqldbStorage.open(AutoHsqldbStorage.java:112)
+	at org.apache.sqoop.tool.JobTool.run(JobTool.java:289)
+	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)
+	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:70)
+	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
+	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)
+Caused by: java.sql.SQLInvalidAuthorizationSpecException: invalid authorization specification: SA
+	at org.hsqldb.jdbc.JDBCUtil.sqlException(Unknown Source)
+	at org.hsqldb.jdbc.JDBCUtil.sqlException(Unknown Source)
+	at org.hsqldb.jdbc.JDBCConnection.<init>(Unknown Source)
+	at org.hsqldb.jdbc.JDBCDriver.getConnection(Unknown Source)
+
+```
+
+
+# Caused by: org.hsqldb.HsqlException: Parameter not set
+```
+20/04/15 23:20:57 ERROR tool.JobTool: I/O error performing job operation: java.io.IOException: Exception creating SQL connection
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:216)
+	at org.apache.sqoop.metastore.hsqldb.AutoHsqldbStorage.open(AutoHsqldbStorage.java:112)
+	at org.apache.sqoop.tool.JobTool.run(JobTool.java:289)
+	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)
+	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:70)
+	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)
+	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)
+	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)
+Caused by: java.sql.SQLException: Parameter not set
+	at org.hsqldb.jdbc.JDBCUtil.sqlException(Unknown Source)
+	at org.hsqldb.jdbc.JDBCUtil.sqlException(Unknown Source)
+	at org.hsqldb.jdbc.JDBCUtil.sqlException(Unknown Source)
+	at org.hsqldb.jdbc.JDBCPreparedStatement.checkParametersSet(Unknown Source)
+	at org.hsqldb.jdbc.JDBCPreparedStatement.fetchResult(Unknown Source)
+	at org.hsqldb.jdbc.JDBCPreparedStatement.executeUpdate(Unknown Source)
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.setRootProperty(HsqldbJobStorage.java:618)
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.createRootTable(HsqldbJobStorage.java:531)
+	at org.apache.sqoop.metastore.hsqldb.HsqldbJobStorage.init(HsqldbJobStorage.java:185)
+	... 8 more
+Caused by: org.hsqldb.HsqlException: Parameter not set
+	at org.hsqldb.error.Error.error(Unknown Source)
+
+```
+
+问题原因，命令行中的*-- import*之间没有空格
+
+[Sqoop job creation](http://discuss.itversity.com/t/sqoop-job-creation/7239)
+
+[how to connect to default sqoop metastore](https://community.cloudera.com/t5/Support-Questions/how-to-connect-to-default-sqoop-metastore/td-p/146274) 
