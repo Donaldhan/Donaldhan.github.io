@@ -1306,9 +1306,9 @@ start-metastore.sh -p sqoop-metastore -l /bdp/sqoop/log
 [HSQLDB 安装与使用](https://www.cnblogs.com/saintaxl/archive/2012/01/20/2328356.html)  
 [HSQLDB Client 命令行访问](https://www.jianshu.com/p/d3e951641b7c)   
 
-## 
+##  hsqldb metatore 存储方式配置
 
-
+首先配置sqoop-site.xml如下：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -1379,6 +1379,7 @@ shared.db.lck  shared.db.properties  shared.db.tmp
 shared.db.log  shared.db.script
 ```
 
+注意这个有很多问题，想尝试的可以趟一趟，（~）
 
 ## 问题集
 
