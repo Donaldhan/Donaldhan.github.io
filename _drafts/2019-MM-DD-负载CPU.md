@@ -3,7 +3,7 @@ layout: page
 title: my blog
 subtitle: sub title
 date: 2018-11-04 15:17:19
-author: donaldhan
+author: valuewithTime
 catalog: true
 category: linux
 categories:
