@@ -5,9 +5,9 @@ subtitle: Selenium(ChromeDriver)的一次趟坑
 date: 2020-01-31 22:51:01
 author: donaldhan
 catalog: true
-category: Util
+category: util
 categories:
-    - Util
+    - util
 tags:
     - selenium
 ---
