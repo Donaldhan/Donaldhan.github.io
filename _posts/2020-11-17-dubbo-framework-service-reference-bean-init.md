@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Dubbo框架设计源码解读第一篇（服务和引用bean初始化）
+title: Dubbo框架设计源码解读一（服务和引用bean初始化）
 subtitle: ServiceBean和ReferenceBean的初始化
 date: 2020-11-17 23:11:00
 author: valuewithTime
