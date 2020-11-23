@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Dubbo框架设
-subtitle: ServiceBean和ReferenceBean的初始化
+title: Dubbo框架设计源码解读四(Dubbo基于Netty的传输器Transport)
+subtitle: Dubbo基于Netty的传输器Transport
 date: 2020-11-23 23:11:00
 author: valuewithTime
 catalog: true
