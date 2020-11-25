@@ -2,7 +2,7 @@
 layout: page
 title: Dubbo框架设计及源码解读
 subtitle: Dubbo框架设计及源码解读
-date: 2020-11-23 23:06:00
+date: 2020-11-25 23:06:00
 author: valuewithTime
 catalog: true
 category: Dubbo
@@ -94,7 +94,7 @@ netty客户端也没有多少新鲜的动心，编解码器，Netty客户端处�
 
 ## 消息编解码
 
-
+[Dubbo框架设计源码解读五(消息编解码器)](https://donaldhan.github.io/dubbo/2020/11/25/dubbo-framework-encoder-decoder.html) 
 
 NettyCodecAdapter为编解码器的适配，内部编码器实际为ByteToMessageDecoder， 内部的编码操作委托给内部编解码器，根据SPI机制，实际为DubboCodec；内部解码器实际为ByteToMessageDecoder，解码操作委托给DubboCodec。
 
