@@ -108,6 +108,11 @@ NettyCodecAdapter为编解码器的适配，内部编码器实际为ByteToMessag
 
 
 # 附
+## Dubbo类图
+![dubbo-class](/image/dubbo/dubbo-class.png) 
+
+
+## 参考文献
 
 [dubbo offical site](https://dubbo.apache.org/zh-cn/index.html)    
 [dubbo github](https://github.com/apache/dubbo)   
