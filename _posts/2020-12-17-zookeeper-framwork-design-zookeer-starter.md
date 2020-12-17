@@ -269,6 +269,7 @@ public class QuorumPeerMain {
 
 2. 启动服务监听请求
 //QuorumPeer
+
 ```java
 /**
      * 启动server
