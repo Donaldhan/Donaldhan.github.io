@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Zookeeper框架设计及源码解读二（快速选举器及选举消息的发送与接收）
-subtitle: Zookeeper框架设计及源码解读二（快速选举器及选举消息的发送与接收）
+title: Zookeeper框架设计及源码解读二（快速选举策略及选举消息的发送与接收）
+subtitle: Zookeeper框架设计及源码解读二（快速选举策略及选举消息的发送与接收）
 date: 2020-12-22 21:07:00
 author: valuewithTime
 catalog: true
@@ -1194,11 +1194,8 @@ fast leader 选举策略启动时实际上启动了一个消息处理器Messenge
 今天现将到者，选举还有很多内容，在QuorumPeer中处理，我们放到下一篇。
 
 
-## QuorumPeer
 
-
-
-# 附
+# 总结
 
 启动peer选举策略实际启动的为fast leader 选举策略，如果peer状态为LOOKING， 创建投票（最后提交的日志id，时间戳，peerId）。
 
