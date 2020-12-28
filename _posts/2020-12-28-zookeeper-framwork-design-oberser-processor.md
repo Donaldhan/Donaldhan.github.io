@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Zookeeper框架设计及源码解读四（）
-subtitle: Zookeeper框架设计及源码解读四（）
+title: Zookeeper框架设计及源码解读四（观察者）
+subtitle: Zookeeper框架设计及源码解读四（观察者）
 date: 2020-12-16 19:41:00
 author: valuewithTime
 catalog: true
