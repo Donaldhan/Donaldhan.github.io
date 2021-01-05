@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Zookeeper框架设计及源码解读四（观察者消息处理）
-subtitle: Zookeeper框架设计及源码解读四（观察者消息处理）
+title: Zookeeper框架设计及源码解读六（Leader消息处理）
+subtitle: Zookeeper框架设计及源码解读六（Leader消息处理）
 date: 2021-01-05 19:37:00
 author: valuewithTime
 catalog: true
