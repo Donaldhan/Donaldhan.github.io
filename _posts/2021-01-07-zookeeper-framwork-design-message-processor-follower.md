@@ -2,7 +2,7 @@
 layout: page
 title: Zookeeper框架设计及源码解读七（跟随者观察者消息处理器）
 subtitle: Zookeeper框架设计及源码解读七（跟随者观察者消息处理器）
-date: 2021-0107 20:33:00
+date: 2021-01-07 20:33:00
 author: valuewithTime
 catalog: true
 category: Zookeeper
