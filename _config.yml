@@ -1,4 +1,4 @@
-title: ValueTime Blog
+title: Ravitn Blog
 description: Just do it, deeply...
 show_downloads: false
 google_analytics:
@@ -17,7 +17,7 @@ gitee:
 jianshu:
     username: Donaldhan
 Donaldhan:
-    email: valuewithtime@163.com
+    email: ravitn@163.com
 # Build settings
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
 plugins:
