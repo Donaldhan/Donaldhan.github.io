@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Seata框架设计
-subtitle: Seata框架设计
+title: Seata分布式事务框架设计
+subtitle: Seata分布式事务框架设计
 date: 2021-02-08 14:51:00
 author: Ravitn
 catalog: true
