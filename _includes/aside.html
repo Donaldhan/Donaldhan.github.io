@@ -1,5 +1,5 @@
  <aside id="sidebar">
-
+        
           {% if site.show_downloads %}
             <a href="{{ site.github.zip_url }}" class="button">
               <small>Download</small>
@@ -20,6 +20,44 @@
             <a href="{{ site.github.repository_url }}" class="button"><small>Follow me on</small> GitHub</a>
           {% endif %}
       -->
+       <div class="profile">
+            <img src="{{ site.baseurl }}/image/aside/profile.jpg"  alt="Donaldhan">
+            <!-- now disabled, display at about html.    -->
+            <p>
+            {{ site.data.profile.cityInfo }}<br/>
+            {% comment %} {{ site.data.profile.workInfo }}<br/> {% endcomment %}
+            <span>
+                <svg aria-hidden="true" class="octicon octicon-mail" height="16" version="1.1" viewBox="0 0 14 16" width="14">
+                    <path fill-rule="evenodd"
+                        d="M0 4v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1H1c-.55 0-1 .45-1 1zm13 0L7 9 1 4h12zM1 5.5l4 3-4 3v-6zM2 12l3.5-3L7 10.5 8.5 9l3.5 3H2zm11-.5l-4-3 4-3v6z">
+                    </path>
+                </svg>
+                <a class="u-email" href="mailto:{{ site.Donaldhan.email }}">{{ site.Donaldhan.email }}</a>
+           </span>
+           </p>
+        </div>
+        <hr/>
+        <div>
+    		<p>
+                <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z">
+                    </path>
+                </svg>
+
+                <a target="_blank"  href="https://github.com/{{ site.github.username }}">GitHub</a>
+                | <a target="_blank"  href="https://www.iteye.com/blog/user/{{ site.iteye.username }}">Iteye</a>
+                | <a target="_blank"  href="https://www.jianshu.com/u/79667750f82e">JianShu</a>
+                | <a target="_blank"  href="https://juejin.cn/user/720903091002247/posts">JueJin</a>
+                | <a target="_blank"  href="https://www.zhihu.com/people/donaldhan/posts">ZhiHu</a>
+                | <a target="_blank"  href="https://weibo.com/donesqh/profile?rightmod=1&wvr=6&mod=personinfo&is_all=1">Weibo</a>
+                | <a target="_blank"  href="https://gitee.com/{{ site.gitee.username }}">Gitee</a>
+
+            <!--
+                | <a target="_blank"  href="https://gitee.com/{{ site.weibo.usernam e}}">WeiBo</a>
+                | <a target="_blank"  href="http://www.jianshu.com/users/79667750f82e/timeline">Jianshu</a>.
+             -->
+            </p>
+       </div>
       <!-- list categories start -->
 	   <h1>Categories</h1>
        <ul class="tag-box inline font-medium">
@@ -58,40 +96,5 @@
           {% endfor %}
         </ul>
         <hr/>
-        <div class="profile">
-            <img src="{{ site.baseurl }}/image/aside/profile.jpg"  alt="Donaldhan">
-            <!-- now disabled, display at about html.    -->
-            <p>
-            {{ site.data.profile.cityInfo }}<br/>
-            {% comment %} {{ site.data.profile.workInfo }}<br/> {% endcomment %}
-            <span>
-                <svg aria-hidden="true" class="octicon octicon-mail" height="16" version="1.1" viewBox="0 0 14 16" width="14">
-                    <path fill-rule="evenodd"
-                        d="M0 4v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1H1c-.55 0-1 .45-1 1zm13 0L7 9 1 4h12zM1 5.5l4 3-4 3v-6zM2 12l3.5-3L7 10.5 8.5 9l3.5 3H2zm11-.5l-4-3 4-3v6z">
-                    </path>
-                </svg>
-                <a class="u-email" href="mailto:{{ site.Donaldhan.email }}">{{ site.Donaldhan.email }}</a>
-           </span>
-           </p>
-        </div>
-        <hr/>
-        <!-- list all the tags end -->
-        <div>
-    		<p>
-                <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
-                    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z">
-                    </path>
-                </svg>
-
-                <a target="_blank"  href="https://github.com/{{ site.github.username }}">GitHub</a>
-                | <a target="_blank"  href="https://www.iteye.com/blog/user/{{ site.iteye.username }}">Iteye</a>
-                 | <a target="_blank"  href="https://www.jianshu.com/u/79667750f82e">JianShu</a>
-                | <a target="_blank"  href="https://gitee.com/{{ site.gitee.username }}">Gitee</a>
-
-            <!--
-                | <a target="_blank"  href="https://gitee.com/{{ site.weibo.usernam e}}">WeiBo</a>
-                | <a target="_blank"  href="http://www.jianshu.com/users/79667750f82e/timeline">Jianshu</a>.
-             -->
-            </p>
-       </div>
+     <!-- list all the tags end -->
 </aside>
