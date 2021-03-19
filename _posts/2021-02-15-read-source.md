@@ -24,3 +24,6 @@ tags:
 
 具体可以参考一下我的这篇文档，
 [Seata分布式事务框架设计](https://donaldhan.github.io/seata/2021/02/08/seata-framework-design.html), 当前个人最高源码解读水准（~）。
+
+
+PS：不要拘泥细节，关注整体框架和关键流程
