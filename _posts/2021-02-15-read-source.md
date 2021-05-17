@@ -26,4 +26,4 @@ tags:
 [Seata分布式事务框架设计](https://donaldhan.github.io/seata/2021/02/08/seata-framework-design.html), 当前个人最高源码解读水准（~）。
 
 
-PS：不要拘泥细节，关注整体框架和关键流程
+PS：不要拘泥细节，关注整体框架和关键流程; 我又要否则这一点，有些流程中的细节，凸显了设计者意图，和巧做天工之作。
