@@ -28,6 +28,7 @@ plugins:
 paginate: 8
 paginate_path: "page:num"
 
+timezone: Asia/Shanghai
 # tipue_search fulltext search base liquid
 # collections is an array containing a list of collections you want to include.
 #https://github.com/Donaldhan/jekyll-tipue-search
