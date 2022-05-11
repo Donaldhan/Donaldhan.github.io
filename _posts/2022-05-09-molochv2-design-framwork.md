@@ -2,7 +2,7 @@
 layout: page
 title: MolochV2 DAO解读
 subtitle: MolochV2 DAO解读
-date: 2022-05-10 23:22:00
+date: 2022-05-09 23:22:00
 author: Ravitn
 catalog: true
 category: DAO
