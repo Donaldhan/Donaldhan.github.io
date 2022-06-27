@@ -17,7 +17,8 @@ gitee:
 jianshu:
     username: Donaldhan
 Donaldhan:
-    email: shaoqinghan@aliyun.com
+    email: ravitn@aliyun.com
+#    email: shaoqinghan@aliyun.com
 # Build settings
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
 plugins:
