@@ -1,3 +1,4 @@
+---
 layout: page
 title: OpenZeppelin代理升级原理分析  
 subtitle: OpenZeppelin代理升级原理分析  
@@ -10,6 +11,8 @@ categories:
 tags:
     - OpenZeppelin
 ---
+
+
 # 引言
 >什么是智能合约升级？
 智能合约升级是一种在保留存储和余额的同时，而又可以任意更改在地址中执行代码的操作。
