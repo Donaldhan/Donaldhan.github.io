@@ -26,7 +26,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-lunr-js-search
 
-paginate: 8
+paginate: 10
 paginate_path: "page:num"
 
 #timezone: Asia/Shanghai
