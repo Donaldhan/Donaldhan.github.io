@@ -2,7 +2,7 @@
 layout: page
 title: OpenZeppelin代理升级原理分析  
 subtitle: OpenZeppelin代理升级原理分析  
-date: 2022-08-23 19:53:39
+date: 2022-08-22 19:53:39
 author: ravitn
 catalog: true
 category: solidity
