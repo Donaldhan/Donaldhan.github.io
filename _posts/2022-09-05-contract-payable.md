@@ -47,7 +47,8 @@ tags:
 
 
 
-2. transfer原型
+2. transfer原型  
+
 ```
 <address>.transfer(uint256 amount)
 ```
@@ -57,6 +58,7 @@ tags:
 
 
 > send与transfer对比简析
+
 * 相同之处
 1. 均是向address发送ETH（以Wei做单位）
 2. 发送的同时传输2300gas（gas数量很少，只允许接收方合约执行最简单的操作，2300gas只能够发送一个事件，有其他操作，则会抛出gas不足
@@ -69,7 +71,7 @@ tags:
 
 再来看一下call和delegatecall
 
-## call与delegatecall区别
+## call与delegatecall区别  
 1. call原型
 ```
 <address>.call(...) returns (bool)
