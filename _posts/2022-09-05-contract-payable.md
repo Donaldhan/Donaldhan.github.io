@@ -28,7 +28,6 @@ tags:
     * [call转账回退测试合约](#call转账回退测试合约) 
     * [transfer转账回退测试合约](#transfer转账回退测试合约) 
     * [转账测试合约](#转账测试合约) 
-    * [测试脚本](#测试脚本) 
 * [总结](#总结)     
 * [附](#附) 
 
@@ -385,82 +384,6 @@ contract CallerPayable {
         return testPayable.transfer(2 ether);
     }
 }
-```
-
-
-## 测试脚本
-```js
-
- const { expect } = require("chai");
- const { ethers } = require("hardhat");
-describe("CallerPayable-test Test", function () {
-    it("CallerPayable-test Test error", async function () {
-    const [owner, ravitn] = await ethers.getSigners();
-    const TestErrorPayable = await ethers.getContractFactory("TestErrorPayable");
-    const testErrorPayable = await TestErrorPayable.deploy();
-    await testErrorPayable.deployed();
-
-
-    const TestPayable = await ethers.getContractFactory("TestPayable");
-    const testPayable = await TestPayable.deploy();
-    await testPayable.deployed();
-
-
-    const TestPayableV2 = await ethers.getContractFactory("TestPayableV2");
-    const testPayableV2 = await TestPayableV2.deploy();
-    await testPayableV2.deployed();
-
-    const TestPayableV3 = await ethers.getContractFactory("TestPayableV3");
-    const testPayableV3 = await TestPayableV3.deploy();
-    await testPayableV3.deployed();
-
-    const TestPayableV4 = await ethers.getContractFactory("TestPayableV4");
-    const testPayableV4 = await TestPayableV4.deploy();
-    await testPayableV4.deployed();
-
-    const CallerPayable = await ethers.getContractFactory("CallerPayable");
-    const callerPayable = await CallerPayable.deploy();
-    await callerPayable.deployed();
-
-    let tx = await callerPayable.setBlockTimestamp({value: ethers.utils.parseEther("20")});
-    await tx.wait()
-
-    var callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance:", callerPayableBalance);
-
-    await callerPayable.callTestError(testErrorPayable.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestError:", callerPayableBalance);
-
-
-    await callerPayable.callTestPayable(testPayable.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestPayable:", callerPayableBalance);
-
-    //call 回退到fallback
-    await callerPayable.callTestPayableV3(testPayableV3.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestPayableV3:", callerPayableBalance);
-
-    //send，tranfer回退到fallback
-    await callerPayable.callTestPayableV4(testPayableV4.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestPayableV4:", callerPayableBalance);
-    var gasPriceNow = await ethers.provider.getGasPrice ();
-    console.log("garPrice:", gasPriceNow);
- 
-    await callerPayable.callTestPayableBySend(testPayableV2.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestPayableBySend:", callerPayableBalance);
-
-    // 2300
-    await callerPayable.callTestPayableByTransfer(testPayableV2.address);
-    callerPayableBalance = await ethers.provider.getBalance(callerPayable.address);
-    console.log("callerPayableBalance after callTestPayableByTransfer:", callerPayableBalance);
-
-    }).timeout(60000);;
-});
-
 ```
 
  # 总结
