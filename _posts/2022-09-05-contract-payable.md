@@ -72,7 +72,8 @@ tags:
 再来看一下call和delegatecall
 
 ## call与delegatecall区别  
-1. call原型
+1. call原型  
+
 ```
 <address>.call(...) returns (bool)
 ```
@@ -88,7 +89,8 @@ nameReg.call(bytes4(keccak256("fun(uint256)")), a);
 nameReg.call.gas(1000000).value(1 ether)("register", "MyName");
 ```
 
-2. delegatecall原型
+2. delegatecall原型   
+
 ```
 <address>.delegatecall(...) returns (bool)
 ```
@@ -128,6 +130,7 @@ nameReg.delagatecall.gas(1000000)("register", "MyName");
 3中转账的方式中，合约使用什么方法来接受，默认使用默认使用receive（payable），如果没有，则调用fallback（payable），如果fallback非payalbe则将失败；
 另外说明一下 address(test).call{value: 2 ether}("")；方式，calldata为空，默认先调用receive，没有再调fallback；当call的calldata不为空时（address(test).call{value: 1}(abi.encodeWithSignature("nonExistingFunction()"))），则调用的为fallback函数。具体如下：
 
+
 ```
 /*
 Which function is called, fallback() or receive()?
@@ -144,6 +147,7 @@ receive() exists?  fallback()
     receive()   fallback()
 */
 ```
+
 
 另外说明一下fallback函数：
 
@@ -179,7 +183,8 @@ eip1884后，需要相关操作码的gas成本，在gas成本不变（在2300gas
 # 测试合约
 
 
-## 非payable的Fallback合约
+## 非payable的Fallback合约  
+
 ```solidity
 import "hardhat/console.sol";
 pragma solidity ^0.8.0;
@@ -196,7 +201,8 @@ contract TestErrorPayable {
 ```
 
 
-## 接受方法测试合约
+## 接受方法测试合约  
+
 ```solidity
 import "hardhat/console.sol";
 pragma solidity ^0.8.0;
@@ -225,7 +231,8 @@ contract TestPayable {
 ```
 
 
-## call非空data测试合约
+## call非空data测试合约   
+
 ```solidity
 import "hardhat/console.sol";
 pragma solidity ^0.8.0;
@@ -253,7 +260,8 @@ contract TestPayableV2 {
 
 ```
 
-## call转账回退测试合约
+## call转账回退测试合约   
+
 
 
 ```solidity
@@ -303,6 +311,7 @@ contract TestPayableV4 {
 
 
 ## 转账测试合约
+
 ```solidity
 import "./TestErrorPayable.sol";
 import "./TestPayable.sol";
