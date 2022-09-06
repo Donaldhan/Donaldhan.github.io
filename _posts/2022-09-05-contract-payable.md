@@ -77,6 +77,7 @@ tags:
 ```
 <address>.call(...) returns (bool)
 ```
+
 简介:以address（被调用合约）的身份调用address内的函数，默认情况下将所有可用的gas传输过去，gas传输量可调。执行失败时返回false
 
 > 实例
@@ -94,6 +95,7 @@ nameReg.call.gas(1000000).value(1 ether)("register", "MyName");
 ```
 <address>.delegatecall(...) returns (bool)
 ```
+
 简介:以调用合约的身份调用address内的函数，默认情况下将所有可用的gas传输过去，gas传输量可调。执行失败时返回false。本函数目的在于让合约能够在不传输自身状态(如balance、storage)的情况下使用其他合约的代码。
 
 > 实例
