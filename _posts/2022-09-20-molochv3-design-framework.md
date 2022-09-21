@@ -66,7 +66,7 @@ RPC客户端负责调用适配器的公共/外部函数，与DAO核心模块进�
 如果一个核心模块需要外部信息，应该通过一个输出适配器提供，而不是直接调用外部世界信息。
 
 # V3整体架构
-![MolochV3-framework](/image/molochv3/MolochV3-framework..png)
+![MolochV3-framework](/image/molochv3/MolochV3-framework.png)
 
 整体架构主要有基础层，核心层，适配器层，及工厂层。
 
