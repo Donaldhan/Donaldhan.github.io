@@ -9,7 +9,7 @@ category: solidity
 categories:
     - solidity
 tags:
-    - DAO
+    - Moloch
 ---
 
 

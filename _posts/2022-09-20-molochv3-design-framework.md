@@ -5,9 +5,9 @@ subtitle: DAO服务MolochV3
 date: 2022-09-20 23:22:00
 author: Ravitn
 catalog: true
-category: DAO
+category: solidity
 categories:
-    - DAO
+    - solidity
 tags:
     - Moloch
 ---
