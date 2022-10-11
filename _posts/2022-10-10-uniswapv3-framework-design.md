@@ -257,7 +257,7 @@ V3通过 Global State和Tick-Indexed State来解决这些问题；
 针对虚拟流动性，有些流动性不能反映从合约创建时的fee，我们称为uncollected fees，
 V3通过Position-Indexed State可以计算相应的uncollected fees。
 
-提供交易池的创建，交易相关的核心操作，比如添加流动mint，swap操作等，管理价格tick map，用户的位置信息，交易池状态，及oralce；
+v3-core提供交易池的创建，交易相关的核心操作，比如添加流动mint，swap操作等，管理价格tick map，用户的位置信息，交易池状态，及oralce；
 
 v3-periphery提供swap相关的路由操作，并在没有swap相应的基于用户位置信息的NFT，如果mint操作的交易池不存在，则创建相应的交易池。
 UniswapV3Pool维护者交易者池的状态Slot0, 当前流动性，token0和token1的当前累计费用，tick信息，tick bitMap信息，用户流动性位置信息，及oralce观察点信息；
@@ -265,6 +265,8 @@ UniswapV3Pool维护者交易者池的状态Slot0, 当前流动性，token0和tok
 2. tick信息: 维护每个tick的信息，主要有当前tick流动性，流动性网格数量，tick范围外的token0和token1的fee，相对于当前tick外的每个流动性单元运行时间seconds，当前tick外的花费总时间seconds；
 3. tick bitMap信息：每个tick的状态等信息；
 4. 用户流动性位置信息：用户在tick上线限之间的流动，token0和token1收益， 及流动性fee
+
+每个交易池根据token0和token1的地址及交易费fee来创建，相同token0和token1，fee不同的，则会重建一个新的交易池；在同一个交易池，不同的用户可以添加自己的流动性价格区间位置，每个交易池 会将所有的用户位置价格区间分别以tick进行分割，交易池的流动所有的ticks使用TickBitMap进行管理；用户swap时将会根据价格限制，从交易池的TickBitMap中筛选出最优的tick的流动区间进行swap， 如果tick的流动性区间属于某个用户，则将交易费直接给相应的用户，否则将费用平均分配给覆盖tick的位置的用户（???），并更新用户的位置费用信息。
 
 
 针对用户swap的tokenIn和tokenOut交易池不存在时，uniswap前端将会生成相应的路径，委托给SwapRouter进行swap操作；
