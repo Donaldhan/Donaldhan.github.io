@@ -198,7 +198,7 @@ v3合约作最重要的两个模块交易池核心v3-core和外围的swap路由�
 * IUniswapV3PoolActions:主要用于初始化交易池，提供与交易核心操作，比如mint，burn，swap，flash等操作以及记录交易池快照信息increaseObservationCardinalityNext；
 * IUniswapV3PoolOwnerActions：提供设置交易协议费用和收集协议费用
 * IUniswapV3Factory：创建交易池（交易池token pair，及tick交易费用）；
-* UniswapV3Pool:提供mint，burn，swap，flash等核心实现，另外还有oralce的观察点记录；
+* UniswapV3Pool:提供mint，burn，swap，flash，及collect(销毁流动性之后提取自己资产及fee收益)等核心实现，另外还有oralce的观察点记录；
 
 > UniswapV3Pool维护者交易者池的状态Slot0, 当前流动性，token0和token1的当前累计费用，tick信息，tick bitMap信息，用户流动性位置信息，及oralce观察点信息；
 
