@@ -73,7 +73,7 @@ Liquidity Orace：v3同时每个区块基于秒级的seconds-weighted accumulato
 
 * 交易操作（swap）
 ![uniswapv3-swap](/image/uniswapv3/uniswapv3-swap.png)
-输入给定的eth,根据当前交易池价格swap出相应的USDT。
+输入给定的eth,根据当前交易池价格swap出相应的USDT。兑换时，前端将会拉取当前交易池的最优交易价格（oracle的TWAP），进行swap操作。
 
 
 * 交易列表
@@ -104,6 +104,7 @@ Uniswap v3 采用了等比数列的形式确定价格数列，公比为 1.0001�
 
 
 > v3核心思路
+
 1. 将流动池的tick化，每个tick粒度，默认为0.01；pool将会追踪没有tick的每秒的sqrt价格；在初始化时，tick没有暂用的情况下，可以初始化；
 2. pool初始化时，会设置tickSpacing，只有tickSpacing允许的范围内，才能添加到pool中，比如如果tickSpacing设为2,则(...-4, -2, 0, 2, 4...)形式的tick才可以初始化，用户添加流动性，
 只能添加tick规则允许的价格区间；
@@ -200,6 +201,7 @@ v3合约作最重要的两个模块交易池核心v3-core和外围的swap路由�
 * UniswapV3Pool:提供mint，burn，swap，flash等核心实现，另外还有oralce的观察点记录；
 
 > UniswapV3Pool维护者交易者池的状态Slot0, 当前流动性，token0和token1的当前累计费用，tick信息，tick bitMap信息，用户流动性位置信息，及oralce观察点信息；
+
 1. 交易者池的状态Slot0：主要有当前价格sqrt(x*y)，tick，最近观察点索引，当前存储观察点数量，下次需要存储的观察点索引，协议费用以及交易池是否锁住；
 2. tick信息: 维护每个tick的信息，主要有当前tick流动性，流动性网格数量，tick范围外的token0和token1的fee，相对于当前tick外的每个流动性单元运行时间seconds，当前tick外的花费总时间seconds；
 3. tick bitMap信息：每个tick的状态等信息；
