@@ -44,7 +44,7 @@ gitee:
 jianshu:
     username: Donaldhan
 Donaldhan:
-    email: shaoqinghan@aliyun.com
+    email: ravitn@aliyun.com
 ```
 
  `profile.yml`
