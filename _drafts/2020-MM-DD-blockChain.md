@@ -27,16 +27,16 @@ tags:
 ###
 ```
 
-hanshaoqing@HIH-L-3882 MINGW64 /f/blokchain
+ravitn@HIH-L-3882 MINGW64 /f/blokchain
 $ mkdir hello_world_voting
 
-hanshaoqing@HIH-L-3882 MINGW64 /f/blokchain
+ravitn@HIH-L-3882 MINGW64 /f/blokchain
 $ cd hello_world_voting/
 
-hanshaoqing@HIH-L-3882 MINGW64 /f/blokchain/hello_world_voting
+ravitn@HIH-L-3882 MINGW64 /f/blokchain/hello_world_voting
 $ mkdir node_modules
 
-hanshaoqing@HIH-L-3882 MINGW64 /f/blokchain/hello_world_voting
+ravitn@HIH-L-3882 MINGW64 /f/blokchain/hello_world_voting
 $
 
 ```
