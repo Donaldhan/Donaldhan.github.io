@@ -5,9 +5,9 @@ subtitle: Web3加速器Account abstraction
 date: 2024-06-07 23:11:00
 author: 0xTTEPX
 catalog: true
-category: Blockchain
+category: BlockChain
 categories:
-    - Blockchain
+    - BlockChain
 tags:
     - Account-Abstraction
 ---
