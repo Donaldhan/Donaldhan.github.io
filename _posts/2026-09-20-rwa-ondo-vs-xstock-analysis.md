@@ -3,7 +3,7 @@ layout: page
 title: RWA 行业深度分析：Ondo 与 XStock 两大链上资产路线对比
 subtitle: RWA 行业深度分析：Ondo 与 XStock 两大链上资产路线对比
 date: 2026-09-20 15:17:19
-author: valuewithTime
+author: TtepX
 catalog: true
 category: web3
 categories:
