@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Disruptor高性能框架设计
-subtitle: Disruptor高性能框架设计
+subtitle: Disruptor高性能线程间消息传递库框架设计
 date: 2026-10-12 15:00:00
 author: 0xTTEPX
 catalog: true
